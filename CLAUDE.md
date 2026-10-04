@@ -25,11 +25,13 @@ npm install
 npm test                               # vitest run
 npx vitest run path/to/file.test.js    # single file
 npx vitest run -t "test name"          # single test by name
-npm run lint                           # eslint
-npm run dev | build | start            # next (see docs/progresso.md before relying on these)
+npm run lint                           # eslint (flat config in eslint.config.js)
+npm run format                         # prettier --write
+npm run format:check                   # prettier --check (runs in CI)
+npm run dev | build | start            # next (no src/app yet, see docs/progresso.md)
 ```
 
-ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`.
+ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`: lint, format check, tests. Tests live in `tests/**/*.test.js`.
 
 ## Docs map: task → documents
 
