@@ -90,3 +90,27 @@ A primeira versão do ranking usará fórmula determinística baseada em avalia�
 ## DT022 — Auditoria append-only
 
 Logs de auditoria não poderão ser alterados ou apagados pela aplicação.
+
+## DT023 — Tipo de acomodação pertence ao hotel
+
+`ROOM_TYPE` pertence ao hotel e é reutilizado por quartos de qualquer unidade desse hotel. O quarto físico pertence à unidade.
+
+## DT024 — Favoritos separados por tipo
+
+Listas de hotéis e listas de quartos são entidades distintas (`FAVORITE_HOTEL_LIST` e `FAVORITE_ROOM_LIST`).
+
+## DT025 — Cálculo financeiro por item
+
+Preço, desconto, comissão, taxa de serviço e valor reembolsável são calculados e gravados por `RESERVATION_ROOM`. Os totais da reserva são a soma dos itens.
+
+## DT026 — Tentativas de pagamento como registros
+
+Cada tentativa de pagamento é um registro de `PAYMENT`. Eventos de webhook do Stripe são registrados em `STRIPE_WEBHOOK_EVENT` para idempotência.
+
+## DT027 — Padrão de branches
+
+Branches de trabalho usam `<type>/<ticket-id>-<short-description>`, em que `<ticket-id>` é o número da issue.
+
+## DT028 — Métricas de pesquisa no MySQL
+
+Impressões e cliques são persistidos em `SEARCH_IMPRESSION` e `SEARCH_CLICK`. Redis guarda apenas cache de agregados.

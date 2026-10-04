@@ -87,17 +87,31 @@ Prettier deverá respeitar 4 espaços.
 
 ## Git
 
-Branches sugeridas:
+Branches permanentes:
 
 ```text
 main
 develop
-feature/auth
-feature/hotel-search
-feature/reservations
-feature/admin-dashboard
-feature/overbooking
-fix/reservation-validation
+```
+
+Branches de trabalho seguem o formato:
+
+```text
+<type>/<ticket-id>-<short-description>
+```
+
+- `<type>` usa os mesmos tipos dos commits: `feat`, `fix`, `refactor`, `style`, `docs`, `test`, `chore`;
+- `<ticket-id>` é o número da issue no GitHub;
+- `<short-description>` em inglês, minúsculas, separada por hífens.
+
+Exemplos:
+
+```text
+feat/12-hotel-search
+feat/18-reservation-flow
+feat/25-overbooking-limit
+fix/31-reservation-validation
+docs/40-update-database-model
 ```
 
 Commits:
@@ -109,4 +123,6 @@ fix: prevent invalid checkout date
 refactor: extract availability service
 style: adjust hotel card layout
 docs: update project requirements
+test: add overlapping reservation tests
+chore: configure eslint
 ```

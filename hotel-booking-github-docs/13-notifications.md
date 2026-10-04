@@ -35,6 +35,8 @@ Notificar em:
 - denúncia;
 - hotel aprovado;
 - hotel bloqueado;
+- correções solicitadas pelo administrador (hotel devolvido para rascunho);
+- hotel desbloqueado;
 - alerta de overbooking;
 - conflito causado por bloqueio de quarto.
 

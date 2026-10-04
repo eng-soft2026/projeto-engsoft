@@ -20,8 +20,10 @@
 - endereço;
 - imagens com Cloudinary;
 - políticas;
+- regras de aceitação;
+- gestores adicionais do hotel;
 - comodidades;
-- tipos de acomodação;
+- tipos de acomodação (por hotel);
 - camas;
 - quartos.
 

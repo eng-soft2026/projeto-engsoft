@@ -96,7 +96,7 @@ RabbitMQ → e-mails, lembretes, reembolsos e tarefas assíncronas
 
 ## Métricas de pesquisa
 
-Contadores de impressão e clique podem ser acumulados temporariamente no Redis e consolidados periodicamente no MySQL.
+Impressões e cliques são persistidos em `SEARCH_IMPRESSION` e `SEARCH_CLICK` no MySQL, que é a fonte de verdade. Os contadores do Redis são cache de agregados usados pela relevância: são incrementados no registro do evento, possuem TTL e podem ser reconstruídos a partir do MySQL pelo job `analytics.aggregate`.
 
 Chaves sugeridas:
 

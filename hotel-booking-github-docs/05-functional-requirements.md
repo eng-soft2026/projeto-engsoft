@@ -22,7 +22,7 @@
 
 ## Tipos e quartos
 
-- RF015 — Criar tipos de acomodação.
+- RF015 — Criar tipos de acomodação no nível do hotel, reutilizáveis pelas unidades do mesmo hotel.
 - RF016 — Configurar camas, capacidade, área, fotos e preço padrão.
 - RF017 — Cadastrar quartos físicos individualmente.
 - RF018 — Definir andar, acessibilidade, observações e status.
@@ -51,7 +51,7 @@
 - RF035 — Filtrar por avaliação.
 - RF036 — Filtrar por comodidades.
 - RF037 — Filtrar por acessibilidade.
-- RF038 — Filtrar por aceita pets.
+- RF038 — Filtrar por aceita pets (regra de aceitação PETS permitida).
 - RF039 — Filtrar por tipo de cama.
 - RF040 — Filtrar por área do quarto.
 - RF041 — Filtrar por distância.
@@ -80,7 +80,7 @@
 - RF061 — Cancelar reserva por quarto.
 - RF062 — Alterar reserva até 24h antes.
 - RF063 — Alterar hóspedes até 24h antes.
-- RF064 — Cancelar pelo cliente até 24h antes.
+- RF064 — Cancelar pelo cliente antes do check-in, com reembolso integral até 24h antes e sem reembolso com menos de 24h.
 - RF065 — Gestor cancelar até 48h antes.
 - RF066 — Liberar disponibilidade após regra de cancelamento.
 
@@ -106,7 +106,7 @@
 
 - RF079 — Favoritar hotel.
 - RF080 — Favoritar quarto.
-- RF081 — Criar listas de favoritos nomeadas.
+- RF081 — Criar listas de favoritos nomeadas, separadas para hotéis e para quartos.
 
 ## Home
 
@@ -153,7 +153,7 @@
 - RF109 — Armazenar mídia no Cloudinary.
 - RF110 — Permitir até 10 fotos no cadastro principal do hotel.
 - RF111 — Permitir galeria de fotos sem limite funcional fixo por unidade, sujeita às cotas do provedor.
-- RF112 — Permitir até 4 fotos por avaliação/comentário.
+- RF112 — Permitir até 4 arquivos de mídia (imagens e/ou vídeos) por avaliação e por comentário do autor.
 - RF113 — Aceitar imagens JPG e JPEG.
 - RF114 — Aceitar vídeos em formatos comuns suportados pela política do projeto, incluindo MP4, WebM e MOV.
 - RF115 — Limitar vídeos de avaliação a no máximo 10 segundos.
@@ -189,3 +189,8 @@
 - RF133 — Registrar cliques em resultados.
 - RF134 — Considerar favoritos, hospedagens concluídas e avaliação na relevância.
 - RF135 — Calcular destinos populares pelo número de check-ins realizados.
+
+## Gestores e regras de aceitação
+
+- RF136 — Proprietário do hotel adicionar e remover gestores adicionais.
+- RF137 — Gestor configurar regras de aceitação do hotel (pets, cigarro, crianças, visitantes, eventos e regras próprias).

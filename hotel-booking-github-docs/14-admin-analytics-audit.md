@@ -82,14 +82,14 @@ UNDER_REVIEW
 → DRAFT
 ```
 
-Deverá registrar uma observação de revisão com itens que precisam ser corrigidos. O gestor corrige e submete novamente.
+Deverá registrar uma observação de revisão com itens que precisam ser corrigidos. A observação é gravada em `HOTEL_REVIEW_NOTE`, vinculada ao hotel e ao administrador. O gestor corrige e submete novamente.
 
 ### Desbloqueio
 
 Um hotel `BLOCKED` não será desbloqueado automaticamente.
 
 - Se o problema puder ser resolvido administrativamente, o administrador poderá restaurar `PUBLISHED`, registrando motivo.
-- Se exigir alteração de dados pelo gestor, o administrador moverá para `DRAFT`; depois o hotel deverá passar novamente por `UNDER_REVIEW` e aprovação.
+- Se exigir alteração de dados pelo gestor, o administrador moverá para `DRAFT` com observação em `HOTEL_REVIEW_NOTE`; depois o hotel deverá passar novamente por `UNDER_REVIEW` e aprovação.
 
 ## Auditoria
 

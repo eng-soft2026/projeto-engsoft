@@ -42,13 +42,15 @@ Pode:
 
 Pode:
 
-- cadastrar vários hotéis;
+- cadastrar vários hotéis como proprietário;
+- administrar gestores adicionais dos hotéis em que é proprietário;
+- operar hotéis em que foi adicionado como gestor adicional;
 - cadastrar várias unidades por hotel;
 - cadastrar tipos de acomodação;
 - cadastrar quartos físicos;
 - configurar preços, disponibilidade e overbooking;
 - criar comodidades próprias;
-- configurar políticas;
+- configurar políticas e regras de aceitação (pets, cigarro, crianças, visitantes, eventos e regras próprias);
 - gerenciar reservas;
 - responder avaliações publicamente;
 - denunciar avaliações;

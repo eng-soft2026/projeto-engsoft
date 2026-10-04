@@ -35,6 +35,8 @@
 - Meus hotéis
 - Criar hotel
 - Editar hotel
+- Gestores do hotel
+- Regras de aceitação e políticas
 - Unidades
 - Criar unidade
 - Tipos de acomodação

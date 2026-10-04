@@ -35,9 +35,14 @@ CLOUDINARY_API_SECRET=
 RABBITMQ_URL=
 SMTP_HOST=
 SMTP_PORT=
+SMTP_SECURE=
 SMTP_USER=
 SMTP_PASS=
 EMAIL_FROM=
+MAX_IMAGE_UPLOAD_MB=10
+MAX_VIDEO_UPLOAD_MB=50
+MAX_REVIEW_VIDEO_SECONDS=10
+NOMINATIM_USER_AGENT=
 ```
 
 `.env` nunca deve ser commitado.
@@ -52,7 +57,7 @@ Toda entrada deve ser revalidada no servidor.
 
 Cliente não acessa rotas administrativas.
 
-Gestor acessa apenas hotéis sob sua responsabilidade.
+Gestor acessa apenas hotéis sob sua responsabilidade (como proprietário ou gestor adicional).
 
 Administrador possui acesso global.
 

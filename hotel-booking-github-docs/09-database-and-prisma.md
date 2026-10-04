@@ -16,7 +16,7 @@ Prisma ORM será utilizado para:
 
 ## Regras de modelagem
 
-- IDs preferencialmente UUID ou CUID.
+- IDs em UUID (`@default(uuid())`).
 - Datas em UTC no banco.
 - Valores monetários com Decimal, nunca float.
 - CNPJ e CPF armazenados normalizados.
@@ -27,14 +27,15 @@ Prisma ORM será utilizado para:
 
 - Hotel.status
 - Hotel.cnpj
-- HotelUnit.city/state ou equivalentes no Address
+- Address.city/state
 - Room.unitId
 - Room.roomTypeId
 - Reservation.userId
 - ReservationRoom.roomId
-- ReservationRoom.checkIn/checkOut
+- Reservation.checkIn/checkOut
 - Payment.reservationId
-- Review.hotel/unit conforme modelo final
+- Review.reservationRoomId
+- Review.userId
 
 ## Restrições
 
@@ -72,28 +73,38 @@ Usar em:
 
 ## Entidades adicionais definidas posteriormente
 
-O schema definitivo também deverá prever:
+Os nomes definitivos estão em `25-database-model.md`:
 
 ```text
-MediaAsset
-Promotion
-PromotionScope ou relacionamento equivalente
-SearchMetric
-EmailDelivery ou NotificationDelivery
-AdminReviewNote
+HOTEL_IMAGE
+UNIT_IMAGE
+ROOM_TYPE_IMAGE
+REVIEW_MEDIA
+PROMOTION
+PROMOTION_HOTEL
+PROMOTION_UNIT
+PROMOTION_ROOM_TYPE
+PROMOTION_ROOM
+SEARCH_IMPRESSION
+SEARCH_CLICK
+EMAIL_DELIVERY
+JOB_EXECUTION
+HOTEL_REVIEW_NOTE
+STRIPE_WEBHOOK_EVENT
+RESERVATION_ROOM_NIGHT
 ```
 
-### MediaAsset
+### Mídia
 
-Referência a arquivos no Cloudinary, sem binário no banco.
+Não existe tabela genérica de mídia. Cada contexto possui a sua tabela (`HOTEL_IMAGE`, `UNIT_IMAGE`, `ROOM_TYPE_IMAGE`, `REVIEW_MEDIA`) com referências ao Cloudinary, sem binário no banco.
 
-### Promotion
+### Promoção
 
-Deverá preservar escopo, tipo, valor, período, mínimo de noites e estado. Reservas deverão armazenar snapshot suficiente para auditoria do desconto aplicado.
+Escopo por tabelas de alvo (hotel, unidade, tipo e quarto). Reservas armazenam snapshot suficiente para auditoria do desconto aplicado em `RESERVATION_ROOM`.
 
-### SearchMetric
+### Métricas de pesquisa
 
-Poderá guardar agregados por unidade/data para impressões, cliques, favoritos e hospedagens concluídas.
+`SEARCH_IMPRESSION` e `SEARCH_CLICK` são a fonte de verdade. Favoritos e hospedagens concluídas são calculados a partir das tabelas de favoritos e de `RESERVATION_ROOM`. Contadores no Redis são apenas cache.
 
 ## Precisão monetária
 

@@ -56,6 +56,12 @@ totalCliente = valorBruto + taxaServico
 valorLiquidoHotel = valorBruto - comissao
 ```
 
+## Cálculo por item
+
+Todos os valores acima são calculados por quarto reservado (`RESERVATION_ROOM`) e gravados como snapshot no item. Os totais da reserva (`RESERVATION`) são a soma dos itens, de modo que comissão, taxa de serviço e valor reembolsável de cada quarto são exatos e a soma dos itens sempre fecha com o total da reserva.
+
+A promoção é avaliada por quarto: aplica-se a elegível que gerar o menor preço final para aquele item.
+
 ## Arredondamento
 
 Toda operação monetária deverá utilizar duas casas decimais e arredondamento sempre para baixo.
@@ -82,7 +88,7 @@ Limite:
 até 12x sem juros
 ```
 
-A condição usa o valor bruto da hospedagem, não o total com taxa de serviço.
+A condição usa o valor bruto da reserva (soma dos itens), não o total com taxa de serviço.
 
 ## Estados de pagamento
 
@@ -143,17 +149,19 @@ validar nova configuração
 → confirmar alteração após novo pagamento
 ```
 
+O estorno do pagamento anterior gera um `Refund` para cada `ReservationRoom` pago, cada um com o respectivo `total_price`.
+
 ## Reembolso parcial
 
 Reserva com múltiplos quartos deve permitir reembolso apenas do `ReservationRoom` cancelado.
 
-Taxa de serviço e valores do item deverão ser rateados/snapshotados de maneira que o sistema consiga determinar exatamente o valor reembolsável do quarto.
+O valor reembolsável de um quarto é o `total_price` do `ReservationRoom` (valor bruto do item + taxa de serviço do item), já calculado por item e gravado como snapshot.
 
 ## Webhooks
 
 - validar assinatura;
 - processar de forma idempotente;
-- armazenar `stripeEventId`;
+- armazenar `stripeEventId` (único) na tabela `STRIPE_WEBHOOK_EVENT`;
 - evitar duplicação de pagamento, reserva ou reembolso;
 - confirmar pagamento somente após evento confiável do servidor.
 
@@ -167,7 +175,7 @@ stripeEventId
 
 ## Histórico
 
-Nunca sobrescrever tentativas antigas.
+Nunca sobrescrever tentativas antigas. Cada tentativa de pagamento é um registro próprio em `PAYMENT`; tentativas com falha permanecem com status FAILED.
 
 Preservar:
 

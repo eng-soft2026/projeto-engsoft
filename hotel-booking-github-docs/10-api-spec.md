@@ -64,6 +64,9 @@ GET /api/hotels/:id
 POST /api/hotels
 PATCH /api/hotels/:id
 POST /api/hotels/:id/submit-review
+POST /api/hotels/:id/managers
+DELETE /api/hotels/:id/managers/:userId
+PUT /api/hotels/:id/acceptances
 ```
 
 ### Units
@@ -75,14 +78,17 @@ PATCH /api/units/:id
 POST /api/units/:id/blocks
 ```
 
-### Rooms
+### Room types e rooms
 
 ```text
-POST /api/units/:unitId/room-types
-POST /api/room-types/:roomTypeId/rooms
+POST /api/hotels/:hotelId/room-types
+PATCH /api/room-types/:id
+POST /api/units/:unitId/rooms
 PATCH /api/rooms/:id
 POST /api/rooms/:id/blocks
 ```
+
+O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade.
 
 ### Search
 
@@ -110,13 +116,19 @@ POST /api/reviews/:id/replies
 POST /api/reviews/:id/report
 ```
 
+`comments` é usado pelo autor da avaliação e aceita mídia. `replies` é usado pelo gestor do hotel e aceita somente texto.
+
 ### Favorites
 
 ```text
-GET /api/favorite-lists
-POST /api/favorite-lists
-POST /api/favorite-lists/:id/items
-DELETE /api/favorite-lists/:id/items/:itemId
+GET /api/favorite-hotel-lists
+POST /api/favorite-hotel-lists
+POST /api/favorite-hotel-lists/:id/items
+DELETE /api/favorite-hotel-lists/:id/items/:itemId
+GET /api/favorite-room-lists
+POST /api/favorite-room-lists
+POST /api/favorite-room-lists/:id/items
+DELETE /api/favorite-room-lists/:id/items/:itemId
 ```
 
 ### Admin
@@ -125,6 +137,8 @@ DELETE /api/favorite-lists/:id/items/:itemId
 GET /api/admin/dashboard
 POST /api/admin/hotels/:id/approve
 POST /api/admin/hotels/:id/block
+POST /api/admin/hotels/:id/request-changes
+POST /api/admin/hotels/:id/unblock
 GET /api/admin/review-reports
 ```
 

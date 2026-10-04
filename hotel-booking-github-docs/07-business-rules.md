@@ -2,7 +2,7 @@
 
 ## Usuários e operação
 
-- RN001 — Um gestor pode administrar vários hotéis cadastrados por ele.
+- RN001 — Um gestor pode ser proprietário de vários hotéis. Cada hotel possui um único proprietário e pode possuir gestores adicionais.
 - RN002 — Hotel precisa de aprovação do administrador para ser publicado.
 - RN003 — Estados do hotel: DRAFT, UNDER_REVIEW, PUBLISHED, BLOCKED.
 - RN004 — CNPJ é obrigatório.
@@ -13,7 +13,7 @@
 
 - RN007 — Quartos são controlados individualmente.
 - RN008 — Número do quarto é único dentro da unidade.
-- RN009 — Quarto pertence a uma unidade e a um tipo de acomodação.
+- RN009 — Quarto pertence a uma unidade e a um tipo de acomodação. O tipo pertence ao hotel e só pode ser usado em quartos de unidades desse mesmo hotel.
 - RN010 — Quarto pode sobrescrever o preço padrão do tipo.
 - RN011 — Quarto com histórico não deve ser apagado fisicamente.
 - RN012 — Gestor pode bloquear quarto mesmo com reserva futura, mas deve receber alerta.
@@ -87,7 +87,7 @@
 ## Favoritos
 
 - RN058 — Cliente pode favoritar hotéis e quartos.
-- RN059 — Cliente pode criar múltiplas listas nomeadas.
+- RN059 — Cliente pode criar múltiplas listas nomeadas, separadas para hotéis e para quartos. Cada lista contém apenas itens de um tipo.
 
 ## Financeiro
 
@@ -127,14 +127,14 @@
 ## Avaliações e mídia
 
 - RN079 — Avaliação fica disponível imediatamente após o checkout previsto, desde que a reserva/quarto não esteja cancelado.
-- RN080 — Cada avaliação ou comentário poderá conter no máximo 4 imagens.
+- RN080 — Cada avaliação e cada comentário do autor poderá conter no máximo 4 arquivos de mídia no total (imagens e/ou vídeos). Respostas públicas do gestor não aceitam mídia.
 - RN081 — Imagens aceitas: JPG e JPEG.
 - RN082 — Vídeos aceitos: MP4, WebM e MOV.
 - RN083 — Vídeo anexado a avaliação/comentário terá duração máxima de 10 segundos.
-- RN084 — A aplicação admite limite de negócio de até 50 MB por imagem, porém o limite efetivo nunca poderá ultrapassar o limite técnico do plano Cloudinary ativo.
+- RN084 — A aplicação admite limite de negócio de até 50 MB por imagem, porém o limite efetivo nunca poderá ultrapassar o limite técnico do plano Cloudinary ativo. Vídeos são limitados a 50 MB (`MAX_VIDEO_UPLOAD_MB`), também sujeitos ao limite técnico do plano.
 - RN085 — Hotel poderá possuir no máximo 10 fotos no cadastro principal.
 - RN086 — Unidade não possuirá limite funcional fixo de fotos, permanecendo sujeita às cotas e limites do Cloudinary.
-- RN087 — Avaliação continuará limitada a no máximo 4 fotos.
+- RN087 — Avaliação continuará limitada a no máximo 4 arquivos de mídia no total.
 
 ## Mapas
 
@@ -149,7 +149,7 @@
 - RN093 — Desconto percentual deverá estar entre 1% e 70%.
 - RN094 — Desconto fixo nunca poderá tornar a diária negativa ou igual a zero; preço final mínimo será R$ 1,00 por diária.
 - RN095 — Promoções não são cumulativas. Quando múltiplas promoções forem válidas, aplicar a que produzir o menor preço final para o cliente.
-- RN096 — Promoção poderá definir data de início/fim da oferta, período de hospedagem, mínimo de noites e escopo.
+- RN096 — Promoção poderá definir data de início/fim da oferta, período de hospedagem, mínimo de noites, escopo, limite de usos e valor mínimo do subtotal do quarto.
 - RN097 — O desconto será aplicado antes do cálculo da comissão e da taxa de serviço.
 - RN098 — Reserva deve armazenar snapshot da promoção e do desconto aplicado.
 
@@ -171,6 +171,16 @@
 - RN106 — Hotel BLOCKED somente poderá voltar a PUBLISHED por ação do administrador; quando exigir correções do gestor, deverá retornar primeiro para DRAFT e passar novamente por UNDER_REVIEW.
 - RN107 — Logs de auditoria serão imutáveis e mantidos durante toda a vida útil do projeto.
 - RN108 — Toda ação administrativa capaz de afetar reserva, pagamento, publicação, bloqueio ou conteúdo do usuário deverá registrar motivo obrigatório.
+
+## Regras complementares
+
+- RN109 — Cada hotel possui um único proprietário (`owner_user_id`), que deve ter o papel MANAGER.
+- RN110 — O proprietário pode adicionar e remover gestores adicionais do hotel, que devem ter o papel MANAGER. Gestores adicionais possuem os mesmos poderes operacionais entre si, mas não podem alterar a lista de gestores nem remover o proprietário.
+- RN111 — Os cálculos financeiros são feitos por quarto reservado (`ReservationRoom`) e gravados como snapshot no item. Os totais da reserva são a soma dos itens, e a promoção é avaliada por item.
+- RN112 — O valor reembolsável de um quarto é o seu `total_price` (valor bruto do item + taxa de serviço do item), inclusive no estorno do pagamento anterior em alterações de reserva.
+- RN113 — Cada hotel possui no máximo uma regra de aceitação por tipo padronizado. Para `OTHER`, o `custom_label` deve ser único dentro do hotel.
+- RN114 — A política de cancelamento da plataforma (RN039 a RN045 e RN077) é fixa. Políticas textuais do hotel (`HOTEL_POLICY`) apenas complementam a informação exibida e nunca alteram prazos ou reembolsos.
+- RN115 — O valor mínimo de uma promoção é comparado ao subtotal do quarto antes do desconto. Cada quarto confirmado com uma promoção que tenha limite de usos consome 1 uso, devolvido se esse quarto for cancelado.
 
 ---
 

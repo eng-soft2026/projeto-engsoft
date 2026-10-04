@@ -10,7 +10,7 @@ Localização física de um hotel, com endereço, telefone, fotos, quartos, hor�
 
 ## Tipo de acomodação
 
-Template que agrupa características compartilhadas por quartos semelhantes, como capacidade, camas, área e preço padrão.
+Template que agrupa características compartilhadas por quartos semelhantes, como capacidade, camas, área e preço padrão. Pertence ao hotel e pode ser usado por quartos de qualquer unidade desse hotel.
 
 ## Quarto físico
 
@@ -38,15 +38,15 @@ Margem comercial configurável por unidade, limitada a 10% pela plataforma. Não
 
 ## Valor bruto
 
-Valor da hospedagem antes da comissão da plataforma.
+Valor da hospedagem após descontos promocionais e antes da taxa de serviço da plataforma. A comissão é calculada sobre ele.
 
 ## Comissão
 
-Percentual de 10% cobrado pela plataforma sobre o valor bruto da hospedagem.
+Valor equivalente a 10% do valor bruto da hospedagem, retido pela plataforma e descontado do valor pertencente ao hotel.
 
 ## Taxa de serviço
 
-Valor adicional cobrado do cliente pela plataforma e exibido separadamente.
+Valor adicional cobrado do cliente pela plataforma, equivalente a 10% do valor bruto da hospedagem, e exibido separadamente.
 
 ## Reembolso parcial
 
@@ -62,8 +62,24 @@ Cópia dos valores aplicados no momento da reserva para impedir alterações ret
 
 ## Gestor
 
-Usuário responsável por cadastrar e operar um ou vários hotéis próprios dentro da plataforma.
+Usuário com papel MANAGER, responsável por cadastrar e operar hotéis na plataforma. Pode ser proprietário de vários hotéis ou gestor adicional de hotéis de outros gestores.
 
 ## Administrador global
 
 Usuário com acesso administrativo a toda a plataforma.
+
+## Proprietário
+
+Gestor que cadastrou o hotel. Cada hotel possui um único proprietário, que administra a lista de gestores adicionais.
+
+## Gestor adicional
+
+Gestor associado a um hotel pelo proprietário. Possui os mesmos poderes operacionais dos demais gestores adicionais.
+
+## Regra de aceitação
+
+Configuração simples de aceita/não aceita de um hotel (pets, cigarro, crianças, visitantes, eventos ou regra própria), distinta das políticas textuais.
+
+## Valor reembolsável
+
+Valor devolvido ao cliente quando um quarto é cancelado com direito a reembolso: valor bruto do item mais a taxa de serviço do item.

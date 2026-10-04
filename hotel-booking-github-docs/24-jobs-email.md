@@ -7,16 +7,25 @@ RabbitMQ será utilizado para tarefas que não devem bloquear requests web.
 ## Exchanges e filas sugeridas
 
 ```text
-app.events
+app.events (exchange)
 email.send
 notifications.dispatch
 refund.process
 reservation.expiration
 checkin.reminder
 analytics.aggregate
+media.cleanup
 ```
 
-Cada fila crítica deverá possuir Dead Letter Queue correspondente.
+Para cada fila `X` existem `X.retry` (TTL de 30 minutos, com dead-letter exchange de volta para `X`) e `X.dlq`.
+
+Responsabilidades:
+
+- `reservation.expiration`: cancela reservas em `PENDING_PAYMENT` cujo `hold_expires_at` passou (o hold em si expira por TTL no Redis);
+- `media.cleanup`: remove do Cloudinary uploads órfãos de cadastros que falharam;
+- `analytics.aggregate`: consolida `DAILY_METRIC` e reconstrói contadores do Redis a partir do MySQL.
+
+Cada job é registrado em `JOB_EXECUTION` e cada e-mail em `EMAIL_DELIVERY` (ver `25-database-model.md`).
 
 ## Retry
 

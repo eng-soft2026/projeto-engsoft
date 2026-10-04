@@ -119,16 +119,20 @@ Necessários para:
 
 RabbitMQ será a infraestrutura de filas.
 
-Filas iniciais sugeridas:
+Exchange e filas (detalhes em `24-jobs-email.md`):
 
 ```text
+app.events (exchange)
 email.send
-notification.dispatch
+notifications.dispatch
 refund.process
-reservation.expire
+reservation.expiration
 checkin.reminder
-media.process
+analytics.aggregate
+media.cleanup
 ```
+
+Cada fila `X` possui uma fila de retry `X.retry` (TTL de 30 minutos) e uma Dead Letter Queue `X.dlq`.
 
 Falhas transitórias deverão ser reenviadas após 30 minutos. A política padrão será de até 3 tentativas totais. Após o limite, a mensagem deverá seguir para uma Dead Letter Queue para inspeção administrativa.
 
