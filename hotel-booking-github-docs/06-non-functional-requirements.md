@@ -1,0 +1,38 @@
+# 06 — Requisitos Não Funcionais
+
+- RNF001 — Aplicação responsiva para mobile, tablet e desktop.
+- RNF002 — Interface mobile-first.
+- RNF003 — MySQL será a fonte de verdade dos dados persistentes.
+- RNF004 — Redis não poderá substituir garantias transacionais.
+- RNF005 — Entradas deverão ser validadas no servidor.
+- RNF006 — Senhas armazenadas somente com hash seguro.
+- RNF007 — Rotas administrativas protegidas por autorização.
+- RNF008 — Segredos armazenados em variáveis de ambiente.
+- RNF009 — Código com 4 espaços de indentação.
+- RNF010 — Código sem comentários inline.
+- RNF011 — Código deverá seguir princípios de Clean Code.
+- RNF012 — Regras de negócio não deverão ser duplicadas.
+- RNF013 — APIs deverão retornar erros padronizados.
+- RNF014 — Operações críticas deverão possuir tratamento de erro.
+- RNF015 — Pagamentos deverão ser idempotentes.
+- RNF016 — Webhooks deverão validar assinatura.
+- RNF017 — Reserva deverá ser protegida contra concorrência.
+- RNF018 — O sistema deverá preservar histórico financeiro.
+- RNF019 — O sistema deverá preservar histórico de reservas.
+- RNF020 — Operações administrativas críticas deverão ser auditadas.
+- RNF021 — Componentes React devem ser pequenos e reutilizáveis.
+- RNF022 — Server Components serão o padrão.
+- RNF023 — Cache deverá possuir TTL ou estratégia de invalidação.
+- RNF024 — O sistema não deverá expor stack trace ou detalhes internos ao usuário.
+- RNF025 — O sistema deve ser compatível com execução local e ambiente de deploy moderno para Next.js.
+
+- RNF026 — Valores monetários deverão utilizar tipo decimal; operações financeiras não devem depender de ponto flutuante binário do JavaScript.
+- RNF027 — Resultados monetários deverão ser arredondados para duas casas decimais sempre para baixo.
+- RNF028 — Uploads deverão ser validados no servidor e no provedor de mídia.
+- RNF029 — Arquivos de mídia não deverão ser persistidos como binário no MySQL.
+- RNF030 — Geocodificação pública deverá ser executada pelo backend, com cache e controle de taxa.
+- RNF031 — O sistema não deverá executar autocomplete diretamente contra o Nominatim público.
+- RNF032 — Jobs assíncronos deverão ser idempotentes sempre que possam ser reenviados.
+- RNF033 — E-mails e tarefas com erro transitório deverão utilizar retry controlado e Dead Letter Queue.
+- RNF034 — Logs de auditoria serão append-only e não poderão ser editados pela aplicação.
+- RNF035 — Upload de imagem no ambiente acadêmico gratuito deverá respeitar também o limite técnico do plano Cloudinary utilizado.
