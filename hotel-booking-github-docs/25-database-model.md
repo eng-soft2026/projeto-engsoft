@@ -31,6 +31,10 @@ DECIMAL(12,2)
 
 Arredondamento financeiro: duas casas decimais, sempre para baixo.
 
+No Prisma, models usam PascalCase e campos usam camelCase, mapeados com `@@map`/`@map` para tabelas e colunas em snake_case no singular (por exemplo `HotelUnit` → `hotel_unit`, `overbookingPercentage` → `overbooking_percentage`). IDs são `CHAR(36)` com `@default(uuid())`. Chaves estrangeiras usam `ON DELETE RESTRICT`; a desativação lógica é preferida à exclusão (§28).
+
+Restrições que o Prisma não representa, como `CHECK`, são escritas em SQL na própria migration. O MySQL não possui índice parcial: unicidades condicionais combinam o índice único possível com validação no service.
+
 ## 3. Usuários
 
 ### USER
@@ -90,7 +94,8 @@ Regras:
 - cada hotel possui um único proprietário;
 - o proprietário deve ser `MANAGER`;
 - CNPJ é obrigatório;
-- publicação exige aprovação administrativa.
+- publicação exige aprovação administrativa;
+- `category` é texto livre (até 50 caracteres) enquanto os valores não forem definidos.
 
 ### HOTEL_MANAGER
 
@@ -145,7 +150,7 @@ EVENTS
 OTHER
 ```
 
-Os tipos oficiais da plataforma terão `is_system = true`.
+Os tipos oficiais da plataforma terão `is_system = true` e são criados pelo seed.
 
 ### HOTEL_ACCEPTANCE
 
@@ -165,7 +170,8 @@ Regras:
 - se `acceptance_type != OTHER`, `custom_label = NULL`;
 - se `acceptance_type = OTHER`, `custom_label` é obrigatório;
 - `OTHER` representa especificidades criadas pelo gestor;
-- cada hotel possui no máximo uma regra por tipo padronizado; para `OTHER`, `custom_label` é único dentro do hotel (validado no service, RN113).
+- cada hotel possui no máximo uma regra por tipo padronizado; para `OTHER`, `custom_label` é único dentro do hotel (RN113);
+- o banco possui índice único em `(hotel_id, acceptance_type_id, custom_label)`, que garante a unicidade do `custom_label` em `OTHER`. Como o MySQL aceita vários `NULL` em índice único, a regra de uma por tipo padronizado e a obrigatoriedade de `custom_label` apenas em `OTHER` são validadas no service.
 
 Exemplo:
 
@@ -240,7 +246,7 @@ HOTEL_UNIT
 
 Cada unidade pertence a apenas um hotel.
 
-Overbooking configurável entre 0% e 10%. Bloqueios temporários são feitos por `UNIT_BLOCK`; `is_active` desativa a unidade definitivamente.
+Overbooking configurável entre 0% e 10%. `overbooking_percentage` é inteiro (`TINYINT UNSIGNED`, padrão 0) com `CHECK (overbooking_percentage BETWEEN 0 AND 10)` criado em SQL na migration; o service também valida o valor contra `MAX_OVERBOOKING_PERCENT`. Bloqueios temporários são feitos por `UNIT_BLOCK`; `is_active` desativa a unidade definitivamente.
 
 ### ADDRESS
 
@@ -1151,7 +1157,7 @@ SYSTEM_SETTING
 - key UNIQUE
 - value
 - value_type
-- updated_by_user_id FK
+- updated_by_user_id FK nullable
 - updated_at
 ```
 
@@ -1166,6 +1172,17 @@ MAX_BOOKING_ADVANCE_DAYS = 365
 JOB_RETRY_MINUTES = 30
 MAX_JOB_ATTEMPTS = 3
 ```
+
+`value` é texto (`VARCHAR(255)`) interpretado conforme `value_type`:
+
+```text
+INTEGER
+DECIMAL
+BOOLEAN
+STRING
+```
+
+Os valores acima são criados pelo seed sem autor (`updated_by_user_id = NULL`). O seed cria apenas as chaves ausentes e nunca sobrescreve valores alterados pelo administrador. `MAX_OVERBOOKING_PERCENT` só pode reduzir o teto da plataforma (RN047): o banco recusa overbooking acima de 10%.
 
 ## 27. Índices recomendados
 

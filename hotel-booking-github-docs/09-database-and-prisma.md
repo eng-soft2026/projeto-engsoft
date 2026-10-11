@@ -46,6 +46,12 @@ Prisma ORM será utilizado para:
 - percentual de overbooking entre 0 e 10;
 - notas entre 1 e 5.
 
+Como cada restrição é garantida no MySQL:
+
+- chaves, unicidade simples e índices: `schema.prisma`;
+- `CHECK` (por exemplo, overbooking entre 0 e 10): SQL escrito na migration, pois o Prisma não representa CHECK;
+- regras que dependem de outra tabela ou de unicidade parcial (proprietário com papel MANAGER, uma regra de aceitação por tipo): service, dentro de transação quando houver concorrência.
+
 ## Transações
 
 Obrigatórias em fluxos como:
