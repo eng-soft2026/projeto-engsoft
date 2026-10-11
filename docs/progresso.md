@@ -4,8 +4,7 @@ Working notes for Claude Code and the team. The spec in `hotel-booking-github-do
 
 ## Tooling gaps (fix, then remove from this list)
 
-- [ ] No `src/app/` yet, so `npm run dev|build|start` do not work and `build` is not in CI. Add the minimal App Router files (with Tailwind `globals.css`) in the first UI issue and put `npm run build` back in CI.
-- [ ] `tests/` is empty (Vitest runs with `passWithNoTests`). Add the first availability tests (`16-testing-quality.md`) and remove `passWithNoTests`.
+- [ ] Vitest still runs with `passWithNoTests`. Remove it once the availability tests from `16-testing-quality.md` cover the main flows.
 - [ ] Obsolete root `README.md` (old "resort" scope). Rewrite it or mark it obsolete and point to `hotel-booking-github-docs/`.
 - [ ] Legacy entities in `src/domain/` use Portuguese names and 2-space indentation. Migrate into `src/modules/` when touched.
 
@@ -13,6 +12,7 @@ Working notes for Claude Code and the team. The spec in `hotel-booking-github-do
 
 - Spec reviewed and made consistent (docs 01-25).
 - Issue #1 tooling: Next 16, React 19, Tailwind 4 (PostCSS), Prettier (4 spaces), ESLint flat config, Vitest config, CI without `tsc`.
+- Issue #24 (base structure): Target structure folders, App Router layout with Tailwind, placeholder home, `lib/api-response.js` and `lib/errors.js` (doc 10 codes) with tests, `npm run build` back in CI.
 
 ## Next
 
@@ -28,3 +28,5 @@ Add one line per decision made during implementation: date, decision, doc update
 - 2026-10-04: `npm run build` removed from CI until `src/app/` exists. Doc: none.
 - 2026-10-11: Adopted the code-review-graph MCP for code navigation and review. Its local index (`.code-review-graph/`) and the machine-specific `.mcp.json` are git-ignored. Doc: `CLAUDE.md`.
 - 2026-10-11: `.gitattributes` forces LF line endings (`* text=auto eol=lf`), so Prettier checks pass on Windows with `core.autocrlf=true`. Doc: none.
+- 2026-10-11: `DomainError(code, message)` has no default message and no HTTP status mapping; status mapping belongs to the Route Handlers. Subclasses: `NotFoundError`, `UnauthorizedError`, `ForbiddenError`. Doc: none.
+- 2026-10-11: API helpers return plain objects (no `NextResponse`) to stay testable. Doc: none.
