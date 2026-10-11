@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 UNIFESP Software Engineering project: a hotel booking platform restricted to Brazil, with fictional hotels registered by managers. Three roles: customer, hotel manager, global admin.
 
-- The repo is at an early stage. The only code is three plain entities in `src/domain/` (`acomodacao.js`, `hospede.js`, `reserva.js`). Everything else is specification.
+- The repo is at an early stage. Code so far: three plain entities in `src/domain/` (`acomodacao.js`, `hospede.js`, `reserva.js`), the base Next.js structure, `src/lib/` helpers (API response, domain errors, Prisma and Redis singletons) and the local infra (`docker-compose.yml`, empty `prisma/schema.prisma`). There are no Prisma models yet. Everything else is specification.
 - The specification in `hotel-booking-github-docs/` (Portuguese) is the source of truth for scope, rules and target architecture. If code and docs disagree, the docs win.
 - The root `README.md` is obsolete (old "resort" scope with different cancellation rules). Ignore it.
 - Current status, tooling problems and a decisions log live in `docs/progresso.md`. Read it at the start of a session.
@@ -28,10 +28,13 @@ npx vitest run -t "test name"          # single test by name
 npm run lint                           # eslint (flat config in eslint.config.js)
 npm run format                         # prettier --write
 npm run format:check                   # prettier --check (runs in CI)
-npm run dev | build | start            # next (no src/app yet, see docs/progresso.md)
+npm run dev | build | start            # next
+npm run db:up | db:down                # docker compose: MySQL 8.4 + Redis 7 (copy .env.example to .env first)
+npm run prisma:generate | prisma:validate
+npm run prisma:migrate:dev | prisma:migrate:deploy
 ```
 
-ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`: lint, format check, tests. Tests live in `tests/**/*.test.js`.
+ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`: lint, format check, tests, build. `npm install` runs `prisma generate` (client in `src/generated/prisma`, git-ignored). Prisma 7 connects through `@prisma/adapter-mariadb`; use `getPrisma()` and `await getRedis()` from `src/lib/`, never instantiate the clients elsewhere. Tests live in `tests/**/*.test.js`.
 
 ## Docs map: task → documents
 
@@ -91,7 +94,7 @@ src/
     repositories/
     schemas/        Zod
     lib/ hooks/ utils/ constants/ config/
-prisma/             schema.prisma, migrations, seeds
+prisma/             schema.prisma, migrations, seeds (prisma.config.mjs at the root)
 tests/
 ```
 

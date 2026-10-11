@@ -4,7 +4,13 @@ import globals from "globals";
 
 export default [
     {
-        ignores: [".next/", "node_modules/", "coverage/", "src/domain/"],
+        ignores: [
+            ".next/",
+            "node_modules/",
+            "coverage/",
+            "src/domain/",
+            "src/generated/",
+        ],
     },
     js.configs.recommended,
     nextPlugin.configs["core-web-vitals"],
