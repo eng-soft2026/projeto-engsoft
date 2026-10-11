@@ -7,3 +7,6 @@ coverage/
 .DS_Store
 *.log
 .claude
+# Added by code-review-graph
+.code-review-graph/
+.mcp.json

@@ -130,3 +130,14 @@ tests/
 - Conventional commits (`feat:`, `fix:`, `refactor:`, `style:`, `docs:`, `test:`, `chore:`). Reference the issue (`Closes #N`).
 - Changes reach `main` through a PR reviewed by another team member.
 - Never commit `.env`. Keep `.env.example` updated without real secrets.
+
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
+
+Narrow scope with the graph before reading files, then verify in the source (the source wins over a stale graph; an empty result can mean "not indexed").
+
+- Explore: `semantic_search_nodes_tool`, `query_graph_tool` (`callers_of`, `callees_of`, `imports_of`, `tests_for`), `get_architecture_overview_tool`.
+- Impact: `get_impact_radius_tool`, `get_affected_flows_tool`.
+- Review: `detect_changes_tool` + `get_review_context_tool`.
+- The graph auto-updates on file changes via hooks.
+<!-- /code-review-graph MCP tools -->
