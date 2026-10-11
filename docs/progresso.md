@@ -26,3 +26,4 @@ Add one line per decision made during implementation: date, decision, doc update
 - 2026-10-04: Using `@next/eslint-plugin-next` directly instead of `eslint-config-next`, which pulls `typescript` as a peer (DT002). Doc: none.
 - 2026-10-04: Prettier ignores `*.md`, `package.json` and `src/domain/` (legacy). Doc: none.
 - 2026-10-04: `npm run build` removed from CI until `src/app/` exists. Doc: none.
+- 2026-10-11: `.gitattributes` forces LF line endings (`* text=auto eol=lf`), so Prettier checks pass on Windows with `core.autocrlf=true`. Doc: none.
