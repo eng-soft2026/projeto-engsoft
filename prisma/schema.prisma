@@ -6,3 +6,213 @@ generator client {
 datasource db {
     provider = "mysql"
 }
+
+enum UserRole {
+    CUSTOMER
+    MANAGER
+    ADMIN
+}
+
+enum HotelStatus {
+    DRAFT
+    UNDER_REVIEW
+    PUBLISHED
+    BLOCKED
+}
+
+enum HotelPolicyType {
+    CANCELLATION
+    QUIET_HOURS
+    PARKING
+    OTHER
+}
+
+enum SettingValueType {
+    INTEGER
+    DECIMAL
+    BOOLEAN
+    STRING
+}
+
+model User {
+    id           String   @id @default(uuid()) @db.Char(36)
+    name         String   @db.VarChar(150)
+    email        String   @unique @db.VarChar(254)
+    cpf          String   @unique @db.Char(11)
+    passwordHash String   @map("password_hash") @db.VarChar(255)
+    role         UserRole @default(CUSTOMER)
+    isActive     Boolean  @default(true) @map("is_active")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
+
+    ownedHotels      Hotel[]           @relation("HotelOwner")
+    managedHotels    HotelManager[]
+    hotelReviewNotes HotelReviewNote[]
+    updatedSettings  SystemSetting[]
+
+    @@map("user")
+}
+
+model Hotel {
+    id          String      @id @default(uuid()) @db.Char(36)
+    ownerUserId String      @map("owner_user_id") @db.Char(36)
+    name        String      @db.VarChar(150)
+    description String      @db.Text
+    category    String      @db.VarChar(50)
+    cnpj        String      @db.Char(14)
+    email       String      @db.VarChar(254)
+    status      HotelStatus @default(DRAFT)
+    isActive    Boolean     @default(true) @map("is_active")
+    createdAt   DateTime    @default(now()) @map("created_at")
+    updatedAt   DateTime    @updatedAt @map("updated_at")
+
+    owner       User              @relation("HotelOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+    managers    HotelManager[]
+    reviewNotes HotelReviewNote[]
+    acceptances HotelAcceptance[]
+    policies    HotelPolicy[]
+    units       HotelUnit[]
+
+    @@index([status])
+    @@index([cnpj])
+    @@map("hotel")
+}
+
+model HotelManager {
+    hotelId   String   @map("hotel_id") @db.Char(36)
+    userId    String   @map("user_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+    @@id([hotelId, userId])
+    @@map("hotel_manager")
+}
+
+model HotelReviewNote {
+    id          String      @id @default(uuid()) @db.Char(36)
+    hotelId     String      @map("hotel_id") @db.Char(36)
+    adminUserId String      @map("admin_user_id") @db.Char(36)
+    fromStatus  HotelStatus @map("from_status")
+    toStatus    HotelStatus @map("to_status")
+    notes       String      @db.Text
+    createdAt   DateTime    @default(now()) @map("created_at")
+
+    hotel     Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    adminUser User  @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+    @@index([hotelId, createdAt])
+    @@map("hotel_review_note")
+}
+
+model AcceptanceType {
+    id          String   @id @default(uuid()) @db.Char(36)
+    code        String   @unique @db.VarChar(30)
+    name        String   @db.VarChar(100)
+    description String   @db.VarChar(255)
+    isSystem    Boolean  @default(false) @map("is_system")
+    createdAt   DateTime @default(now()) @map("created_at")
+
+    hotelAcceptances HotelAcceptance[]
+
+    @@map("acceptance_type")
+}
+
+model HotelAcceptance {
+    id               String   @id @default(uuid()) @db.Char(36)
+    hotelId          String   @map("hotel_id") @db.Char(36)
+    acceptanceTypeId String   @map("acceptance_type_id") @db.Char(36)
+    customLabel      String?  @map("custom_label") @db.VarChar(150)
+    isAllowed        Boolean  @map("is_allowed")
+    details          String?  @db.Text
+    createdAt        DateTime @default(now()) @map("created_at")
+    updatedAt        DateTime @updatedAt @map("updated_at")
+
+    hotel          Hotel          @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    acceptanceType AcceptanceType @relation(fields: [acceptanceTypeId], references: [id], onDelete: Restrict)
+
+    @@unique([hotelId, acceptanceTypeId, customLabel])
+    @@map("hotel_acceptance")
+}
+
+model HotelPolicy {
+    id          String          @id @default(uuid()) @db.Char(36)
+    hotelId     String          @map("hotel_id") @db.Char(36)
+    type        HotelPolicyType
+    title       String          @db.VarChar(150)
+    description String          @db.Text
+    isSystem    Boolean         @default(false) @map("is_system")
+    isActive    Boolean         @default(true) @map("is_active")
+    createdAt   DateTime        @default(now()) @map("created_at")
+    updatedAt   DateTime        @updatedAt @map("updated_at")
+
+    hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+
+    @@index([hotelId, type])
+    @@map("hotel_policy")
+}
+
+model HotelUnit {
+    id                    String   @id @default(uuid()) @db.Char(36)
+    hotelId               String   @map("hotel_id") @db.Char(36)
+    name                  String   @db.VarChar(150)
+    email                 String   @db.VarChar(254)
+    checkInTime           DateTime @map("check_in_time") @db.Time(0)
+    checkOutTime          DateTime @map("check_out_time") @db.Time(0)
+    overbookingPercentage Int      @default(0) @map("overbooking_percentage") @db.UnsignedTinyInt
+    isActive              Boolean  @default(true) @map("is_active")
+    createdAt             DateTime @default(now()) @map("created_at")
+    updatedAt             DateTime @updatedAt @map("updated_at")
+
+    hotel   Hotel       @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    address Address?
+    phones  UnitPhone[]
+
+    @@map("hotel_unit")
+}
+
+model Address {
+    id           String   @id @default(uuid()) @db.Char(36)
+    unitId       String   @unique @map("unit_id") @db.Char(36)
+    zipCode      String   @map("zip_code") @db.Char(8)
+    street       String   @db.VarChar(200)
+    number       String   @db.VarChar(20)
+    complement   String?  @db.VarChar(100)
+    neighborhood String   @db.VarChar(100)
+    city         String   @db.VarChar(100)
+    state        String   @db.Char(2)
+    latitude     Decimal  @db.Decimal(9, 6)
+    longitude    Decimal  @db.Decimal(9, 6)
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
+
+    unit HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+    @@index([city, state])
+    @@map("address")
+}
+
+model UnitPhone {
+    id        String   @id @default(uuid()) @db.Char(36)
+    unitId    String   @map("unit_id") @db.Char(36)
+    phone     String   @db.VarChar(20)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    unit HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+    @@map("unit_phone")
+}
+
+model SystemSetting {
+    id              String           @id @default(uuid()) @db.Char(36)
+    key             String           @unique @db.VarChar(100)
+    value           String           @db.VarChar(255)
+    valueType       SettingValueType @map("value_type")
+    updatedByUserId String?          @map("updated_by_user_id") @db.Char(36)
+    updatedAt       DateTime         @updatedAt @map("updated_at")
+
+    updatedByUser User? @relation(fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+    @@map("system_setting")
+}
