@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 UNIFESP Software Engineering project: a hotel booking platform restricted to Brazil, with fictional hotels registered by managers. Three roles: customer, hotel manager, global admin.
 
-- The repo is at an early stage. Code so far: three plain entities in `src/domain/` (`acomodacao.js`, `hospede.js`, `reserva.js`), the base Next.js structure, `src/lib/` helpers (API response, domain errors, Prisma and Redis singletons), the local infra (`docker-compose.yml`) and Prisma schema part 1: models for doc 25 §3-7 and §26 (users, hotels, managers, review notes, acceptance rules, policies, units, addresses, phones, system settings), the first migration and a seed. No services, repositories or routes yet. Everything else is specification.
+- The repo is at an early stage. Code so far: three plain entities in `src/domain/` (`acomodacao.js`, `hospede.js`, `reserva.js`), the base Next.js structure, `src/lib/` helpers (API response, domain errors, Prisma and Redis singletons), the local infra (`docker-compose.yml`) and Prisma schema part 1: models for doc 25 §3-7 and §26 (users, hotels, managers, review notes, acceptance rules, policies, units, addresses, phones, system settings), the first migration and a seed. Auth and roles (issue #30): Auth.js v5 credentials login with JWT sessions, `UserService`/`AuthService`, `UserRepository`, auth guards, register/login/logout and `/api/users/me` routes, and the ADMIN seed. Everything else is specification.
 - The specification in `hotel-booking-github-docs/` (Portuguese) is the source of truth for scope, rules and target architecture. If code and docs disagree, the docs win.
 - The root `README.md` is obsolete (old "resort" scope with different cancellation rules). Ignore it.
 - Current status, tooling problems and a decisions log live in `docs/progresso.md`. Read it at the start of a session.
@@ -30,12 +30,13 @@ npm run format                         # prettier --write
 npm run format:check                   # prettier --check (runs in CI)
 npm run dev | build | start            # next
 npm run db:up | db:down                # docker compose: MySQL 8.4 + Redis 7 (copy .env.example to .env first)
-npm run db:seed                        # prisma db seed: system acceptance types and default settings (idempotent)
+npm run db:seed                        # prisma db seed: acceptance types, default settings and the ADMIN user from ADMIN_* (idempotent)
+openssl rand -base64 32                # generate a value for AUTH_SECRET in .env
 npm run prisma:generate | prisma:validate
 npm run prisma:migrate:dev | prisma:migrate:deploy
 ```
 
-ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`: lint, format check, tests, build. `npm install` runs `prisma generate` (client in `src/generated/prisma`, git-ignored). Prisma 7 connects through `@prisma/adapter-mariadb`; use `getPrisma()` and `await getRedis()` from `src/lib/`, never instantiate the clients elsewhere. Prisma 7 never seeds on `migrate dev`; run `npm run db:seed`. Tests live in `tests/**/*.test.js`.
+ESM package (`"type": "module"`). CI runs on Node 22 for pushes and PRs to `main`: lint, format check, tests, build. `npm install` runs `prisma generate` (client in `src/generated/prisma`, git-ignored). Prisma 7 connects through `@prisma/adapter-mariadb`; use `getPrisma()` and `await getRedis()` from `src/lib/`, never instantiate the clients elsewhere. Prisma 7 never seeds on `migrate dev`; run `npm run db:seed`. Tests live in `tests/**/*.test.js`; `vitest.config.js` inlines `next-auth` (it imports `next/server` without an extension, which plain Node ESM cannot resolve).
 
 Prisma schema rules: models in PascalCase and fields in camelCase, mapped to singular snake_case tables and columns; `CHAR(36)` UUID ids; FKs `onDelete: Restrict`. Keep 4-space indentation in `schema.prisma` and do not run `prisma format` (it rewrites to 2 spaces). Prisma cannot express CHECK constraints and MySQL has no partial indexes: write CHECKs by hand at the end of the generated `migration.sql` (and keep the test in `tests/prisma/migrations.test.js` covering them); enforce conditional uniqueness and cross-table rules in the service. Never edit a migration already merged into `main`; create a new one.
 
@@ -46,7 +47,7 @@ Numbers refer to files in `hotel-booking-github-docs/` (e.g. `25` = `25-database
 | Task | Read |
 |---|---|
 | Setup, dependencies, folder structure | 02, 04 |
-| Auth, users, roles | 05 (RF001-006), 15, 25 §3-4 |
+| Auth, users, roles | 05 (RF001-006), 15, 25 §3-4, 07 (RN116-118), 10 (Auth) |
 | Hotel: registration, approval, blocking, managers, acceptance rules, policies | 07 (RN001-006, RN105-114), 14 (hotel review), 25 §4-6 |
 | Unit, address, geocoding, map | 23 (Maps), 07 (RN088-090), 25 §7, 04 |
 | Room types, rooms, amenities | 07 (RN007-012), 25 §8-11 |
@@ -85,6 +86,9 @@ UI → Route Handler / Server Action → Zod schema → Service → Repository �
 - Business rules live in Services (`ReservationService`, `AvailabilityService`, `PricingService`, `OverbookingService`, `PaymentService`, ...). Repositories own persistence and complex queries. Rules are never duplicated.
 - MySQL is the source of truth. Redis is only cache, 15-minute holds and ephemeral locks. Integrations (RabbitMQ, Cloudinary, Stripe, Leaflet/Nominatim, Nodemailer) are described in the docs; Stripe is implemented last (DT011).
 - API responses use the envelope in `10-api-spec.md` (`success`, `data` or `error.code`/`error.message`).
+- Route Handler pattern: `readJsonBody` (`src/lib/request-body.js`, requires JSON) → `parseWithSchema` (`src/lib/validation.js`, throws `ValidationError`) → service → `jsonSuccess`/`jsonError` (`src/lib/route-response.js`, maps the error class to the HTTP status and hides unexpected errors behind `INTERNAL_ERROR`). Wrap the handler body in `try/catch` and return `jsonError(error)`.
+- Services and repositories are factories with injected dependencies (`createUserService({ userRepository, passwordHasher })`) plus a default instance (`userService`). Repositories resolve the Prisma client lazily, so importing them never needs `DATABASE_URL`. Public selects never include `passwordHash`.
+- Auth: Auth.js v5 lives in `src/modules/auth/` (`auth-config.js`, `auth.js`, `guards.js`, `password-hasher.js`). Authorize in Route Handlers with `requireAuth()`/`requireRole([...roles])` (throw `UnauthorizedError`/`ForbiddenError`) and in Server Components with `requirePageAuth()`/`requirePageRole([...roles])` (redirect to `/login` or `notFound()`). Guards reload the user from MySQL on every call; never authorize from the JWT role. No role hierarchy: list `ADMIN` explicitly when it is allowed. Roles come from `USER_ROLES` in `src/constants/user-roles.js`.
 
 ### Target structure
 

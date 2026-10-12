@@ -7,6 +7,18 @@
 - sessão segura;
 - autorização no servidor.
 
+### Implementação
+
+- Auth.js v5 (`next-auth@5.0.0-beta.32`, versão fixa) com o provider de credenciais (e-mail e senha). Esse provider só funciona com sessão JWT, então a sessão é um JWT criptografado em cookie `HttpOnly` com `SameSite=Lax`, válido por 24 horas.
+- Um JWT não pode ser revogado antes de expirar. Por isso os helpers de autorização (`requireAuth`, `requireRole`) releem o usuário no banco a cada requisição: usuário inativo perde o acesso e mudanças de papel valem na hora (RN118). O papel guardado no token serve apenas para a interface.
+- `requireRole` recebe a lista explícita de papéis permitidos. Não há hierarquia implícita: rotas que o administrador também acessa listam `ADMIN`.
+- Em Server Components, sem sessão o usuário é redirecionado para `/login`; sem permissão, a página responde 404 (`notFound()`).
+- Senha: mínimo de 8 caracteres, máximo de 72 bytes (limite do bcrypt), com pelo menos uma letra e um número. Hash bcrypt com custo 12 (OWASP recomenda no mínimo 10).
+- Login com e-mail inexistente também executa uma comparação bcrypt, para não revelar pelo tempo de resposta se o e-mail existe. Usuário inativo recebe o mesmo `INVALID_CREDENTIALS`.
+- `POST /api/auth/login` chama o `signIn` do servidor, que não passa pela checagem de CSRF do Auth.js. A rota exige `Content-Type: application/json` (formulários de outro site não conseguem enviar JSON sem preflight de CORS) e o cookie de sessão é `SameSite=Lax`.
+- Variáveis: `AUTH_SECRET` (obrigatória em produção) e `AUTH_URL` (necessária fora da Vercel para o Auth.js confiar no host). O usuário `ADMIN` inicial vem de `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_CPF` e `ADMIN_PASSWORD` no seed.
+- Ainda não implementado: limite de tentativas de login (o Auth.js deixa isso para a aplicação).
+
 ## Dados sensíveis
 
 Nunca retornar:
@@ -25,6 +37,11 @@ Exemplo:
 DATABASE_URL=
 REDIS_URL=
 AUTH_SECRET=
+AUTH_URL=
+ADMIN_NAME=
+ADMIN_EMAIL=
+ADMIN_CPF=
+ADMIN_PASSWORD=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
