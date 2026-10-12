@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+    ConflictError,
     DomainError,
     ERROR_CODES,
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
+    ValidationError,
 } from "../../src/lib/errors.js";
 
 const SPEC_CODES = [
@@ -27,6 +29,9 @@ const SPEC_CODES = [
     "REFUND_FAILED",
     "INVALID_GUEST_DATA",
     "INVALID_CPF",
+    "VALIDATION_ERROR",
+    "USER_ALREADY_EXISTS",
+    "INTERNAL_ERROR",
 ];
 
 describe("ERROR_CODES", () => {
@@ -88,6 +93,38 @@ describe("UnauthorizedError", () => {
         );
 
         expect(error.code).toBe("INVALID_CREDENTIALS");
+    });
+});
+
+describe("ConflictError", () => {
+    it("is a DomainError that keeps the given code", () => {
+        const error = new ConflictError(
+            ERROR_CODES.USER_ALREADY_EXISTS,
+            "Conta já existe.",
+        );
+
+        expect(error).toBeInstanceOf(DomainError);
+        expect(error.code).toBe("USER_ALREADY_EXISTS");
+        expect(error.name).toBe("ConflictError");
+    });
+});
+
+describe("ValidationError", () => {
+    it("defaults to the VALIDATION_ERROR code", () => {
+        const error = new ValidationError("Dados inválidos.");
+
+        expect(error).toBeInstanceOf(DomainError);
+        expect(error.code).toBe("VALIDATION_ERROR");
+        expect(error.message).toBe("Dados inválidos.");
+    });
+
+    it("accepts a specific code such as INVALID_CPF", () => {
+        const error = new ValidationError(
+            "CPF inválido.",
+            ERROR_CODES.INVALID_CPF,
+        );
+
+        expect(error.code).toBe("INVALID_CPF");
     });
 });
 

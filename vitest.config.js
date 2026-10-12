@@ -4,5 +4,10 @@ export default defineConfig({
     test: {
         include: ["tests/**/*.test.{js,jsx}"],
         passWithNoTests: true,
+        server: {
+            deps: {
+                inline: ["next-auth"],
+            },
+        },
     },
 });

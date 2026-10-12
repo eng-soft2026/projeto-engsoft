@@ -45,7 +45,30 @@ PAYMENT_FAILED
 REFUND_FAILED
 INVALID_GUEST_DATA
 INVALID_CPF
+VALIDATION_ERROR
+USER_ALREADY_EXISTS
+INTERNAL_ERROR
 ```
+
+- `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`.
+- `USER_ALREADY_EXISTS`: e-mail ou CPF já cadastrado. Um único código para os dois casos, para não revelar qual dado já existe.
+- `INTERNAL_ERROR`: erro inesperado. A `message` é genérica; detalhes ficam apenas no log do servidor (sem dados sensíveis).
+
+## Status HTTP
+
+O status é derivado da classe do erro de domínio (`src/lib/route-response.js`):
+
+```text
+ValidationError     -> 400
+UnauthorizedError   -> 401   (UNAUTHORIZED, INVALID_CREDENTIALS)
+ForbiddenError      -> 403
+NotFoundError       -> 404
+ConflictError       -> 409
+outro DomainError   -> 400
+erro inesperado     -> 500   (INTERNAL_ERROR)
+```
+
+Rotas que recebem corpo exigem `Content-Type: application/json`.
 
 ## Rotas sugeridas
 
@@ -54,7 +77,17 @@ INVALID_CPF
 ```text
 POST /api/auth/register
 POST /api/auth/login
+POST /api/auth/logout
+GET /api/users/me
+PATCH /api/users/me
 ```
+
+- `register`: `name`, `email`, `cpf` (com ou sem máscara), `password` e `role` opcional (`CUSTOMER` padrão ou `MANAGER`, RN116). Responde `201` com o usuário, sem hash de senha.
+- `login`: `email` e `password`. Delega ao Auth.js (`signIn` com o provider de credenciais), que grava o cookie de sessão. Responde `200` com o usuário ou `401 INVALID_CREDENTIALS`.
+- `logout`: encerra a sessão do Auth.js e responde `200` com `data: null`.
+- `users/me`: `GET` retorna o perfil do usuário autenticado; `PATCH` aceita `name`, `email`, `newPassword` e `currentPassword` (obrigatória para trocar a senha). CPF e papel não são alteráveis (RN117).
+
+Os endpoints internos do Auth.js ficam em `/api/auth/*` (`session`, `csrf`, `providers`, `signin`, `callback`, `signout`) e não seguem o envelope acima.
 
 ### Hotels
 

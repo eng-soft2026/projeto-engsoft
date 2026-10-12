@@ -62,6 +62,8 @@ ADMIN
 
 Cada usuário possui apenas um role.
 
+`email` é gravado em minúsculas e `cpf` com 11 dígitos, sem máscara (RN117). O cadastro público só cria `CUSTOMER` ou `MANAGER`; `ADMIN` vem do seed (RN116). `password_hash` nunca é selecionado nas consultas que alimentam respostas da API.
+
 ## 4. Hotéis e gestores
 
 ### HOTEL

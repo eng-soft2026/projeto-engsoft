@@ -18,6 +18,9 @@ export const ERROR_CODES = Object.freeze({
     REFUND_FAILED: "REFUND_FAILED",
     INVALID_GUEST_DATA: "INVALID_GUEST_DATA",
     INVALID_CPF: "INVALID_CPF",
+    VALIDATION_ERROR: "VALIDATION_ERROR",
+    USER_ALREADY_EXISTS: "USER_ALREADY_EXISTS",
+    INTERNAL_ERROR: "INTERNAL_ERROR",
 });
 
 export class DomainError extends Error {
@@ -29,6 +32,14 @@ export class DomainError extends Error {
 }
 
 export class NotFoundError extends DomainError {}
+
+export class ConflictError extends DomainError {}
+
+export class ValidationError extends DomainError {
+    constructor(message, code = ERROR_CODES.VALIDATION_ERROR) {
+        super(code, message);
+    }
+}
 
 export class UnauthorizedError extends DomainError {
     constructor(message, code = ERROR_CODES.UNAUTHORIZED) {

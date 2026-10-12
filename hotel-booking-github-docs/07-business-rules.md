@@ -181,6 +181,9 @@
 - RN113 — Cada hotel possui no máximo uma regra de aceitação por tipo padronizado. Para `OTHER`, o `custom_label` deve ser único dentro do hotel.
 - RN114 — A política de cancelamento da plataforma (RN039 a RN045 e RN077) é fixa. Políticas textuais do hotel (`HOTEL_POLICY`) apenas complementam a informação exibida e nunca alteram prazos ou reembolsos.
 - RN115 — O valor mínimo de uma promoção é comparado ao subtotal do quarto antes do desconto. Cada quarto confirmado com uma promoção que tenha limite de usos consome 1 uso, devolvido se esse quarto for cancelado.
+- RN116 — O cadastro público cria apenas contas `CUSTOMER` (padrão) ou `MANAGER`, escolhidas pelo próprio usuário. Contas `ADMIN` são criadas somente pelo seed (variáveis `ADMIN_*`) ou por ação administrativa.
+- RN117 — E-mail é armazenado em minúsculas e CPF com 11 dígitos, sem máscara e com dígitos verificadores válidos; ambos são únicos. O usuário pode alterar nome, e-mail e senha no próprio perfil (a troca de senha exige a senha atual), mas não o CPF nem o papel.
+- RN118 — Usuário inativo (`is_active = false`) não consegue autenticar, e uma sessão já emitida deixa de valer na próxima requisição, pois o papel e o status são relidos do banco a cada requisição autenticada.
 
 ---
 
