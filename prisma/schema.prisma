@@ -71,6 +71,7 @@ model User {
     hotelReviewNotes HotelReviewNote[]
     auditLogs        AuditLog[]
     updatedSettings  SystemSetting[]
+    amenities        Amenity[]
 
     @@map("user")
 }
@@ -93,6 +94,7 @@ model Hotel {
     reviewNotes HotelReviewNote[]
     acceptances HotelAcceptance[]
     policies    HotelPolicy[]
+    amenities   HotelAmenity[]
     units       HotelUnit[]
     roomTypes   RoomType[]
 
@@ -192,6 +194,7 @@ model HotelUnit {
     address Address?
     phones  UnitPhone[]
     rooms   Room[]
+    amenities UnitAmenity[]
 
     @@map("hotel_unit")
 }
@@ -278,6 +281,7 @@ model RoomType {
     hotel   Hotel              @relation(fields: [hotelId], references: [id], onDelete: Restrict)
     beds    BedConfiguration[]
     rooms   Room[]
+    amenities RoomTypeAmenity[]
     history RoomTypeHistory[]
 
     @@index([hotelId])
@@ -312,6 +316,7 @@ model Room {
     unit         HotelUnit         @relation(fields: [unitId], references: [id], onDelete: Restrict)
     roomType     RoomType          @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
     typeHistory  RoomTypeHistory[]
+    amenities    RoomAmenity[]
     priceHistory RoomPriceHistory[]
 
     @@unique([unitId, number])
@@ -346,4 +351,70 @@ model RoomPriceHistory {
 
     @@index([roomId, validFrom])
     @@map("room_price_history")
+}
+
+model Amenity {
+    id              String   @id @default(uuid()) @db.Char(36)
+    createdByUserId String?  @map("created_by_user_id") @db.Char(36)
+    name            String   @db.VarChar(100)
+    isGlobal        Boolean  @default(false) @map("is_global")
+    isActive        Boolean  @default(true) @map("is_active")
+    createdAt       DateTime @default(now()) @map("created_at")
+
+    createdBy     User?             @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+    hotels        HotelAmenity[]
+    units         UnitAmenity[]
+    roomTypes     RoomTypeAmenity[]
+    rooms         RoomAmenity[]
+
+    @@unique([createdByUserId, name])
+    @@map("amenity")
+}
+
+model HotelAmenity {
+    hotelId   String   @map("hotel_id") @db.Char(36)
+    amenityId String   @map("amenity_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    hotel   Hotel   @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    amenity Amenity @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+
+    @@id([hotelId, amenityId])
+    @@map("hotel_amenity")
+}
+
+model UnitAmenity {
+    unitId    String   @map("unit_id") @db.Char(36)
+    amenityId String   @map("amenity_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    unit    HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+    amenity Amenity   @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+
+    @@id([unitId, amenityId])
+    @@map("unit_amenity")
+}
+
+model RoomTypeAmenity {
+    roomTypeId String   @map("room_type_id") @db.Char(36)
+    amenityId  String   @map("amenity_id") @db.Char(36)
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+    amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+
+    @@id([roomTypeId, amenityId])
+    @@map("room_type_amenity")
+}
+
+model RoomAmenity {
+    roomId    String   @map("room_id") @db.Char(36)
+    amenityId String   @map("amenity_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    room    Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
+    amenity Amenity @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+
+    @@id([roomId, amenityId])
+    @@map("room_amenity")
 }

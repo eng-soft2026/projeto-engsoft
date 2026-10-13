@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { createTransactionRunner } from "../../src/lib/transaction.js";
+import { createAmenityRepository } from "../../src/repositories/amenity-repository.js";
 import { createAuditLogRepository } from "../../src/repositories/audit-log-repository.js";
+import { createHotelAcceptanceRepository } from "../../src/repositories/hotel-acceptance-repository.js";
 import { createHotelManagerRepository } from "../../src/repositories/hotel-manager-repository.js";
+import { createHotelPolicyRepository } from "../../src/repositories/hotel-policy-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
@@ -43,6 +46,9 @@ const units = createUnitRepository(() => prisma);
 const systemSettings = createSystemSettingRepository(() => prisma);
 const roomTypes = createRoomTypeRepository(() => prisma);
 const rooms = createRoomRepository(() => prisma);
+const amenities = createAmenityRepository(() => prisma);
+const acceptances = createHotelAcceptanceRepository(() => prisma);
+const policies = createHotelPolicyRepository(() => prisma);
 const transactions = createTransactionRunner(() => prisma);
 
 const NEW_HOTEL = {
@@ -239,6 +245,76 @@ const QUERIES = [
     ],
     ["roomPriceHistory.count", () => rooms.hasHistory(ID)],
     ["roomTypeHistory.deleteMany", () => rooms.deleteById(ID)],
+    [
+        "amenity.create",
+        () => amenities.create({ createdByUserId: ID, name: "Piscina" }),
+    ],
+    ["amenity.findMany (available)", () => amenities.listAvailableTo(ID)],
+    [
+        "amenity.findMany (by ids)",
+        () => amenities.findIdsAvailableTo([ID], [ID]),
+    ],
+    ["amenity.findFirst", () => amenities.existsVisibleByName("Piscina", ID)],
+    ["hotelAmenity.findMany", () => amenities.listAssociated("hotel", ID)],
+    ["unitAmenity.findMany", () => amenities.listAssociated("unit", ID)],
+    [
+        "roomTypeAmenity.findMany",
+        () => amenities.listAssociated("roomType", ID),
+    ],
+    ["roomAmenity.findMany", () => amenities.listAssociated("room", ID)],
+    [
+        "hotelAmenity.deleteMany",
+        () => amenities.replaceAssociations("hotel", ID, [ID]),
+    ],
+    [
+        "unitAmenity.deleteMany",
+        () => amenities.replaceAssociations("unit", ID, [ID]),
+    ],
+    [
+        "roomTypeAmenity.deleteMany",
+        () => amenities.replaceAssociations("roomType", ID, [ID]),
+    ],
+    [
+        "roomAmenity.deleteMany",
+        () => amenities.replaceAssociations("room", ID, [ID]),
+    ],
+    ["acceptanceType.findMany", () => acceptances.listTypes()],
+    ["hotelAcceptance.findMany", () => acceptances.listByHotel(ID)],
+    [
+        "hotelAcceptance.deleteMany",
+        () =>
+            acceptances.replaceAll(ID, [
+                {
+                    acceptanceTypeId: ID,
+                    customLabel: null,
+                    isAllowed: true,
+                    details: null,
+                },
+            ]),
+    ],
+    [
+        "hotelPolicy.create",
+        () =>
+            policies.create({
+                hotelId: ID,
+                type: "PARKING",
+                title: "Estacionamento",
+                description: "Gratuito.",
+            }),
+    ],
+    ["hotelPolicy.findUnique", () => policies.findByIdWithHotel(ID)],
+    ["hotelPolicy.findMany", () => policies.listByHotel(ID)],
+    [
+        "hotelPolicy.update",
+        () =>
+            policies.updateFields(ID, {
+                type: "OTHER",
+                title: "Novo",
+                description: "Texto.",
+                isActive: false,
+                updatedAt: new Date(),
+            }),
+    ],
     [
         "systemSetting.findUnique",
         () => systemSettings.findByKey("MAX_OVERBOOKING_PERCENT"),

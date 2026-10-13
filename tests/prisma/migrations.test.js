@@ -94,6 +94,41 @@ describe("prisma migrations", () => {
         );
     });
 
+    it("blocks a duplicated amenity pair with a composite primary key (doc 25 §11)", () => {
+        const sql = readAllMigrationsSql();
+
+        for (const [table, owner] of [
+            ["hotel_amenity", "hotel_id"],
+            ["unit_amenity", "unit_id"],
+            ["room_type_amenity", "room_type_id"],
+            ["room_amenity", "room_id"],
+        ]) {
+            const [, body] = sql.match(
+                new RegExp(String.raw`CREATE TABLE \`${table}\` \(([\s\S]*?)
+\) `),
+            );
+
+            expect(body).toContain(
+                `PRIMARY KEY (\`${owner}\`, \`amenity_id\`)`,
+            );
+        }
+    });
+
+    it("keeps the amenity foreign keys as RESTRICT and the name unique per creator (RN011)", () => {
+        const sql = readAllMigrationsSql();
+        const foreignKeys = sql.match(
+            /ALTER TABLE `(amenity|hotel_amenity|unit_amenity|room_type_amenity|room_amenity)` ADD CONSTRAINT[^;]*;/g,
+        );
+
+        expect(foreignKeys).toHaveLength(9);
+        for (const statement of foreignKeys) {
+            expect(statement).toContain("ON DELETE RESTRICT");
+        }
+        expect(sql).toMatch(
+            /UNIQUE INDEX `\w+`\(`created_by_user_id`, `name`\)/,
+        );
+    });
+
     it("stores the audit log snapshots as JSON (doc 25 §25)", () => {
         const body = readAuditLogTableBody();
 
