@@ -131,14 +131,15 @@ tests/
 2. For anything beyond a small fix, propose a short plan and wait for my approval before editing.
 3. If the docs are ambiguous or conflict, ask. Do not pick silently.
 4. Stay inside the scope of the issue. Mention out-of-scope problems instead of fixing them.
-5. Prefer small, verifiable steps. Run `npm test` and `npm run lint` before finishing and report the result; if something cannot run, say why.
+5. Prefer small, verifiable steps. Run `npm run lint`, `npm run format:check`, `npm test` and `npm run build` (the checks of the `ci` job, which blocks the merge) before finishing and report the result; if something cannot run, say why.
 6. When a task creates a new decision, rule or table change, update the relevant spec doc and this file in the same PR, and add a short note to `docs/progresso.md`.
 
 ### Git
 
 - Every task is a GitHub issue. Branch: `<type>/<ticket-id>-<short-description>`, where `<ticket-id>` is the issue number (e.g. `feat/12-hotel-search`).
 - Conventional commits (`feat:`, `fix:`, `refactor:`, `style:`, `docs:`, `test:`, `chore:`). Reference the issue (`Closes #N`).
-- Changes reach `main` through a PR reviewed by another team member.
+- Changes reach `main` through a PR reviewed by another team member. The `Protect Main` ruleset (GitHub: Settings → Rules → Rulesets) enforces it: 1 approving review, the `ci` check passing (GitHub Actions), the branch up to date with `main`, no force-push, no branch deletion and no bypass actors. A failing `ci` blocks the merge: fix the cause.
+- The required check is the job id `ci` in `.github/workflows/ci.yml`: if you rename the job, update the ruleset in the same change. Never let the workflow be skipped on a PR (`paths`/`paths-ignore` filters, `[skip ci]` in a commit message): a skipped required check stays pending and blocks the merge (GitHub docs, "Troubleshooting required status checks").
 - Never commit `.env`. Keep `.env.example` updated without real secrets.
 
 <!-- code-review-graph MCP tools -->
