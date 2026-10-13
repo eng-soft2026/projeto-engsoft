@@ -188,8 +188,8 @@ model Address {
     neighborhood String   @db.VarChar(100)
     city         String   @db.VarChar(100)
     state        String   @db.Char(2)
-    latitude     Decimal  @db.Decimal(9, 6)
-    longitude    Decimal  @db.Decimal(9, 6)
+    latitude     Decimal? @db.Decimal(9, 6)
+    longitude    Decimal? @db.Decimal(9, 6)
     createdAt    DateTime @default(now()) @map("created_at")
     updatedAt    DateTime @updatedAt @map("updated_at")
 

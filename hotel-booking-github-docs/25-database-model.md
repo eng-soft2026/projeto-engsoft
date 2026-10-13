@@ -264,11 +264,13 @@ ADDRESS
 - neighborhood
 - city
 - state
-- latitude
-- longitude
+- latitude nullable
+- longitude nullable
 - created_at
 - updated_at
 ```
+
+`latitude` e `longitude` são `DECIMAL(9,6)` anuláveis. Quem as preenche é a geocodificação (Fase 3, RN088), nunca o cliente; até lá ficam `NULL`, em vez de um valor falso como `0,0`, que é um ponto válido no oceano. Ao alterar o endereço, o service volta as duas colunas a `NULL`, porque a coordenada antiga deixou de valer. Pesquisa e mapa devem ignorar unidades sem coordenadas, e a Fase 3 deve exigi-las antes de publicar o hotel.
 
 Cardinalidade:
 

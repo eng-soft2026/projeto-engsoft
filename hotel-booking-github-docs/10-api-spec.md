@@ -116,11 +116,20 @@ PUT /api/hotels/:id/acceptances
 ### Units
 
 ```text
+GET /api/hotels/:hotelId/units
 GET /api/units/:id
 POST /api/hotels/:hotelId/units
 PATCH /api/units/:id
 POST /api/units/:id/blocks
 ```
+
+- No código, o segmento dinâmico de `/api/hotels/...` chama-se `[id]`, porque o Next não aceita dois nomes diferentes no mesmo nível. Ele continua sendo o id do hotel.
+- `POST /api/hotels/:hotelId/units`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT` (RN124); em outro status responde `409 INVALID_HOTEL_STATUS`. Corpo: `name`, `email`, `checkInTime` e `checkOutTime` (`HH:mm`, RN022), `overbookingPercentage` (inteiro de 0 a 10, padrão 0, RN046-048), `address` (`zipCode`, `street`, `number`, `complement` opcional, `neighborhood`, `city`, `state`) e `phones` (1 a 5, RN125). `latitude` e `longitude` enviadas no corpo são ignoradas (RN126). Unidade, endereço e telefones são gravados na mesma transação. Responde `201` com a unidade.
+- `GET /api/hotels/:hotelId/units`: `MANAGER` proprietário ou `ADMIN`. Lista as unidades do hotel, da mais antiga à mais recente. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`.
+- `GET /api/units/:id`: `MANAGER` proprietário ou `ADMIN`. Devolve a unidade com `address` (com `latitude` e `longitude`, hoje `null`) e `phones` (`id`, `phone`). Unidade de hotel alheio responde `404 UNIT_NOT_FOUND`.
+- `PATCH /api/units/:id`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT`. Aceita os campos do cadastro, ao menos um. `address` é enviado completo e `phones` substitui a lista (RN125, RN126). `isActive: false` desativa a unidade de forma definitiva; `isActive: true` responde `400`. Não há `DELETE` (RN127).
+- Um overbooking acima de 10, ou acima de `MAX_OVERBOOKING_PERCENT` quando ele é menor, responde `400 VALIDATION_ERROR`.
+- Os horários voltam como `HH:mm`.
 
 ### Room types e rooms
 
