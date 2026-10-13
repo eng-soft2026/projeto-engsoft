@@ -78,6 +78,8 @@ Gestor acessa apenas hotéis sob sua responsabilidade (como proprietário ou ges
 
 Administrador possui acesso global.
 
+Enquanto os gestores adicionais (RN110) não são implementados, só o proprietário passa na verificação. `canManageHotel` (`src/modules/hotels/hotel-access.js`) é o único ponto a estender. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe, e papel inadequado responde `403`.
+
 ## Stripe
 
 - validar webhook;
@@ -90,9 +92,16 @@ Validar formato e dígitos verificadores.
 
 Armazenar normalizado.
 
+O CNPJ aceita o formato numérico e o alfanumérico. Desde julho de 2026 a Receita Federal emite CNPJ com letras para novas inscrições, e os números já existentes não mudam ([Receita Federal](https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/cnpj-alfanumerico)). Os 12 primeiros caracteres aceitam letras e números e os 2 dígitos verificadores continuam numéricos. O cálculo segue o módulo 11, com pesos de 2 a 9 da direita para a esquerda, e converte cada caractere pelo código ASCII menos 48: `0` a `9` valem 0 a 9 e `A` a `Z` valem 17 a 42 ([tabela da Receita](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj/manual-dv-cnpj.pdf)). O exemplo oficial é `12.ABC.345/01DE-35`. O valor é gravado em maiúsculas e sem máscara (`src/utils/cnpj.js`).
+
 ## Auditoria
 
 Ações administrativas e financeiras relevantes devem ser registradas.
+
+- O log é gravado na mesma transação da ação (RN122). Se o `INSERT` falhar, a ação inteira é desfeita: é preferível bloquear a ação a executá-la sem registro.
+- Append-only (DT022, RNF034): `audit-log-repository.js` só tem `create`, e `tests/architecture/audit-log-append-only.test.js` falha se algum código em `src/` ou `prisma/` alterar ou apagar linhas de `audit_log`.
+- Na implantação, a conta de banco usada pela aplicação deve receber apenas `SELECT` e `INSERT` em `audit_log`, e as migrations devem rodar com outra conta. O ambiente local usa `root` (`.env.example`) e, por isso, não tem essa garantia. Triggers do MySQL contra `UPDATE` e `DELETE` ficaram de fora, por não terem sido validados contra um MySQL real.
+- `ip_address` vem do primeiro endereço de `x-forwarded-for` (ou de `x-real-ip`) e é apenas informativo: o cliente pode forjar o cabeçalho, e só endereços acrescentados por um proxy confiável servem para decisões de segurança ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For)). O endereço é validado, e `user_agent` e `request_id` são truncados ou descartados para não estourar as colunas.
 
 
 ## Uploads

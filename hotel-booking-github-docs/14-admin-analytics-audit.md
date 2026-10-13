@@ -84,12 +84,21 @@ UNDER_REVIEW
 
 Deverá registrar uma observação de revisão com itens que precisam ser corrigidos. A observação é gravada em `HOTEL_REVIEW_NOTE`, vinculada ao hotel e ao administrador. O gestor corrige e submete novamente.
 
+### Aprovação e bloqueio
+
+- Aprovar: `UNDER_REVIEW` → `PUBLISHED`.
+- Bloquear: `PUBLISHED` ou `UNDER_REVIEW` → `BLOCKED` (RN121). Hotel `DRAFT` não é bloqueado.
+
+As duas ações exigem motivo e geram `AUDIT_LOG` na mesma transação (RN122). O bloqueio grava também `HOTEL_REVIEW_NOTE`, para que o gestor veja o motivo (RN123); a aprovação não grava nota.
+
 ### Desbloqueio
 
 Um hotel `BLOCKED` não será desbloqueado automaticamente.
 
 - Se o problema puder ser resolvido administrativamente, o administrador poderá restaurar `PUBLISHED`, registrando motivo.
 - Se exigir alteração de dados pelo gestor, o administrador moverá para `DRAFT` com observação em `HOTEL_REVIEW_NOTE`; depois o hotel deverá passar novamente por `UNDER_REVIEW` e aprovação.
+
+O administrador informa o destino de forma explícita (`PUBLISHED` ou `DRAFT`), sem valor padrão, e os dois casos gravam `HOTEL_REVIEW_NOTE` (RN123).
 
 ## Auditoria
 

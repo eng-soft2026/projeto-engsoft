@@ -95,7 +95,8 @@ BLOCKED
 Regras:
 - cada hotel possui um único proprietário;
 - o proprietário deve ser `MANAGER`;
-- CNPJ é obrigatório;
+- CNPJ é obrigatório, gravado normalizado (14 caracteres em maiúsculas, numérico ou alfanumérico, RN119) e sem unicidade entre hotéis;
+- `description`, `category` e `email` também são obrigatórios: o rascunho é criado já com todos os campos preenchidos;
 - publicação exige aprovação administrativa;
 - `category` é texto livre (até 50 caracteres) enquanto os valores não forem definidos.
 
@@ -123,7 +124,7 @@ HOTEL_REVIEW_NOTE
 - created_at
 ```
 
-Registra as observações administrativas quando um hotel `UNDER_REVIEW` volta para `DRAFT` ou quando um hotel `BLOCKED` é movido para `DRAFT` ou `PUBLISHED`.
+Registra as observações administrativas quando um hotel `UNDER_REVIEW` volta para `DRAFT`, quando um hotel `PUBLISHED` ou `UNDER_REVIEW` é bloqueado e quando um hotel `BLOCKED` é movido para `DRAFT` ou `PUBLISHED` (RN123). `notes` recebe o mesmo motivo gravado em `AUDIT_LOG.reason`.
 
 ## 5. Regras simples de aceitação
 
@@ -1149,6 +1150,30 @@ RELOCATE
 
 Logs são imutáveis. `user_id` fica `NULL` quando o ator é o sistema (webhooks e jobs). `reason` é obrigatório nas ações administrativas (RN108). A conta de banco usada pela aplicação não deve possuir permissão de `UPDATE` ou `DELETE` em `AUDIT_LOG`.
 
+Definições da implementação:
+
+```text
+id            CHAR(36) UUID
+user_id       CHAR(36) nullable, FK -> USER.id ON DELETE RESTRICT
+action        VARCHAR(50), uma das ações acima (lista aberta, constantes em src/constants/audit.js)
+entity_type   VARCHAR(50), HOTEL por enquanto
+entity_id     CHAR(36)
+before_data   JSON nullable
+after_data    JSON nullable
+reason        VARCHAR(1000) nullable
+result        ENUM('SUCCESS', 'FAILURE')
+request_id    VARCHAR(64) nullable
+ip_address    VARCHAR(45) nullable
+user_agent    VARCHAR(255) nullable
+created_at    DATETIME(3), sem updated_at
+```
+
+- `result`: só `SUCCESS` é gravado por enquanto, porque uma ação que falha desfaz a transação inteira, inclusive o log. `FAILURE` fica reservado para o registro de tentativas negadas ou com erro.
+- `before_data` e `after_data` guardam apenas os campos que mudaram (nas ações de hotel, `{ "status": ... }`), nunca CNPJ, e-mail, CPF ou outros dados pessoais.
+- O log é gravado na mesma transação da mudança que ele descreve (RN122).
+- Índices: `(entity_type, entity_id, created_at)` e `(user_id, created_at)`, para as consultas por entidade e por ator (doc 14).
+- A aplicação só insere: `audit-log-repository.js` expõe apenas `create`, e um teste (`tests/architecture`) falha se algum código alterar ou apagar linhas. A garantia no banco, a conta da aplicação com apenas `SELECT` e `INSERT` em `audit_log`, é configurada na implantação (doc 15).
+
 ## 26. Configurações globais
 
 ### SYSTEM_SETTING
@@ -1220,6 +1245,9 @@ RESERVATION_ROOM_NIGHT(reservation_room_id, stay_date) UNIQUE
 STRIPE_WEBHOOK_EVENT(stripe_event_id) UNIQUE
 HOTEL_ACCEPTANCE(hotel_id, acceptance_type_id)
 PROMOTION(is_active, valid_from, valid_until)
+
+AUDIT_LOG(entity_type, entity_id, created_at)
+AUDIT_LOG(user_id, created_at)
 ```
 
 ## 28. Exclusão lógica

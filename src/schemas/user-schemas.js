@@ -5,10 +5,10 @@ import {
 } from "../constants/user-roles.js";
 import { ERROR_CODES } from "../lib/errors.js";
 import { isValidCpf, normalizeCpf } from "../utils/cpf.js";
+import { emailSchema } from "./common-schemas.js";
 
 const NAME_MIN_LENGTH = 2;
 const NAME_MAX_LENGTH = 150;
-const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_BYTES = 72;
 
@@ -39,16 +39,6 @@ const nameSchema = z
     .max(NAME_MAX_LENGTH, {
         error: `O nome deve ter no máximo ${NAME_MAX_LENGTH} caracteres.`,
     });
-
-const emailSchema = z
-    .string({ error: "Informe o e-mail." })
-    .trim()
-    .toLowerCase()
-    .pipe(
-        z.email({ error: "Informe um e-mail válido." }).max(EMAIL_MAX_LENGTH, {
-            error: `O e-mail deve ter no máximo ${EMAIL_MAX_LENGTH} caracteres.`,
-        }),
-    );
 
 const cpfSchema = z
     .string({ error: "Informe o CPF." })
