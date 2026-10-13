@@ -6,15 +6,15 @@ import {
 } from "../../../../src/lib/errors.js";
 import { createJsonRequest } from "../../../helpers/http.js";
 
-const { requireRole, listOwnHotels, createHotel } = vi.hoisted(() => ({
+const { requireRole, listManagedHotels, createHotel } = vi.hoisted(() => ({
     requireRole: vi.fn(),
-    listOwnHotels: vi.fn(),
+    listManagedHotels: vi.fn(),
     createHotel: vi.fn(),
 }));
 
 vi.mock("../../../../src/modules/auth/guards.js", () => ({ requireRole }));
 vi.mock("../../../../src/services/hotel-service.js", () => ({
-    hotelService: { listOwnHotels, createHotel },
+    hotelService: { listManagedHotels, createHotel },
 }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: "MANAGER" });
@@ -35,7 +35,9 @@ describe("/api/hotels", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listOwnHotels.mockResolvedValue([{ id: "hotel-1", status: "DRAFT" }]);
+        listManagedHotels.mockResolvedValue([
+            { id: "hotel-1", status: "DRAFT" },
+        ]);
         createHotel.mockImplementation(async (owner, input) => ({
             id: "hotel-1",
             ownerUserId: owner.id,
@@ -54,7 +56,7 @@ describe("/api/hotels", () => {
                 data: [{ id: "hotel-1", status: "DRAFT" }],
             });
             expect(requireRole).toHaveBeenCalledWith(["MANAGER"]);
-            expect(listOwnHotels).toHaveBeenCalledWith(MANAGER);
+            expect(listManagedHotels).toHaveBeenCalledWith(MANAGER);
         });
 
         it("returns 401 UNAUTHORIZED without a session", async () => {
@@ -66,7 +68,7 @@ describe("/api/hotels", () => {
 
             expect(response.status).toBe(401);
             expect((await response.json()).error.code).toBe("UNAUTHORIZED");
-            expect(listOwnHotels).not.toHaveBeenCalled();
+            expect(listManagedHotels).not.toHaveBeenCalled();
         });
 
         it("returns 403 FORBIDDEN for a user that is not a manager", async () => {
@@ -78,7 +80,7 @@ describe("/api/hotels", () => {
 
             expect(response.status).toBe(403);
             expect((await response.json()).error.code).toBe("FORBIDDEN");
-            expect(listOwnHotels).not.toHaveBeenCalled();
+            expect(listManagedHotels).not.toHaveBeenCalled();
         });
     });
 

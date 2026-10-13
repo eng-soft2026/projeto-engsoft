@@ -65,12 +65,16 @@ describe("unitRepository", () => {
         });
     });
 
-    it("findByIdWithHotel adds only the owner and status of the hotel", async () => {
+    it("findByIdWithHotel adds only the owner, status and manager ids of the hotel", async () => {
         await repository.findByIdWithHotel("unit-1");
 
         const { select } = prisma.hotelUnit.findUnique.mock.calls[0][0];
         expect(select.hotel).toEqual({
-            select: { ownerUserId: true, status: true },
+            select: {
+                ownerUserId: true,
+                status: true,
+                managers: { select: { userId: true } },
+            },
         });
     });
 

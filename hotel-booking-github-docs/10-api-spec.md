@@ -32,6 +32,8 @@ FORBIDDEN
 USER_NOT_FOUND
 HOTEL_NOT_FOUND
 INVALID_HOTEL_STATUS
+HOTEL_MANAGER_NOT_FOUND
+HOTEL_MANAGER_ALREADY_EXISTS
 UNIT_NOT_FOUND
 ROOM_TYPE_NOT_FOUND
 ROOM_NOT_FOUND
@@ -107,11 +109,13 @@ PUT /api/hotels/:id/acceptances
 ```
 
 - `POST /api/hotels`: apenas `MANAGER`. Corpo: `name`, `description`, `category`, `cnpj` (com ou sem máscara, numérico ou alfanumérico, RN119) e `email`. O proprietário é o usuário da sessão e o status inicial é sempre `DRAFT`; `status`, `ownerUserId` e `isActive` enviados no corpo são ignorados. Responde `201` com o hotel.
-- `GET /api/hotels`: apenas `MANAGER`. Lista os hotéis do usuário proprietário, do mais recente ao mais antigo.
-- `GET /api/hotels/:id`: `MANAGER` proprietário ou `ADMIN`. Devolve o hotel, o resumo do proprietário (`id`, `name`, `email`) e as `reviewNotes` (`id`, `fromStatus`, `toStatus`, `notes`, `createdAt`), da mais recente para a mais antiga e sem o id do administrador. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe.
-- `PATCH /api/hotels/:id`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT` (RN120); em outro status responde `409 INVALID_HOTEL_STATUS`. Aceita os campos do cadastro, ao menos um.
-- `POST /api/hotels/:id/submit-review`: apenas o proprietário; `DRAFT` → `UNDER_REVIEW`. Não recebe corpo.
-- As rotas de gestores adicionais e de regras de aceitação ainda não foram implementadas. Enquanto isso, só o proprietário acessa o hotel (doc 15).
+- `GET /api/hotels`: apenas `MANAGER`. Lista os hotéis de que o usuário é proprietário ou gestor adicional, do mais recente ao mais antigo.
+- `GET /api/hotels/:id`: `MANAGER` proprietário, `MANAGER` gestor adicional ou `ADMIN`. Devolve o hotel, o resumo do proprietário (`id`, `name`, `email`) e as `reviewNotes` (`id`, `fromStatus`, `toStatus`, `notes`, `createdAt`), da mais recente para a mais antiga e sem o id do administrador. `managers` (`id`, `name`, `email` dos gestores adicionais) só vai para o proprietário e para o `ADMIN`. Hotel de quem não é gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe.
+- `PATCH /api/hotels/:id`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT` (RN120); em outro status responde `409 INVALID_HOTEL_STATUS`. Aceita os campos do cadastro, ao menos um.
+- `POST /api/hotels/:id/submit-review`: proprietário ou gestor adicional; `DRAFT` → `UNDER_REVIEW`. Não recebe corpo.
+- `POST /api/hotels/:id/managers`: apenas o `MANAGER` proprietário (RN110, RF136). Corpo: `email` do gestor. O usuário deve existir (`404 USER_NOT_FOUND`), estar ativo e ter o papel `MANAGER` (`400 VALIDATION_ERROR`). O proprietário ou quem já é gestor adicional responde `409 HOTEL_MANAGER_ALREADY_EXISTS`. Responde `201` com `id`, `name` e `email`. Gestor adicional, outro gestor e hotel inexistente respondem `404 HOTEL_NOT_FOUND`.
+- `DELETE /api/hotels/:id/managers/:userId`: apenas o `MANAGER` proprietário. Remove o vínculo e responde `200` com `{ "removed": true }`; quem não é gestor adicional do hotel responde `404 HOTEL_MANAGER_NOT_FOUND`. O proprietário não pode ser removido porque não está na lista.
+- As rotas de regras de aceitação ainda não foram implementadas.
 
 ### Units
 
@@ -124,10 +128,10 @@ POST /api/units/:id/blocks
 ```
 
 - No código, o segmento dinâmico de `/api/hotels/...` chama-se `[id]`, porque o Next não aceita dois nomes diferentes no mesmo nível. Ele continua sendo o id do hotel.
-- `POST /api/hotels/:hotelId/units`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT` (RN124); em outro status responde `409 INVALID_HOTEL_STATUS`. Corpo: `name`, `email`, `checkInTime` e `checkOutTime` (`HH:mm`, RN022), `overbookingPercentage` (inteiro de 0 a 10, padrão 0, RN046-048), `address` (`zipCode`, `street`, `number`, `complement` opcional, `neighborhood`, `city`, `state`) e `phones` (1 a 5, RN125). `latitude` e `longitude` enviadas no corpo são ignoradas (RN126). Unidade, endereço e telefones são gravados na mesma transação. Responde `201` com a unidade.
-- `GET /api/hotels/:hotelId/units`: `MANAGER` proprietário ou `ADMIN`. Lista as unidades do hotel, da mais antiga à mais recente. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`.
-- `GET /api/units/:id`: `MANAGER` proprietário ou `ADMIN`. Devolve a unidade com `address` (com `latitude` e `longitude`, hoje `null`) e `phones` (`id`, `phone`). Unidade de hotel alheio responde `404 UNIT_NOT_FOUND`.
-- `PATCH /api/units/:id`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT`. Aceita os campos do cadastro, ao menos um. `address` é enviado completo e `phones` substitui a lista (RN125, RN126). `isActive: false` desativa a unidade de forma definitiva; `isActive: true` responde `400`. Não há `DELETE` (RN127).
+- `POST /api/hotels/:hotelId/units`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT` (RN124); em outro status responde `409 INVALID_HOTEL_STATUS`. Corpo: `name`, `email`, `checkInTime` e `checkOutTime` (`HH:mm`, RN022), `overbookingPercentage` (inteiro de 0 a 10, padrão 0, RN046-048), `address` (`zipCode`, `street`, `number`, `complement` opcional, `neighborhood`, `city`, `state`) e `phones` (1 a 5, RN125). `latitude` e `longitude` enviadas no corpo são ignoradas (RN126). Unidade, endereço e telefones são gravados na mesma transação. Responde `201` com a unidade.
+- `GET /api/hotels/:hotelId/units`: `MANAGER` proprietário, gestor adicional ou `ADMIN`. Lista as unidades do hotel, da mais antiga à mais recente. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`.
+- `GET /api/units/:id`: `MANAGER` proprietário, gestor adicional ou `ADMIN`. Devolve a unidade com `address` (com `latitude` e `longitude`, hoje `null`) e `phones` (`id`, `phone`). Unidade de hotel alheio responde `404 UNIT_NOT_FOUND`.
+- `PATCH /api/units/:id`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT`. Aceita os campos do cadastro, ao menos um. `address` é enviado completo e `phones` substitui a lista (RN125, RN126). `isActive: false` desativa a unidade de forma definitiva; `isActive: true` responde `400`. Não há `DELETE` (RN127).
 - Um overbooking acima de 10, ou acima de `MAX_OVERBOOKING_PERCENT` quando ele é menor, responde `400 VALIDATION_ERROR`.
 - Os horários voltam como `HH:mm`.
 

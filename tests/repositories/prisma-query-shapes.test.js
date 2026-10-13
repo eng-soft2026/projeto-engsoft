@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { createTransactionRunner } from "../../src/lib/transaction.js";
 import { createAuditLogRepository } from "../../src/repositories/audit-log-repository.js";
+import { createHotelManagerRepository } from "../../src/repositories/hotel-manager-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
@@ -33,6 +34,7 @@ function createClientWithoutDatabase() {
 
 const prisma = createClientWithoutDatabase();
 const hotels = createHotelRepository(() => prisma);
+const hotelManagers = createHotelManagerRepository(() => prisma);
 const reviewNotes = createHotelReviewNoteRepository(() => prisma);
 const auditLogs = createAuditLogRepository(() => prisma);
 const units = createUnitRepository(() => prisma);
@@ -86,7 +88,10 @@ const QUERIES = [
     ["hotel.create", () => hotels.create(NEW_HOTEL)],
     ["hotel.findById", () => hotels.findById(ID)],
     ["hotel.findByIdWithReviewNotes", () => hotels.findByIdWithReviewNotes(ID)],
-    ["hotel.listByOwner", () => hotels.listByOwner(ID)],
+    ["hotel.listByManager", () => hotels.listByManager(ID)],
+    ["hotelManager.exists", () => hotelManagers.exists(ID, ID)],
+    ["hotelManager.create", () => hotelManagers.create(ID, ID)],
+    ["hotelManager.delete", () => hotelManagers.delete(ID, ID)],
     [
         "hotel.listForReview with a status",
         () => hotels.listForReview({ status: "UNDER_REVIEW" }),

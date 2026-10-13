@@ -11,7 +11,7 @@ const CREATED_STATUS = 201;
 export async function GET() {
     try {
         const manager = await requireRole([USER_ROLES.MANAGER]);
-        const hotels = await hotelService.listOwnHotels(manager);
+        const hotels = await hotelService.listManagedHotels(manager);
         return jsonSuccess(hotels);
     } catch (error) {
         return jsonError(error);
