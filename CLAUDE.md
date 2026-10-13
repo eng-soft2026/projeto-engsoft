@@ -7,6 +7,7 @@ Guidance for Claude Code when working in this repository.
 UNIFESP Software Engineering project: a hotel booking platform restricted to Brazil, with fictional hotels registered by managers. Three roles: customer, hotel manager, global admin.
 
 - The repo is at an early stage. Code so far: three plain entities in `src/domain/` (`acomodacao.js`, `hospede.js`, `reserva.js`), the base Next.js structure, `src/lib/` helpers (API response, domain errors, Prisma and Redis singletons, transaction runner, request context), the local infra (`docker-compose.yml`) and Prisma schema part 1: models for doc 25 §3-7 and §26 (users, hotels, managers, review notes, acceptance rules, policies, units, addresses, phones, system settings), the first migration and a seed. Auth and roles (issue #30): Auth.js v5 credentials login with JWT sessions, `UserService`/`AuthService`, `UserRepository`, auth guards, register/login/logout and `/api/users/me` routes, and the ADMIN seed. Hotel registration and approval (issue #37): `HotelService` with the status machine, CNPJ validation, the `AUDIT_LOG` model (§25, migration `add_audit_log`) with the append-only `auditLogger`, manager routes under `/api/hotels` and admin routes under `/api/admin/hotels`. Hotel units (issue #39): `UnitService` creating and editing `HOTEL_UNIT`, `ADDRESS` (1:1) and `UNIT_PHONE` together, migration `make_address_coordinates_nullable`, routes `/api/hotels/:id/units` and `/api/units/:id`. Additional hotel managers (issue #41): `HotelManagerService`, `hotelManagerRepository`, routes `/api/hotels/:id/managers` and `/api/hotels/:id/managers/:userId`, and `canManageHotel` for the owner and the additional managers. Room types and rooms (issue #43): Prisma models for doc 25 §8-10 (`ROOM_TYPE`, `BED_CONFIGURATION`, `ROOM`, `ROOM_TYPE_HISTORY`, `ROOM_PRICE_HISTORY`), migration `add_room_types_and_rooms` with hand-written CHECKs, `RoomTypeService` and `RoomService`, `roomTypeRepository` and `roomRepository`, routes `/api/hotels/:id/room-types`, `/api/room-types/:id`, `/api/units/:id/rooms` and `/api/rooms/:id`, and `src/utils/money.js`. Amenities, policies and acceptance rules (issue #45): `AMENITY` and the four association tables (migration `add_amenities`), `AmenityService`, `AmenityAssociationService`, `AcceptanceService` and `PolicyService`, `amenityRepository`, `hotelAcceptanceRepository` and `hotelPolicyRepository`, routes `/api/amenities`, `/api/{hotels,units,room-types,rooms}/:id/amenities`, `/api/hotels/:id/acceptances`, `/api/hotels/:id/policies` and `/api/policies/:id`. Everything else is specification.
+- The remaining work is planned as 166 GitHub issues in four plans (database, back-end, front-end, tests and observability) kept in `docs/plans/`. See "Backlog and issue protocol" below.
 - The specification in `hotel-booking-github-docs/` (Portuguese) is the source of truth for scope, rules and target architecture. If code and docs disagree, the docs win.
 - The root `README.md` is obsolete (old "resort" scope with different cancellation rules). Ignore it.
 - Current status, tooling problems and a decisions log live in `docs/progresso.md`. Read it at the start of a session.
@@ -150,6 +151,20 @@ tests/
 - Never commit `.env`. Keep `.env.example` updated without real secrets.
 
 <!-- code-review-graph MCP tools -->
+## Backlog and issue protocol
+
+- The plans live in `docs/plans/` (`README.md` has the index and the suggested order; `01-database.md` is `DB-xx`, `02-backend.md` is `BE-xx`, `03-frontend.md` is `FE-xx`, `04-testing-observability.md` is `QA-xx`). Each task is one GitHub issue whose title starts with the ID (`[BE-22] ...`), with a milestone per phase (`F0`, `F2` to `F11`, from doc 17) and the labels `area:*`, `priority:*` and `type:*`. The plans are the original design; the issue (state, comments, PR) and `docs/progresso.md` track the progress.
+- The issue body is the task: **Depende de**, **Ler antes** (the docs and files to read), **Escopo**, **Testes** and **Critérios de aceite**. Read only what it lists, plus the docs-map rows for the area. Where the issue says to verify or ask because the docs are silent, ask (Workflow 3); do not decide.
+- I ask for one issue per session, with `/issue-cycle #N` or `/issue-cycle <ID>`. Every run must be idempotent, so before any edit:
+    1. Resolve the issue (`gh issue view N`, or `gh issue list --state all --search "<ID> in:title"`). Never create a duplicate issue.
+    2. Stop if the issue is closed.
+    3. Stop and list the open ones if a dependency under **Depende de** is not closed.
+    4. Look for existing work: `git branch -a --list "*<N>-*"` and `gh pr list --state all --search "<N>"`. Reuse the existing branch, never create a second one; with an open PR, report it and ask.
+    5. If the branch already has commits, read `git log main..<branch>` and `git diff main --stat` and continue from there instead of redoing the work.
+    6. Before writing to `docs/progresso.md`, this file or a spec doc, check whether the entry for the issue already exists and update it instead of adding another.
+    7. Before generating a migration, check `prisma/migrations` for the same name. Seeds, scripts and helpers added by a task must be safe to run twice.
+- Dependencies between issues are not enforced by GitHub: the order in `docs/plans/README.md` and the **Depende de** line are the contract.
+
 ## MCP Tools: code-review-graph
 
 Narrow scope with the graph before reading files, then verify in the source (the source wins over a stale graph; an empty result can mean "not indexed").

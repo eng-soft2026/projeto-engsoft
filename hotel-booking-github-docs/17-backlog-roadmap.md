@@ -152,3 +152,8 @@
 - ranking de relevância;
 - destinos populares por check-in;
 - refinamentos administrativos.
+
+
+## Backlog no GitHub
+
+O roadmap acima foi desdobrado em 166 issues, uma por tarefa, descritas em `docs/plans/` (banco de dados, back-end, front-end, testes e observabilidade). Cada fase deste documento é um milestone do GitHub (`F0` reúne as pendências da fundação; `F2` a `F11` seguem as fases 2 a 11) e a prioridade MoSCoW vira o label `priority:must`, `priority:should` ou `priority:could`. A ordem sugerida de execução e o protocolo de trabalho por issue estão em `docs/plans/README.md` e no `CLAUDE.md`.
