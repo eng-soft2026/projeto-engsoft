@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
     canManageHotel,
     canViewHotel,
+    canViewHotelManagers,
+    isAdditionalManager,
+    isHotelOwner,
 } from "../../../src/modules/hotels/hotel-access.js";
 
 const HOTEL = Object.freeze({ id: "hotel-1", ownerUserId: "manager-1" });
@@ -26,6 +29,52 @@ describe("canManageHotel", () => {
 
     it("denies a user without the MANAGER role even with the owner id", () => {
         expect(canManageHotel(CUSTOMER, HOTEL)).toBe(false);
+    });
+});
+
+describe("additional managers (RN110)", () => {
+    const HOTEL_WITH_MANAGERS = Object.freeze({
+        ...HOTEL,
+        managers: [{ userId: "manager-3" }],
+    });
+    const ADDITIONAL = Object.freeze({ id: "manager-3", role: "MANAGER" });
+    const ADDITIONAL_WITHOUT_ROLE = Object.freeze({
+        id: "manager-3",
+        role: "CUSTOMER",
+    });
+
+    it("lets an additional manager manage and view the hotel", () => {
+        expect(canManageHotel(ADDITIONAL, HOTEL_WITH_MANAGERS)).toBe(true);
+        expect(canViewHotel(ADDITIONAL, HOTEL_WITH_MANAGERS)).toBe(true);
+    });
+
+    it("denies a manager who is not in the list", () => {
+        expect(canManageHotel(OTHER_MANAGER, HOTEL_WITH_MANAGERS)).toBe(false);
+    });
+
+    it("denies a listed user who lost the MANAGER role", () => {
+        expect(
+            canManageHotel(ADDITIONAL_WITHOUT_ROLE, HOTEL_WITH_MANAGERS),
+        ).toBe(false);
+    });
+
+    it("works when the hotel carries no manager list", () => {
+        expect(canManageHotel(ADDITIONAL, HOTEL)).toBe(false);
+    });
+
+    it("treats only the owner as owner", () => {
+        expect(isHotelOwner(OWNER, HOTEL_WITH_MANAGERS)).toBe(true);
+        expect(isHotelOwner(ADDITIONAL, HOTEL_WITH_MANAGERS)).toBe(false);
+        expect(isAdditionalManager(ADDITIONAL, HOTEL_WITH_MANAGERS)).toBe(true);
+        expect(isAdditionalManager(OWNER, HOTEL_WITH_MANAGERS)).toBe(false);
+    });
+
+    it("shows the manager list only to the owner and the administrator", () => {
+        expect(canViewHotelManagers(OWNER, HOTEL_WITH_MANAGERS)).toBe(true);
+        expect(canViewHotelManagers(ADMIN, HOTEL_WITH_MANAGERS)).toBe(true);
+        expect(canViewHotelManagers(ADDITIONAL, HOTEL_WITH_MANAGERS)).toBe(
+            false,
+        );
     });
 });
 

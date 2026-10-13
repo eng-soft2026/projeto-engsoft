@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     HOTEL_REVIEW_LIST_LIMIT,
+    MANAGER_ACCESS_FIELDS,
     OWNER_SUMMARY_FIELDS,
     PUBLIC_HOTEL_FIELDS,
     createHotelRepository,
@@ -45,12 +46,25 @@ describe("hotelRepository", () => {
         });
     });
 
-    it("findById selects only public fields", async () => {
+    it("findById selects the public fields and the additional manager ids", async () => {
         await repository.findById("hotel-1");
 
         expect(prisma.hotel.findUnique).toHaveBeenCalledWith({
             where: { id: "hotel-1" },
-            select: PUBLIC_HOTEL_FIELDS,
+            select: { ...PUBLIC_HOTEL_FIELDS, ...MANAGER_ACCESS_FIELDS },
+        });
+        expect(MANAGER_ACCESS_FIELDS).toEqual({
+            managers: { select: { userId: true } },
+        });
+    });
+
+    it("findByIdWithReviewNotes lists the additional managers with id, name and e-mail only", async () => {
+        await repository.findByIdWithReviewNotes("hotel-1");
+
+        const { select } = prisma.hotel.findUnique.mock.calls[0][0];
+        expect(select.managers).toEqual({
+            select: { userId: true, user: { select: OWNER_SUMMARY_FIELDS } },
+            orderBy: { createdAt: "asc" },
         });
     });
 
@@ -69,11 +83,16 @@ describe("hotelRepository", () => {
         expect(select.owner).toEqual({ select: OWNER_SUMMARY_FIELDS });
     });
 
-    it("listByOwner filters by the owner, newest first", async () => {
-        await repository.listByOwner("manager-1");
+    it("listByManager lists owned and additionally managed hotels, newest first", async () => {
+        await repository.listByManager("manager-1");
 
         expect(prisma.hotel.findMany).toHaveBeenCalledWith({
-            where: { ownerUserId: "manager-1" },
+            where: {
+                OR: [
+                    { ownerUserId: "manager-1" },
+                    { managers: { some: { userId: "manager-1" } } },
+                ],
+            },
             select: PUBLIC_HOTEL_FIELDS,
             orderBy: { createdAt: "desc" },
         });

@@ -15,6 +15,10 @@ export const PUBLIC_HOTEL_FIELDS = Object.freeze({
     updatedAt: true,
 });
 
+export const MANAGER_ACCESS_FIELDS = Object.freeze({
+    managers: { select: { userId: true } },
+});
+
 export const OWNER_SUMMARY_FIELDS = Object.freeze({
     id: true,
     name: true,
@@ -23,9 +27,21 @@ export const OWNER_SUMMARY_FIELDS = Object.freeze({
 
 export const HOTEL_REVIEW_LIST_LIMIT = 100;
 
+const HOTEL_WITH_ACCESS_FIELDS = Object.freeze({
+    ...PUBLIC_HOTEL_FIELDS,
+    ...MANAGER_ACCESS_FIELDS,
+});
+
 const HOTEL_WITH_REVIEW_NOTES_FIELDS = Object.freeze({
     ...PUBLIC_HOTEL_FIELDS,
     owner: { select: OWNER_SUMMARY_FIELDS },
+    managers: {
+        select: {
+            userId: true,
+            user: { select: OWNER_SUMMARY_FIELDS },
+        },
+        orderBy: { createdAt: "asc" },
+    },
     reviewNotes: {
         select: PUBLIC_REVIEW_NOTE_FIELDS,
         orderBy: { createdAt: "desc" },
@@ -54,7 +70,7 @@ export function createHotelRepository(getClient = getPrisma) {
         findById(id, client = getClient()) {
             return client.hotel.findUnique({
                 where: { id },
-                select: PUBLIC_HOTEL_FIELDS,
+                select: HOTEL_WITH_ACCESS_FIELDS,
             });
         },
 
@@ -65,9 +81,14 @@ export function createHotelRepository(getClient = getPrisma) {
             });
         },
 
-        listByOwner(ownerUserId, client = getClient()) {
+        listByManager(userId, client = getClient()) {
             return client.hotel.findMany({
-                where: { ownerUserId },
+                where: {
+                    OR: [
+                        { ownerUserId: userId },
+                        { managers: { some: { userId } } },
+                    ],
+                },
                 select: PUBLIC_HOTEL_FIELDS,
                 orderBy: { createdAt: "desc" },
             });

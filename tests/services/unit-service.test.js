@@ -53,12 +53,14 @@ function createWorld({
     hotelStatus = HOTEL_STATUSES.DRAFT,
     maxOverbooking = "10",
     storedUnit = buildStoredUnit(),
+    managers = [],
 } = {}) {
     const state = {
         hotel: {
             id: HOTEL_ID,
             ownerUserId: MANAGER.id,
             status: hotelStatus,
+            managers,
         },
         unit: storedUnit,
     };
@@ -469,5 +471,38 @@ describe("unitService.updateUnit", () => {
 
         expect(unit.id).toBe(UNIT_ID);
         expect(unit.checkOutTime).toBe("12:00");
+    });
+});
+
+describe("unitService with additional managers (RN110)", () => {
+    const COMANAGER = Object.freeze({ id: "manager-3", role: "MANAGER" });
+    const MANAGERS = [{ userId: COMANAGER.id }];
+
+    it("lets an additional manager create and edit units", async () => {
+        const world = createWorld({ managers: MANAGERS });
+
+        await expect(
+            world.service.createUnit(COMANAGER, HOTEL_ID, UNIT_INPUT),
+        ).resolves.toMatchObject({ id: UNIT_ID });
+        await expect(
+            world.service.updateUnit(COMANAGER, UNIT_ID, { name: "Novo" }),
+        ).resolves.toMatchObject({ id: UNIT_ID });
+    });
+
+    it("keeps the manager list out of the presented unit", async () => {
+        const world = createWorld({ managers: MANAGERS });
+
+        const unit = await world.service.getUnit(COMANAGER, UNIT_ID);
+
+        expect(unit).not.toHaveProperty("hotel");
+        expect(JSON.stringify(unit)).not.toContain(COMANAGER.id);
+    });
+
+    it("still answers 404 to a manager outside the list", async () => {
+        const world = createWorld({ managers: MANAGERS });
+
+        await expect(
+            world.service.createUnit(OTHER_MANAGER, HOTEL_ID, UNIT_INPUT),
+        ).rejects.toMatchObject({ code: ERROR_CODES.HOTEL_NOT_FOUND });
     });
 });

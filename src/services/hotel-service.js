@@ -10,6 +10,7 @@ import {
 import {
     canManageHotel,
     canViewHotel,
+    canViewHotelManagers,
 } from "../modules/hotels/hotel-access.js";
 import {
     buildHotelEvent,
@@ -30,6 +31,22 @@ function createHotelNotFoundError() {
         ERROR_CODES.HOTEL_NOT_FOUND,
         "Hotel não encontrado.",
     );
+}
+
+function presentHotel(hotel) {
+    const presented = { ...hotel };
+    delete presented.managers;
+    return presented;
+}
+
+function presentHotelDetail(user, hotel) {
+    if (!canViewHotelManagers(user, hotel)) {
+        return presentHotel(hotel);
+    }
+    return {
+        ...hotel,
+        managers: hotel.managers.map(({ user: manager }) => manager),
+    };
 }
 
 function assertManager(user) {
@@ -89,8 +106,8 @@ export function createHotelService({
         });
     }
 
-    async function listOwnHotels(owner) {
-        return hotelRepository.listByOwner(owner.id);
+    async function listManagedHotels(manager) {
+        return hotelRepository.listByManager(manager.id);
     }
 
     async function listHotelsForReview(admin, { status } = {}) {
@@ -103,7 +120,7 @@ export function createHotelService({
         if (!hotel || !canViewHotel(user, hotel)) {
             throw createHotelNotFoundError();
         }
-        return hotel;
+        return presentHotelDetail(user, hotel);
     }
 
     async function updateHotel(
@@ -124,7 +141,7 @@ export function createHotelService({
         if (!wasUpdated) {
             throw createInvalidHotelStatusError();
         }
-        return hotelRepository.findById(hotelId);
+        return presentHotel(await hotelRepository.findById(hotelId));
     }
 
     async function submitForReview(owner, hotelId) {
@@ -153,7 +170,7 @@ export function createHotelService({
                 toStatus: nextStatus,
             }),
         );
-        return updatedHotel;
+        return presentHotel(updatedHotel);
     }
 
     async function applyAdminAction({
@@ -217,7 +234,9 @@ export function createHotelService({
             );
 
             return {
-                hotel: await hotelRepository.findById(hotelId, client),
+                hotel: presentHotel(
+                    await hotelRepository.findById(hotelId, client),
+                ),
                 fromStatus: hotel.status,
                 toStatus: nextStatus,
             };
@@ -283,7 +302,7 @@ export function createHotelService({
 
     return Object.freeze({
         createHotel,
-        listOwnHotels,
+        listManagedHotels,
         listHotelsForReview,
         getHotel,
         updateHotel,

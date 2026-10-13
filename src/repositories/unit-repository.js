@@ -1,4 +1,5 @@
 import { getPrisma } from "../lib/prisma.js";
+import { MANAGER_ACCESS_FIELDS } from "./hotel-repository.js";
 
 const ADDRESS_FIELDS = Object.freeze({
     zipCode: true,
@@ -34,7 +35,9 @@ export const UNIT_FIELDS = Object.freeze({
 
 const UNIT_WITH_HOTEL_OWNER_FIELDS = Object.freeze({
     ...UNIT_FIELDS,
-    hotel: { select: { ownerUserId: true, status: true } },
+    hotel: {
+        select: { ownerUserId: true, status: true, ...MANAGER_ACCESS_FIELDS },
+    },
 });
 
 export function createUnitRepository(getClient = getPrisma) {

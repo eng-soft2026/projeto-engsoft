@@ -51,7 +51,12 @@ function definedFields(data) {
 }
 
 function createWorld(initialHotel) {
-    const state = { hotel: initialHotel, reviewNotes: [], auditEntries: [] };
+    const state = {
+        hotel: initialHotel,
+        reviewNotes: [],
+        managers: [],
+        auditEntries: [],
+    };
     const order = [];
 
     function hasHotelWithStatus(id, status) {
@@ -65,14 +70,25 @@ function createWorld(initialHotel) {
             ...data,
         })),
         findById: vi.fn(async (id) =>
-            state.hotel?.id === id ? { ...state.hotel } : null,
+            state.hotel?.id === id
+                ? {
+                      ...state.hotel,
+                      managers: state.managers.map(({ userId }) => ({
+                          userId,
+                      })),
+                  }
+                : null,
         ),
         findByIdWithReviewNotes: vi.fn(async (id) =>
             state.hotel?.id === id
-                ? { ...state.hotel, reviewNotes: [...state.reviewNotes] }
+                ? {
+                      ...state.hotel,
+                      reviewNotes: [...state.reviewNotes],
+                      managers: [...state.managers],
+                  }
                 : null,
         ),
-        listByOwner: vi.fn(async () =>
+        listByManager: vi.fn(async () =>
             state.hotel ? [{ ...state.hotel }] : [],
         ),
         listForReview: vi.fn(async () =>
@@ -207,13 +223,13 @@ describe("hotelService", () => {
         );
     });
 
-    describe("listOwnHotels", () => {
-        it("lists only the hotels owned by the manager", async () => {
+    describe("listManagedHotels", () => {
+        it("lists the hotels the manager owns or co-manages", async () => {
             const { service, hotelRepository } = createWorld(buildHotel(DRAFT));
 
-            const hotels = await service.listOwnHotels(MANAGER);
+            const hotels = await service.listManagedHotels(MANAGER);
 
-            expect(hotelRepository.listByOwner).toHaveBeenCalledWith(
+            expect(hotelRepository.listByManager).toHaveBeenCalledWith(
                 "manager-1",
             );
             expect(hotels).toHaveLength(1);
@@ -257,6 +273,75 @@ describe("hotelService", () => {
             );
 
             expect(hotelRepository.listForReview).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("additional managers (RN110)", () => {
+        const COMANAGER = Object.freeze({ id: "manager-3", role: "MANAGER" });
+        const COMANAGER_ENTRY = Object.freeze({
+            userId: COMANAGER.id,
+            user: {
+                id: COMANAGER.id,
+                name: "Gestor Três",
+                email: "tres@marazul.example.com",
+            },
+        });
+
+        function createWorldWithComanager(status = DRAFT) {
+            const world = createWorld(buildHotel(status));
+            world.state.managers.push(COMANAGER_ENTRY);
+            return world;
+        }
+
+        it("lets an additional manager edit the hotel and submit it for review", async () => {
+            const { service } = createWorldWithComanager();
+
+            await expect(
+                service.updateHotel(COMANAGER, HOTEL_ID, { name: "Novo nome" }),
+            ).resolves.toMatchObject({ name: "Novo nome" });
+            await expect(
+                service.submitForReview(COMANAGER, HOTEL_ID),
+            ).resolves.toMatchObject({ status: UNDER_REVIEW });
+        });
+
+        it("keeps the manager ids out of the hotel returned by updates and submissions", async () => {
+            const { service } = createWorldWithComanager();
+
+            const updated = await service.updateHotel(MANAGER, HOTEL_ID, {
+                name: "Novo nome",
+            });
+            const submitted = await service.submitForReview(MANAGER, HOTEL_ID);
+
+            expect(updated).not.toHaveProperty("managers");
+            expect(submitted).not.toHaveProperty("managers");
+        });
+
+        it("still hides the hotel from a manager who is not in the list", async () => {
+            const { service } = createWorldWithComanager();
+
+            await expect(
+                service.updateHotel(OTHER_MANAGER, HOTEL_ID, { name: "X" }),
+            ).rejects.toMatchObject({ code: "HOTEL_NOT_FOUND" });
+        });
+
+        it("shows the additional managers to the owner and to the administrator", async () => {
+            const { service } = createWorldWithComanager();
+            const expected = [COMANAGER_ENTRY.user];
+
+            const forOwner = await service.getHotel(MANAGER, HOTEL_ID);
+            const forAdmin = await service.getHotel(ADMIN, HOTEL_ID);
+
+            expect(forOwner.managers).toEqual(expected);
+            expect(forAdmin.managers).toEqual(expected);
+        });
+
+        it("omits the additional managers from the hotel read by an additional manager", async () => {
+            const { service } = createWorldWithComanager();
+
+            const hotel = await service.getHotel(COMANAGER, HOTEL_ID);
+
+            expect(hotel).toMatchObject({ id: HOTEL_ID });
+            expect(hotel).not.toHaveProperty("managers");
         });
     });
 

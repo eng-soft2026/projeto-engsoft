@@ -114,3 +114,16 @@ export const hotelParamsSchema = z.object(
     { id: z.uuid({ error: "Identificador de hotel inválido." }) },
     { error: "Identificador de hotel inválido." },
 );
+
+export const addHotelManagerSchema = z.object(
+    { email: emailSchema },
+    { error: "Informe o e-mail do gestor." },
+);
+
+export const hotelManagerParamsSchema = z.object(
+    {
+        id: z.uuid({ error: "Identificador de hotel inválido." }),
+        userId: z.uuid({ error: "Identificador de usuário inválido." }),
+    },
+    { error: "Identificadores inválidos." },
+);

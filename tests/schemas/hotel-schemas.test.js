@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+    addHotelManagerSchema,
     createHotelSchema,
+    hotelManagerParamsSchema,
     hotelParamsSchema,
     hotelReviewActionSchema,
     listHotelsQuerySchema,
@@ -250,4 +252,34 @@ describe("hotelParamsSchema", () => {
             expect(issue.message).toBe("Identificador de hotel inválido.");
         },
     );
+});
+
+describe("addHotelManagerSchema", () => {
+    it("normalizes the e-mail", () => {
+        expect(
+            addHotelManagerSchema.parse({ email: " Gestor@Example.com " }),
+        ).toEqual({ email: "gestor@example.com" });
+    });
+
+    it.each([{}, { email: "x" }, { userId: "abc" }])("rejects %j", (input) => {
+        expect(addHotelManagerSchema.safeParse(input).success).toBe(false);
+    });
+});
+
+describe("hotelManagerParamsSchema", () => {
+    const UUID = "3f1c2a4e-8b7d-4c6a-9e21-5d0b7a1c9f33";
+
+    it("accepts two UUIDs", () => {
+        expect(
+            hotelManagerParamsSchema.safeParse({ id: UUID, userId: UUID })
+                .success,
+        ).toBe(true);
+    });
+
+    it("rejects a malformed user id", () => {
+        expect(
+            hotelManagerParamsSchema.safeParse({ id: UUID, userId: "x" })
+                .success,
+        ).toBe(false);
+    });
 });
