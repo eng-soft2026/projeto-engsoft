@@ -1,0 +1,6 @@
+export const HOTEL_POLICY_TYPES = Object.freeze({
+    CANCELLATION: "CANCELLATION",
+    QUIET_HOURS: "QUIET_HOURS",
+    PARKING: "PARKING",
+    OTHER: "OTHER",
+});

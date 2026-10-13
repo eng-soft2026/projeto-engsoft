@@ -454,7 +454,9 @@ ROOM_TYPE_AMENITY
 ROOM_AMENITY
 ```
 
-Cada tabela associativa deve impedir duplicidade do mesmo par.
+Cada tabela associativa tem chave primária composta `(<item>_id, amenity_id)` e colunas `created_at`, o que impede duplicidade do mesmo par (RN137).
+
+`AMENITY.name` é `VARCHAR(100)` e há índice único em `(created_by_user_id, name)`. Como o MySQL aceita vários `NULL` em índice único, o nome das comodidades globais não é protegido pelo banco: o service recusa um nome já usado por uma global ou pelo próprio gestor.
 
 ## 12. Imagens
 

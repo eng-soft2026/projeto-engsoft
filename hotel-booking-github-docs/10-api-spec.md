@@ -35,6 +35,9 @@ INVALID_HOTEL_STATUS
 HOTEL_MANAGER_NOT_FOUND
 HOTEL_MANAGER_ALREADY_EXISTS
 UNIT_NOT_FOUND
+AMENITY_NOT_FOUND
+AMENITY_ALREADY_EXISTS
+POLICY_NOT_FOUND
 ROOM_TYPE_NOT_FOUND
 ROOM_NOT_FOUND
 ROOM_INACTIVE
@@ -108,7 +111,10 @@ PATCH /api/hotels/:id
 POST /api/hotels/:id/submit-review
 POST /api/hotels/:id/managers
 DELETE /api/hotels/:id/managers/:userId
+GET /api/hotels/:id/acceptances
 PUT /api/hotels/:id/acceptances
+GET /api/hotels/:id/policies
+POST /api/hotels/:id/policies
 ```
 
 - `POST /api/hotels`: apenas `MANAGER`. Corpo: `name`, `description`, `category`, `cnpj` (com ou sem máscara, numérico ou alfanumérico, RN119) e `email`. O proprietário é o usuário da sessão e o status inicial é sempre `DRAFT`; `status`, `ownerUserId` e `isActive` enviados no corpo são ignorados. Responde `201` com o hotel.
@@ -118,7 +124,27 @@ PUT /api/hotels/:id/acceptances
 - `POST /api/hotels/:id/submit-review`: proprietário ou gestor adicional; `DRAFT` → `UNDER_REVIEW`. Não recebe corpo.
 - `POST /api/hotels/:id/managers`: apenas o `MANAGER` proprietário (RN110, RF136). Corpo: `email` do gestor. O usuário deve existir (`404 USER_NOT_FOUND`), estar ativo e ter o papel `MANAGER` (`400 VALIDATION_ERROR`). O proprietário ou quem já é gestor adicional responde `409 HOTEL_MANAGER_ALREADY_EXISTS`. Responde `201` com `id`, `name` e `email`. Gestor adicional, outro gestor e hotel inexistente respondem `404 HOTEL_NOT_FOUND`.
 - `DELETE /api/hotels/:id/managers/:userId`: apenas o `MANAGER` proprietário. Remove o vínculo e responde `200` com `{ "removed": true }`; quem não é gestor adicional do hotel responde `404 HOTEL_MANAGER_NOT_FOUND`. O proprietário não pode ser removido porque não está na lista.
-- As rotas de regras de aceitação ainda não foram implementadas.
+- `PUT /api/hotels/:id/acceptances`: substitui todas as regras de aceitação do hotel (RF137). Corpo: `acceptances`, lista (até 30) de `{ type, customLabel, isAllowed, details }`, com `type` em `PETS | SMOKING | CHILDREN | VISITORS | EVENTS | OTHER`. `OTHER` exige `customLabel` e os demais tipos o proíbem; um tipo padronizado aparece uma vez e os rótulos de `OTHER` não se repetem, sem diferenciar maiúsculas (RN113); caso contrário `400 VALIDATION_ERROR`. Lista vazia remove todas. Responde `200` com as regras (`id`, `type`, `typeName`, `customLabel`, `isAllowed`, `details`). `GET` devolve a mesma lista. Só com o hotel em `DRAFT` (RN120, RN135); em outro status responde `409 INVALID_HOTEL_STATUS`.
+- `GET /api/hotels/:id/policies` (`MANAGER` proprietário, adicional ou `ADMIN`) lista as políticas, ativas e inativas. `POST` (proprietário ou adicional, hotel em `DRAFT`) recebe `type` (`CANCELLATION | QUIET_HOURS | PARKING | OTHER`), `title` e `description` e responde `201`. `isSystem` enviado no corpo é ignorado (RN136). O texto de `CANCELLATION` apenas complementa a política fixa da plataforma (RN114).
+- `GET|PATCH /api/policies/:id`: `PATCH` aceita ao menos um campo entre `type`, `title`, `description` e `isActive` (a política é desativada, nunca apagada). Política de hotel alheio responde `404 POLICY_NOT_FOUND`.
+
+### Amenities
+
+```text
+GET /api/amenities
+POST /api/amenities
+GET /api/hotels/:id/amenities
+PUT /api/hotels/:id/amenities
+GET /api/units/:id/amenities
+PUT /api/units/:id/amenities
+GET /api/room-types/:id/amenities
+PUT /api/room-types/:id/amenities
+GET /api/rooms/:id/amenities
+PUT /api/rooms/:id/amenities
+```
+
+- `GET /api/amenities` (`MANAGER`): comodidades ativas globais e as criadas pelo próprio gestor. `POST /api/amenities` (`MANAGER`) recebe `name` (2 a 100 caracteres) e cria uma comodidade própria (`isGlobal: false`, RF027). Nome já usado por uma global ou pelo próprio gestor responde `409 AMENITY_ALREADY_EXISTS`. Comodidades globais só entram por seed (RN137).
+- `PUT` substitui o conjunto de comodidades do hotel, da unidade, do tipo ou do quarto (RF023-026). Corpo: `amenityIds`, lista (até 100) de UUIDs; repetidos são unidos e a lista vazia limpa o conjunto. Cada comodidade deve estar ativa e ser global ou criada pelo proprietário ou por um gestor adicional do hotel; senão `404 AMENITY_NOT_FOUND`. Só o `MANAGER` proprietário ou adicional, com o hotel em `DRAFT` (RN120, RN135). `GET` aceita também o `ADMIN`. Item de hotel alheio responde `404` (`HOTEL_NOT_FOUND`, `UNIT_NOT_FOUND`, `ROOM_TYPE_NOT_FOUND` ou `ROOM_NOT_FOUND`).
 
 ### Units
 
