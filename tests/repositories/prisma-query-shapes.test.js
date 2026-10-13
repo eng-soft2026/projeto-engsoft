@@ -4,6 +4,8 @@ import { createTransactionRunner } from "../../src/lib/transaction.js";
 import { createAuditLogRepository } from "../../src/repositories/audit-log-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
+import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
+import { createUnitRepository } from "../../src/repositories/unit-repository.js";
 
 const DATABASE_REACHED = "database reached";
 const ID = "3f1c2a4e-8b7d-4c6a-9e21-5d0b7a1c9f33";
@@ -33,6 +35,8 @@ const prisma = createClientWithoutDatabase();
 const hotels = createHotelRepository(() => prisma);
 const reviewNotes = createHotelReviewNoteRepository(() => prisma);
 const auditLogs = createAuditLogRepository(() => prisma);
+const units = createUnitRepository(() => prisma);
+const systemSettings = createSystemSettingRepository(() => prisma);
 const transactions = createTransactionRunner(() => prisma);
 
 const NEW_HOTEL = {
@@ -43,6 +47,25 @@ const NEW_HOTEL = {
     cnpj: "11222333000181",
     email: "contato@marazul.example.com",
     status: "DRAFT",
+};
+
+const NEW_UNIT = {
+    hotelId: ID,
+    name: "Unidade Paulista",
+    email: "paulista@marazul.example.com",
+    checkInTime: new Date("1970-01-01T14:00:00.000Z"),
+    checkOutTime: new Date("1970-01-01T12:00:00.000Z"),
+    overbookingPercentage: 5,
+    address: {
+        zipCode: "01310100",
+        street: "Avenida Paulista",
+        number: "1000",
+        complement: null,
+        neighborhood: "Bela Vista",
+        city: "São Paulo",
+        state: "SP",
+    },
+    phones: ["11912345678"],
 };
 
 const AUDIT_ENTRY = {
@@ -110,6 +133,27 @@ const QUERIES = [
                 ipAddress: null,
                 userAgent: null,
             }),
+    ],
+    ["hotelUnit.create", () => units.create(NEW_UNIT)],
+    ["hotelUnit.findById", () => units.findById(ID)],
+    ["hotelUnit.findByIdWithHotel", () => units.findByIdWithHotel(ID)],
+    ["hotelUnit.listByHotel", () => units.listByHotel(ID)],
+    [
+        "hotelUnit.updateFields",
+        () =>
+            units.updateFields(ID, {
+                name: "Novo nome",
+                checkInTime: new Date("1970-01-01T15:00:00.000Z"),
+                overbookingPercentage: 0,
+                isActive: false,
+                updatedAt: new Date(),
+            }),
+    ],
+    ["address.update", () => units.replaceAddress(ID, NEW_UNIT.address)],
+    ["unitPhone.deleteMany", () => units.replacePhones(ID, ["11912345678"])],
+    [
+        "systemSetting.findUnique",
+        () => systemSettings.findByKey("MAX_OVERBOOKING_PERCENT"),
     ],
     [
         "$transaction with a callback",

@@ -189,6 +189,10 @@
 - RN121 — O administrador bloqueia hotéis `PUBLISHED` ou `UNDER_REVIEW`. Hotel em `DRAFT` não é bloqueado, pois não está visível nem em análise.
 - RN122 — Toda ação do administrador sobre o hotel (aprovar, solicitar correções, bloquear, desbloquear) exige motivo de 1 a 1000 caracteres e grava o `AUDIT_LOG` na mesma transação da mudança de status. Se o log não puder ser gravado, a ação não é executada (RN070 e RN108). As ações do gestor sobre o próprio hotel não geram `AUDIT_LOG`.
 - RN123 — Solicitar correções, bloquear e desbloquear gravam também uma `HOTEL_REVIEW_NOTE` com o motivo, visível ao gestor do hotel. O desbloqueio informa o status de destino (`PUBLISHED` ou `DRAFT`) de forma explícita, sem valor padrão (RN106).
+- RN124 — O gestor cria, edita e desativa unidades apenas enquanto o hotel estiver em `DRAFT`, como nos demais dados do hotel (RN120). Em outro status a ação responde `409 INVALID_HOTEL_STATUS`.
+- RN125 — A unidade tem de 1 a 5 telefones brasileiros (DDD mais 8 ou 9 dígitos), armazenados só com dígitos e sem repetição. O `PATCH` que envia `phones` substitui a lista inteira; `UNIT_PHONE` não tem histórico, então a troca pode apagar as linhas antigas (doc 25 §28).
+- RN126 — O endereço da unidade usa CEP de 8 dígitos e UF válida. Latitude e longitude nunca vêm do cliente: ficam `NULL` até a geocodificação (RN088, Fase 3) e voltam a `NULL` sempre que o endereço é alterado, para não manter uma coordenada que já não corresponde ao endereço.
+- RN127 — Desativar uma unidade (`is_active = false`) é definitivo: não há reativação nem exclusão física. O percentual de overbooking é inteiro de 0 a 10, validado no schema Zod e no service, que também respeita `MAX_OVERBOOKING_PERCENT` quando ele é menor que 10 (RN047, RN048).
 
 ---
 

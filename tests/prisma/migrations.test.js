@@ -27,6 +27,13 @@ describe("prisma migrations", () => {
         );
     });
 
+    it("lets the address coordinates be NULL until the geocoding exists (RN088)", () => {
+        const sql = readAllMigrationsSql();
+
+        expect(sql).toContain("MODIFY `latitude` DECIMAL(9, 6) NULL");
+        expect(sql).toContain("MODIFY `longitude` DECIMAL(9, 6) NULL");
+    });
+
     it("keeps the hotel acceptance uniqueness by hotel, type and custom label (RN113)", () => {
         expect(readAllMigrationsSql()).toMatch(
             /UNIQUE INDEX `\w+`\(`hotel_id`, `acceptance_type_id`, `custom_label`\)/,
