@@ -184,6 +184,11 @@
 - RN116 — O cadastro público cria apenas contas `CUSTOMER` (padrão) ou `MANAGER`, escolhidas pelo próprio usuário. Contas `ADMIN` são criadas somente pelo seed (variáveis `ADMIN_*`) ou por ação administrativa.
 - RN117 — E-mail é armazenado em minúsculas e CPF com 11 dígitos, sem máscara e com dígitos verificadores válidos; ambos são únicos. O usuário pode alterar nome, e-mail e senha no próprio perfil (a troca de senha exige a senha atual), mas não o CPF nem o papel.
 - RN118 — Usuário inativo (`is_active = false`) não consegue autenticar, e uma sessão já emitida deixa de valer na próxima requisição, pois o papel e o status são relidos do banco a cada requisição autenticada.
+- RN119 — O CNPJ do hotel é validado pelos dígitos verificadores e armazenado normalizado, com 14 caracteres em maiúsculas. Aceita o formato numérico e o alfanumérico, que a Receita Federal emite para novas inscrições desde julho de 2026. Dois hotéis podem ter o mesmo CNPJ: não há unicidade, e a análise do administrador é o controle (RN002).
+- RN120 — O gestor só edita os dados do hotel enquanto ele estiver em `DRAFT`. Em `UNDER_REVIEW`, `PUBLISHED` e `BLOCKED` a edição é recusada, e um hotel publicado só volta a ser editável se o administrador o devolver a `DRAFT` (RN105 e RN106).
+- RN121 — O administrador bloqueia hotéis `PUBLISHED` ou `UNDER_REVIEW`. Hotel em `DRAFT` não é bloqueado, pois não está visível nem em análise.
+- RN122 — Toda ação do administrador sobre o hotel (aprovar, solicitar correções, bloquear, desbloquear) exige motivo de 1 a 1000 caracteres e grava o `AUDIT_LOG` na mesma transação da mudança de status. Se o log não puder ser gravado, a ação não é executada (RN070 e RN108). As ações do gestor sobre o próprio hotel não geram `AUDIT_LOG`.
+- RN123 — Solicitar correções, bloquear e desbloquear gravam também uma `HOTEL_REVIEW_NOTE` com o motivo, visível ao gestor do hotel. O desbloqueio informa o status de destino (`PUBLISHED` ou `DRAFT`) de forma explícita, sem valor padrão (RN106).
 
 ---
 

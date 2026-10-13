@@ -31,6 +31,7 @@ UNAUTHORIZED
 FORBIDDEN
 USER_NOT_FOUND
 HOTEL_NOT_FOUND
+INVALID_HOTEL_STATUS
 UNIT_NOT_FOUND
 ROOM_TYPE_NOT_FOUND
 ROOM_NOT_FOUND
@@ -45,12 +46,15 @@ PAYMENT_FAILED
 REFUND_FAILED
 INVALID_GUEST_DATA
 INVALID_CPF
+INVALID_CNPJ
 VALIDATION_ERROR
 USER_ALREADY_EXISTS
 INTERNAL_ERROR
 ```
 
-- `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`.
+- `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
+- `INVALID_CNPJ`: CNPJ com formato ou dígitos verificadores inválidos. Aceita o formato numérico e o alfanumérico (RN119).
+- `INVALID_HOTEL_STATUS`: a ação não é permitida para o status atual do hotel (por exemplo, editar um hotel que não está em `DRAFT` ou aprovar um hotel que não está em `UNDER_REVIEW`). Também é devolvido quando outro usuário muda o status durante a requisição. Responde `409`.
 - `USER_ALREADY_EXISTS`: e-mail ou CPF já cadastrado. Um único código para os dois casos, para não revelar qual dado já existe.
 - `INTERNAL_ERROR`: erro inesperado. A `message` é genérica; detalhes ficam apenas no log do servidor (sem dados sensíveis).
 
@@ -101,6 +105,13 @@ POST /api/hotels/:id/managers
 DELETE /api/hotels/:id/managers/:userId
 PUT /api/hotels/:id/acceptances
 ```
+
+- `POST /api/hotels`: apenas `MANAGER`. Corpo: `name`, `description`, `category`, `cnpj` (com ou sem máscara, numérico ou alfanumérico, RN119) e `email`. O proprietário é o usuário da sessão e o status inicial é sempre `DRAFT`; `status`, `ownerUserId` e `isActive` enviados no corpo são ignorados. Responde `201` com o hotel.
+- `GET /api/hotels`: apenas `MANAGER`. Lista os hotéis do usuário proprietário, do mais recente ao mais antigo.
+- `GET /api/hotels/:id`: `MANAGER` proprietário ou `ADMIN`. Devolve o hotel, o resumo do proprietário (`id`, `name`, `email`) e as `reviewNotes` (`id`, `fromStatus`, `toStatus`, `notes`, `createdAt`), da mais recente para a mais antiga e sem o id do administrador. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe.
+- `PATCH /api/hotels/:id`: apenas o `MANAGER` proprietário e somente com o hotel em `DRAFT` (RN120); em outro status responde `409 INVALID_HOTEL_STATUS`. Aceita os campos do cadastro, ao menos um.
+- `POST /api/hotels/:id/submit-review`: apenas o proprietário; `DRAFT` → `UNDER_REVIEW`. Não recebe corpo.
+- As rotas de gestores adicionais e de regras de aceitação ainda não foram implementadas. Enquanto isso, só o proprietário acessa o hotel (doc 15).
 
 ### Units
 
@@ -168,12 +179,21 @@ DELETE /api/favorite-room-lists/:id/items/:itemId
 
 ```text
 GET /api/admin/dashboard
+GET /api/admin/hotels
 POST /api/admin/hotels/:id/approve
 POST /api/admin/hotels/:id/block
 POST /api/admin/hotels/:id/request-changes
 POST /api/admin/hotels/:id/unblock
 GET /api/admin/review-reports
 ```
+
+- `GET /api/admin/hotels?status=`: apenas `ADMIN`. Lista até 100 hotéis (`updatedAt` decrescente) com o resumo do proprietário (sem CPF). O filtro `status` (`DRAFT`, `UNDER_REVIEW`, `PUBLISHED` ou `BLOCKED`) é opcional; sem ele lista todos os status.
+- As quatro ações de hotel são exclusivas do `ADMIN`, exigem corpo JSON com `reason` (1 a 1000 caracteres, RN108), gravam o `AUDIT_LOG` na mesma transação da mudança de status (RN070, RN122) e respondem `200` com o hotel atualizado. Um status de origem incompatível responde `409 INVALID_HOTEL_STATUS`.
+    - `approve`: `UNDER_REVIEW` → `PUBLISHED`.
+    - `request-changes`: `UNDER_REVIEW` → `DRAFT`, com `HOTEL_REVIEW_NOTE` (RN105).
+    - `block`: `PUBLISHED` ou `UNDER_REVIEW` → `BLOCKED`, com `HOTEL_REVIEW_NOTE` (RN121).
+    - `unblock`: `BLOCKED` → `PUBLISHED` ou `DRAFT`, conforme o `targetStatus` do corpo, obrigatório e sem valor padrão (RN106), com `HOTEL_REVIEW_NOTE`.
+- O `AUDIT_LOG` guarda o IP, o `User-Agent` e o `x-request-id` da requisição quando disponíveis. O IP vem de `x-forwarded-for` (primeiro endereço) ou `x-real-ip` e é apenas informativo, pois o cliente pode forjá-lo (doc 15).
 
 ### Payments
 

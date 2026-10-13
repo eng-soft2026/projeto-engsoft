@@ -1,0 +1,157 @@
+import { describe, expect, it } from "vitest";
+import { PrismaClient } from "../../src/generated/prisma/client.ts";
+import { createTransactionRunner } from "../../src/lib/transaction.js";
+import { createAuditLogRepository } from "../../src/repositories/audit-log-repository.js";
+import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
+import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
+
+const DATABASE_REACHED = "database reached";
+const ID = "3f1c2a4e-8b7d-4c6a-9e21-5d0b7a1c9f33";
+
+function createClientWithoutDatabase() {
+    const reachDatabase = async () => {
+        throw new Error(DATABASE_REACHED);
+    };
+    const connection = {
+        provider: "mysql",
+        adapterName: "no-database",
+        queryRaw: reachDatabase,
+        executeRaw: reachDatabase,
+        executeScript: reachDatabase,
+        startTransaction: reachDatabase,
+        dispose: async () => {},
+    };
+    const adapter = {
+        provider: "mysql",
+        adapterName: "no-database",
+        connect: async () => connection,
+    };
+    return new PrismaClient({ adapter });
+}
+
+const prisma = createClientWithoutDatabase();
+const hotels = createHotelRepository(() => prisma);
+const reviewNotes = createHotelReviewNoteRepository(() => prisma);
+const auditLogs = createAuditLogRepository(() => prisma);
+const transactions = createTransactionRunner(() => prisma);
+
+const NEW_HOTEL = {
+    ownerUserId: ID,
+    name: "Hotel Mar Azul",
+    description: "Hotel à beira-mar.",
+    category: "4 estrelas",
+    cnpj: "11222333000181",
+    email: "contato@marazul.example.com",
+    status: "DRAFT",
+};
+
+const AUDIT_ENTRY = {
+    userId: ID,
+    action: "APPROVE",
+    entityType: "HOTEL",
+    entityId: ID,
+    beforeData: { status: "UNDER_REVIEW" },
+    afterData: { status: "PUBLISHED" },
+    reason: "Documentos conferidos.",
+    result: "SUCCESS",
+    requestId: "req-1",
+    ipAddress: "203.0.113.7",
+    userAgent: "Mozilla/5.0",
+};
+
+const QUERIES = [
+    ["hotel.create", () => hotels.create(NEW_HOTEL)],
+    ["hotel.findById", () => hotels.findById(ID)],
+    ["hotel.findByIdWithReviewNotes", () => hotels.findByIdWithReviewNotes(ID)],
+    ["hotel.listByOwner", () => hotels.listByOwner(ID)],
+    [
+        "hotel.listForReview with a status",
+        () => hotels.listForReview({ status: "UNDER_REVIEW" }),
+    ],
+    ["hotel.listForReview without a status", () => hotels.listForReview({})],
+    [
+        "hotel.updateFieldsIfStatus",
+        () =>
+            hotels.updateFieldsIfStatus(ID, "DRAFT", {
+                name: "Novo nome",
+                cnpj: "12ABC34501DE35",
+                description: undefined,
+            }),
+    ],
+    [
+        "hotel.updateStatusIfCurrent",
+        () => hotels.updateStatusIfCurrent(ID, "UNDER_REVIEW", "PUBLISHED"),
+    ],
+    [
+        "hotelReviewNote.create",
+        () =>
+            reviewNotes.create({
+                hotelId: ID,
+                adminUserId: ID,
+                fromStatus: "UNDER_REVIEW",
+                toStatus: "DRAFT",
+                notes: "Corrigir o CNPJ.",
+            }),
+    ],
+    ["auditLog.create", () => auditLogs.create(AUDIT_ENTRY)],
+    [
+        "auditLog.create without snapshots, user or context",
+        () =>
+            auditLogs.create({
+                userId: null,
+                action: "CREATE",
+                entityType: "HOTEL",
+                entityId: ID,
+                beforeData: null,
+                afterData: undefined,
+                reason: null,
+                result: "SUCCESS",
+                requestId: null,
+                ipAddress: null,
+                userAgent: null,
+            }),
+    ],
+    [
+        "$transaction with a callback",
+        () =>
+            transactions.run((client) =>
+                client.hotel.findUnique({ where: { id: ID } }),
+            ),
+    ],
+];
+
+describe("repository queries are valid Prisma queries (no database needed)", () => {
+    it.each(QUERIES)(
+        "%s passes Prisma validation and reaches the database layer",
+        async (name, run) => {
+            await expect(run()).rejects.toThrow(DATABASE_REACHED);
+        },
+    );
+
+    it("detects an unknown field in a select (the check is not vacuous)", async () => {
+        const query = prisma.hotel.findUnique({
+            where: { id: ID },
+            select: { notAColumn: true },
+        });
+
+        await expect(query).rejects.toMatchObject({
+            name: "PrismaClientValidationError",
+        });
+    });
+
+    it("detects an unknown field in the data of a write", async () => {
+        const query = hotels.create({ ...NEW_HOTEL, notAColumn: "x" });
+
+        await expect(query).rejects.toMatchObject({
+            name: "PrismaClientValidationError",
+        });
+    });
+
+    it("detects a status that is not in the HotelStatus enum", async () => {
+        const query = hotels.listForReview({ status: "ARCHIVED" });
+
+        await expect(query).rejects.toMatchObject({
+            name: "PrismaClientValidationError",
+        });
+    });
+});

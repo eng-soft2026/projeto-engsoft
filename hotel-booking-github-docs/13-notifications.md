@@ -64,6 +64,20 @@ NotificationService
 
 O domínio não deve depender diretamente do provedor de e-mail.
 
+### Eventos de hotel
+
+O `HotelService` emite um evento de domínio depois que a mudança de status é confirmada no banco, por meio de `hotelEvents.publish` (`src/modules/hotels/hotel-events.js`). Hoje o publisher é um no-op, e uma falha dele nunca desfaz a ação (só é registrada no log, sem detalhes). A futura implementação do `NotificationService` deve se plugar aí.
+
+```text
+HOTEL_SUBMITTED          gestor enviou para análise      -> notificar administradores
+HOTEL_APPROVED           administrador aprovou           -> notificar o gestor
+HOTEL_CHANGES_REQUESTED  hotel devolvido a DRAFT         -> notificar o gestor
+HOTEL_BLOCKED            hotel bloqueado                 -> notificar o gestor
+HOTEL_UNBLOCKED          hotel desbloqueado              -> notificar o gestor
+```
+
+O evento carrega `hotelId`, `actorUserId`, `fromStatus`, `toStatus`, `reason` (nulo quando o gestor envia para análise) e `occurredAt`.
+
 
 ## Implementação de e-mail
 

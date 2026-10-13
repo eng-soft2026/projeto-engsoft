@@ -34,6 +34,11 @@ enum SettingValueType {
     STRING
 }
 
+enum AuditResult {
+    SUCCESS
+    FAILURE
+}
+
 model User {
     id           String   @id @default(uuid()) @db.Char(36)
     name         String   @db.VarChar(150)
@@ -48,6 +53,7 @@ model User {
     ownedHotels      Hotel[]           @relation("HotelOwner")
     managedHotels    HotelManager[]
     hotelReviewNotes HotelReviewNote[]
+    auditLogs        AuditLog[]
     updatedSettings  SystemSetting[]
 
     @@map("user")
@@ -202,6 +208,28 @@ model UnitPhone {
     unit HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
     @@map("unit_phone")
+}
+
+model AuditLog {
+    id         String      @id @default(uuid()) @db.Char(36)
+    userId     String?     @map("user_id") @db.Char(36)
+    action     String      @db.VarChar(50)
+    entityType String      @map("entity_type") @db.VarChar(50)
+    entityId   String      @map("entity_id") @db.Char(36)
+    beforeData Json?       @map("before_data")
+    afterData  Json?       @map("after_data")
+    reason     String?     @db.VarChar(1000)
+    result     AuditResult
+    requestId  String?     @map("request_id") @db.VarChar(64)
+    ipAddress  String?     @map("ip_address") @db.VarChar(45)
+    userAgent  String?     @map("user_agent") @db.VarChar(255)
+    createdAt  DateTime    @default(now()) @map("created_at")
+
+    user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+    @@index([entityType, entityId, createdAt])
+    @@index([userId, createdAt])
+    @@map("audit_log")
 }
 
 model SystemSetting {
