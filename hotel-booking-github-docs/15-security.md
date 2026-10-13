@@ -78,7 +78,7 @@ Gestor acessa apenas hotéis sob sua responsabilidade (como proprietário ou ges
 
 Administrador possui acesso global.
 
-`canManageHotel` (`src/modules/hotels/hotel-access.js`) aceita o proprietário e os gestores adicionais (RN110), lidos de `HOTEL_MANAGER` junto com o hotel. Só o proprietário (`isHotelOwner`) altera a lista de gestores e a vê na resposta do hotel; o papel `MANAGER` é rechecado a cada chamada, então quem perde o papel perde o acesso. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe, e papel inadequado responde `403`.
+`canManageHotel` (`src/modules/hotels/hotel-access.js`) aceita o proprietário e os gestores adicionais (RN110), lidos de `HOTEL_MANAGER` junto com o hotel. Só o proprietário (`isHotelOwner`) altera a lista de gestores e a vê na resposta do hotel; o papel `MANAGER` é rechecado a cada chamada, então quem perde o papel perde o acesso. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe, e papel inadequado responde `403`. Tipos de acomodação e quartos seguem a mesma regra pelo hotel (tipo) ou pela unidade e seu hotel (quarto): `404 ROOM_TYPE_NOT_FOUND`, `404 ROOM_NOT_FOUND` ou `404 UNIT_NOT_FOUND` para quem não gerencia o hotel.
 
 ## Stripe
 

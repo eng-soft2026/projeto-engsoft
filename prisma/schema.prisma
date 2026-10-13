@@ -39,6 +39,22 @@ enum AuditResult {
     FAILURE
 }
 
+enum BedType {
+    SINGLE
+    DOUBLE
+    QUEEN
+    KING
+    SOFA_BED
+}
+
+enum RoomStatus {
+    AVAILABLE
+    UNAVAILABLE
+    MAINTENANCE
+    BLOCKED
+    INACTIVE
+}
+
 model User {
     id           String   @id @default(uuid()) @db.Char(36)
     name         String   @db.VarChar(150)
@@ -78,6 +94,7 @@ model Hotel {
     acceptances HotelAcceptance[]
     policies    HotelPolicy[]
     units       HotelUnit[]
+    roomTypes   RoomType[]
 
     @@index([status])
     @@index([cnpj])
@@ -174,6 +191,7 @@ model HotelUnit {
     hotel   Hotel       @relation(fields: [hotelId], references: [id], onDelete: Restrict)
     address Address?
     phones  UnitPhone[]
+    rooms   Room[]
 
     @@map("hotel_unit")
 }
@@ -243,4 +261,89 @@ model SystemSetting {
     updatedByUser User? @relation(fields: [updatedByUserId], references: [id], onDelete: Restrict)
 
     @@map("system_setting")
+}
+
+model RoomType {
+    id           String   @id @default(uuid()) @db.Char(36)
+    hotelId      String   @map("hotel_id") @db.Char(36)
+    name         String   @db.VarChar(150)
+    description  String   @db.Text
+    maxGuests    Int      @map("max_guests") @db.UnsignedSmallInt
+    areaM2       Decimal  @map("area_m2") @db.Decimal(7, 2)
+    defaultPrice Decimal  @map("default_price") @db.Decimal(10, 2)
+    isActive     Boolean  @default(true) @map("is_active")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
+
+    hotel   Hotel              @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    beds    BedConfiguration[]
+    rooms   Room[]
+    history RoomTypeHistory[]
+
+    @@index([hotelId])
+    @@map("room_type")
+}
+
+model BedConfiguration {
+    id         String  @id @default(uuid()) @db.Char(36)
+    roomTypeId String  @map("room_type_id") @db.Char(36)
+    bedType    BedType @map("bed_type")
+    quantity   Int     @db.UnsignedTinyInt
+
+    roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+    @@unique([roomTypeId, bedType])
+    @@map("bed_configuration")
+}
+
+model Room {
+    id                  String     @id @default(uuid()) @db.Char(36)
+    unitId              String     @map("unit_id") @db.Char(36)
+    roomTypeId          String     @map("room_type_id") @db.Char(36)
+    number              String     @db.VarChar(20)
+    floor               Int        @db.SmallInt
+    status              RoomStatus @default(AVAILABLE)
+    isAccessible        Boolean    @default(false) @map("is_accessible")
+    administrativeNotes String?    @map("administrative_notes") @db.VarChar(1000)
+    isActive            Boolean    @default(true) @map("is_active")
+    createdAt           DateTime   @default(now()) @map("created_at")
+    updatedAt           DateTime   @updatedAt @map("updated_at")
+
+    unit         HotelUnit         @relation(fields: [unitId], references: [id], onDelete: Restrict)
+    roomType     RoomType          @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+    typeHistory  RoomTypeHistory[]
+    priceHistory RoomPriceHistory[]
+
+    @@unique([unitId, number])
+    @@index([roomTypeId])
+    @@map("room")
+}
+
+model RoomTypeHistory {
+    id         String    @id @default(uuid()) @db.Char(36)
+    roomId     String    @map("room_id") @db.Char(36)
+    roomTypeId String    @map("room_type_id") @db.Char(36)
+    validFrom  DateTime  @map("valid_from") @db.DateTime(0)
+    validUntil DateTime? @map("valid_until") @db.DateTime(0)
+
+    room     Room     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+    roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+    @@index([roomId, validFrom])
+    @@index([roomTypeId])
+    @@map("room_type_history")
+}
+
+model RoomPriceHistory {
+    id         String    @id @default(uuid()) @db.Char(36)
+    roomId     String    @map("room_id") @db.Char(36)
+    price      Decimal   @db.Decimal(10, 2)
+    validFrom  DateTime  @map("valid_from") @db.DateTime(0)
+    validUntil DateTime? @map("valid_until") @db.DateTime(0)
+    createdAt  DateTime  @default(now()) @map("created_at")
+
+    room Room @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+    @@index([roomId, validFrom])
+    @@map("room_price_history")
 }

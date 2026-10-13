@@ -1,0 +1,13 @@
+export const MIN_ROOM_TYPE_GUESTS = 1;
+export const MAX_ROOM_TYPE_GUESTS = 50;
+export const MIN_BED_QUANTITY = 1;
+export const MAX_BED_QUANTITY = 10;
+export const MIN_ROOM_TYPE_BEDS = 1;
+export const MAX_ROOM_TYPE_BEDS = 10;
+export const MAX_ROOM_NUMBER_LENGTH = 20;
+export const MIN_ROOM_FLOOR = -5;
+export const MAX_ROOM_FLOOR = 200;
+export const MAX_ADMINISTRATIVE_NOTES_LENGTH = 1000;
+export const MAX_PRICE_INTEGER_DIGITS = 8;
+export const MAX_AREA_INTEGER_DIGITS = 5;
+export const MONEY_DECIMAL_PLACES = 2;

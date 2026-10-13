@@ -16,6 +16,11 @@ export const UNBLOCK_TARGET_STATUSES = Object.freeze([
 
 const EDITABLE_STATUSES = Object.freeze([HOTEL_STATUSES.DRAFT]);
 
+const OPERABLE_STATUSES = Object.freeze([
+    HOTEL_STATUSES.DRAFT,
+    HOTEL_STATUSES.PUBLISHED,
+]);
+
 const ACTIONS_WITH_REVIEW_NOTE = Object.freeze([
     HOTEL_ACTIONS.REQUEST_CHANGES,
     HOTEL_ACTIONS.BLOCK,
@@ -67,6 +72,10 @@ export function resolveNextStatus(action, currentStatus, requestedStatus) {
 
 export function canEditHotel(status) {
     return EDITABLE_STATUSES.includes(status);
+}
+
+export function canOperateHotel(status) {
+    return OPERABLE_STATUSES.includes(status);
 }
 
 export function shouldRecordReviewNote(action) {
