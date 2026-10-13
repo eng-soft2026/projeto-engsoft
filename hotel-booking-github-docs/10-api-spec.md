@@ -37,6 +37,9 @@ HOTEL_MANAGER_ALREADY_EXISTS
 UNIT_NOT_FOUND
 ROOM_TYPE_NOT_FOUND
 ROOM_NOT_FOUND
+ROOM_INACTIVE
+ROOM_NUMBER_ALREADY_EXISTS
+ROOM_TYPE_INACTIVE
 ROOM_NOT_AVAILABLE
 INVALID_BOOKING_PERIOD
 HOLD_EXPIRED
@@ -138,14 +141,28 @@ POST /api/units/:id/blocks
 ### Room types e rooms
 
 ```text
+GET /api/hotels/:hotelId/room-types
 POST /api/hotels/:hotelId/room-types
+GET /api/room-types/:id
 PATCH /api/room-types/:id
+DELETE /api/room-types/:id
+GET /api/units/:unitId/rooms
 POST /api/units/:unitId/rooms
+GET /api/rooms/:id
 PATCH /api/rooms/:id
+DELETE /api/rooms/:id
 POST /api/rooms/:id/blocks
 ```
 
-O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade.
+- No código, o segmento dinâmico é `[id]` em todas as rotas (`/api/hotels/[id]/room-types`, `/api/units/[id]/rooms`), como nas unidades. Em `/api/units/:unitId/rooms`, `unitId` é o id da unidade. `POST /api/rooms/:id/blocks` não foi implementada (RF020).
+- Acesso: criar, alterar e apagar são do `MANAGER` proprietário ou adicional do hotel; as leituras (`GET`) também aceitam `ADMIN`. Hotel, unidade, tipo ou quarto de outro gestor responde `404`, sem revelar que existe. As regras de status do hotel estão no RN129.
+- `POST /api/hotels/:hotelId/room-types`: `name`, `description`, `maxGuests` (1 a 50), `areaM2` e `defaultPrice` (positivos, até 2 casas decimais, aceitos como número ou texto) e `beds` (1 a 10 itens `{ bedType, quantity }`, `bedType` em `SINGLE | DOUBLE | QUEEN | KING | SOFA_BED`, sem repetir, RN128). Responde `201`; valores monetários e área voltam como texto com 2 casas (`"350.00"`).
+- `PATCH /api/room-types/:id`: ao menos um campo; `beds` substitui a lista; `isActive: false` desativa de forma definitiva e `isActive: true` responde `400`. Tipo desativado responde `409 ROOM_TYPE_INACTIVE`.
+- `POST /api/units/:unitId/rooms`: `roomTypeId` (do mesmo hotel da unidade, RN009, RN132), `number` (até 20 caracteres, único na unidade, RN008), `floor` (inteiro de -5 a 200), `isAccessible` (padrão `false`), `administrativeNotes` (opcional), `status` (`AVAILABLE`, `UNAVAILABLE` ou `MAINTENANCE`, padrão `AVAILABLE`, RN130) e `price` (opcional, preço do quarto, RN010). Responde `201`.
+- O quarto devolve `price` (preço do quarto ou `null`), `effectivePrice` (`price` ou, sem ele, o preço padrão do tipo) e o resumo do tipo (`id`, `name`, `defaultPrice`).
+- `PATCH /api/rooms/:id`: ao menos um campo entre `roomTypeId`, `number`, `floor`, `isAccessible`, `administrativeNotes`, `status`, `price` e `isActive`. `price: null` remove o preço do quarto (RN131). `isActive: false` desativa (`status` passa a `INACTIVE`) e não pode vir junto com `status`. Quarto desativado responde `409 ROOM_INACTIVE`.
+- `DELETE /api/rooms/:id` e `DELETE /api/room-types/:id`: respondem `200` com `{ id, outcome }`, em que `outcome` é `DELETED` (sem histórico) ou `DEACTIVATED` (com histórico, RN011, RN133).
+- O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade. Número repetido na unidade responde `409 ROOM_NUMBER_ALREADY_EXISTS`.
 
 ### Search
 

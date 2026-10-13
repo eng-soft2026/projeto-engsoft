@@ -371,6 +371,18 @@ UNIQUE(unit_id, number)
 
 O `room_type_id` deve pertencer ao hotel da unidade (RN009).
 
+Tipos e restrições implementados (migração `add_room_types_and_rooms`):
+
+```text
+ROOM_TYPE: max_guests SMALLINT UNSIGNED, area_m2 DECIMAL(7,2), default_price DECIMAL(10,2)
+BED_CONFIGURATION: quantity TINYINT UNSIGNED, UNIQUE(room_type_id, bed_type)
+ROOM: floor SMALLINT, number VARCHAR(20), administrative_notes VARCHAR(1000)
+CHECK max_guests >= 1, area_m2 > 0, default_price > 0, quantity >= 1
+CHECK (status = 'INACTIVE') equivale a (is_active = 0)
+```
+
+`ROOM.status = BLOCKED` só será definido pelos bloqueios por período (RF020); o gestor escolhe apenas `AVAILABLE`, `UNAVAILABLE` e `MAINTENANCE` (RN130).
+
 ## 10. Histórico de categoria e preço
 
 ### ROOM_TYPE_HISTORY
@@ -395,6 +407,8 @@ ROOM_PRICE_HISTORY
 - valid_until nullable
 - created_at
 ```
+
+`valid_from` e `valid_until` são `DATETIME(0)`. A linha aberta (`valid_until` nulo) é a vigente; as duas tabelas têm `CHECK (valid_until IS NULL OR valid_until >= valid_from)`, e `ROOM_PRICE_HISTORY.price` tem `CHECK (price > 0)` e é `DECIMAL(10,2)`. O cadastro do quarto grava a primeira linha de `ROOM_TYPE_HISTORY` (e a de `ROOM_PRICE_HISTORY`, se o quarto tiver preço). `ROOM` não tem coluna de preço (RN131).
 
 ### ROOM_PRICE_PERIOD
 

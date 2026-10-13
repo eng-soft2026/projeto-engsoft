@@ -5,6 +5,8 @@ import { createAuditLogRepository } from "../../src/repositories/audit-log-repos
 import { createHotelManagerRepository } from "../../src/repositories/hotel-manager-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
+import { createRoomRepository } from "../../src/repositories/room-repository.js";
+import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
 import { createUnitRepository } from "../../src/repositories/unit-repository.js";
 
@@ -39,6 +41,8 @@ const reviewNotes = createHotelReviewNoteRepository(() => prisma);
 const auditLogs = createAuditLogRepository(() => prisma);
 const units = createUnitRepository(() => prisma);
 const systemSettings = createSystemSettingRepository(() => prisma);
+const roomTypes = createRoomTypeRepository(() => prisma);
+const rooms = createRoomRepository(() => prisma);
 const transactions = createTransactionRunner(() => prisma);
 
 const NEW_HOTEL = {
@@ -68,6 +72,31 @@ const NEW_UNIT = {
         state: "SP",
     },
     phones: ["11912345678"],
+};
+
+const NEW_ROOM_TYPE = {
+    hotelId: ID,
+    name: "Suíte Master",
+    description: "Suíte com vista para o mar.",
+    maxGuests: 3,
+    areaM2: "42.50",
+    defaultPrice: "350.00",
+    beds: [
+        { bedType: "KING", quantity: 1 },
+        { bedType: "SOFA_BED", quantity: 1 },
+    ],
+};
+
+const NEW_ROOM = {
+    unitId: ID,
+    roomTypeId: ID,
+    number: "101",
+    floor: 1,
+    status: "AVAILABLE",
+    isAccessible: false,
+    administrativeNotes: null,
+    price: "299.90",
+    validFrom: new Date("2026-10-13T12:00:00.000Z"),
 };
 
 const AUDIT_ENTRY = {
@@ -156,6 +185,60 @@ const QUERIES = [
     ],
     ["address.update", () => units.replaceAddress(ID, NEW_UNIT.address)],
     ["unitPhone.deleteMany", () => units.replacePhones(ID, ["11912345678"])],
+    ["roomType.create", () => roomTypes.create(NEW_ROOM_TYPE)],
+    ["roomType.findById", () => roomTypes.findById(ID)],
+    ["roomType.findByIdWithHotel", () => roomTypes.findByIdWithHotel(ID)],
+    ["roomType.listByHotel", () => roomTypes.listByHotel(ID)],
+    [
+        "roomType.updateFields",
+        () =>
+            roomTypes.updateFields(ID, {
+                name: "Suíte",
+                areaM2: "40.00",
+                defaultPrice: "400.00",
+                isActive: false,
+                updatedAt: new Date(),
+            }),
+    ],
+    [
+        "bedConfiguration.deleteMany",
+        () => roomTypes.replaceBeds(ID, [{ bedType: "QUEEN", quantity: 2 }]),
+    ],
+    [
+        "room.count (room type references)",
+        () => roomTypes.hasRoomReferences(ID),
+    ],
+    ["bedConfiguration.deleteMany (delete)", () => roomTypes.deleteById(ID)],
+    ["room.create", () => rooms.create(NEW_ROOM)],
+    [
+        "room.create without price",
+        () => rooms.create({ ...NEW_ROOM, price: undefined }),
+    ],
+    ["room.findByIdWithAccess", () => rooms.findByIdWithAccess(ID)],
+    ["room.listByUnit", () => rooms.listByUnit(ID)],
+    [
+        "room.updateFields",
+        () =>
+            rooms.updateFields(ID, {
+                number: "102",
+                floor: 2,
+                status: "MAINTENANCE",
+                isAccessible: true,
+                administrativeNotes: "Pintura.",
+                isActive: false,
+                updatedAt: new Date(),
+            }),
+    ],
+    [
+        "roomTypeHistory.updateMany",
+        () => rooms.changeRoomType(ID, ID, new Date()),
+    ],
+    [
+        "roomPriceHistory.updateMany",
+        () => rooms.changePrice(ID, "310.00", new Date()),
+    ],
+    ["roomPriceHistory.count", () => rooms.hasHistory(ID)],
+    ["roomTypeHistory.deleteMany", () => rooms.deleteById(ID)],
     [
         "systemSetting.findUnique",
         () => systemSettings.findByKey("MAX_OVERBOOKING_PERCENT"),

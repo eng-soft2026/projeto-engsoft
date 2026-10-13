@@ -5,6 +5,7 @@ import {
     HOTEL_ACTIONS,
     UNBLOCK_TARGET_STATUSES,
     canEditHotel,
+    canOperateHotel,
     resolveNextStatus,
     shouldRecordReviewNote,
 } from "../../../src/modules/hotels/hotel-status-machine.js";
@@ -114,6 +115,15 @@ describe("canEditHotel", () => {
         expect(canEditHotel(UNDER_REVIEW)).toBe(false);
         expect(canEditHotel(PUBLISHED)).toBe(false);
         expect(canEditHotel(BLOCKED)).toBe(false);
+    });
+});
+
+describe("canOperateHotel", () => {
+    it("allows the daily operation of rooms in DRAFT and PUBLISHED only", () => {
+        expect(canOperateHotel(DRAFT)).toBe(true);
+        expect(canOperateHotel(PUBLISHED)).toBe(true);
+        expect(canOperateHotel(UNDER_REVIEW)).toBe(false);
+        expect(canOperateHotel(BLOCKED)).toBe(false);
     });
 });
 
