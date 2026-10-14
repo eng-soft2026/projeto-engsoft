@@ -36,3 +36,26 @@ jobs:
 
             - name: Build
               run: npm run build
+
+    security:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Dependency audit
+              run: npm run audit:check
+
+            - name: Secret scanning
+              run: >-
+                  docker run --rm -v "$GITHUB_WORKSPACE:/repo"
+                  ghcr.io/gitleaks/gitleaks:v8.30.1
+                  git /repo --log-opts="--all" --redact --no-banner --exit-code 1

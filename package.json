@@ -19,6 +19,7 @@
     "db:seed": "prisma db seed",
     "db:check": "node --env-file-if-exists=.env scripts/check-mysql-constraints.mjs",
     "smoke": "node --env-file-if-exists=.env scripts/smoke-api.mjs",
+    "audit:check": "node scripts/check-npm-audit.mjs",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:migrate:dev": "prisma migrate dev",
@@ -63,5 +64,10 @@
     "react-dom": "^19.3.0",
     "redis": "^6.3.0",
     "zod": "^4.6.5"
+  },
+  "overrides": {
+    "@prisma/adapter-mariadb": {
+      "mariadb": "3.5.4"
+    }
   }
 }
