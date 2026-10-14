@@ -1,10 +1,7 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readSourceFiles } from "../helpers/source-files.js";
 
-const ROOT_DIR = join(import.meta.dirname, "../..");
-const SOURCE_DIRS = [join(ROOT_DIR, "src"), join(ROOT_DIR, "prisma")];
-const GENERATED_DIR = join(ROOT_DIR, "src", "generated");
+const SOURCE_ROOTS = ["src", "prisma"];
 const AUDIT_LOG_REPOSITORY = "src/repositories/audit-log-repository.js";
 
 const MUTATING_CLIENT_CALL =
@@ -12,27 +9,10 @@ const MUTATING_CLIENT_CALL =
 const MUTATING_RAW_SQL = /\b(UPDATE|DELETE\s+FROM)\s+`?audit_log\b/i;
 const MODEL_ACCESS = /\.auditLog\b/;
 
-function listScriptFiles(directory) {
-    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-        const path = join(directory, entry.name);
-        if (path === GENERATED_DIR) {
-            return [];
-        }
-        if (entry.isDirectory()) {
-            return listScriptFiles(path);
-        }
-        return /\.(js|jsx|mjs)$/.test(entry.name) ? [path] : [];
-    });
-}
-
-function toPortablePath(path) {
-    return relative(ROOT_DIR, path).replaceAll("\\", "/");
-}
-
 function findFilesMatching(pattern) {
-    return SOURCE_DIRS.flatMap(listScriptFiles)
-        .filter((path) => pattern.test(readFileSync(path, "utf8")))
-        .map(toPortablePath);
+    return readSourceFiles(SOURCE_ROOTS)
+        .filter((file) => pattern.test(file.content))
+        .map((file) => file.path);
 }
 
 describe("audit log append-only guard (RN107, DT022)", () => {
