@@ -16,6 +16,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:seed": "prisma db seed",
+    "db:check": "node --env-file-if-exists=.env scripts/check-mysql-constraints.mjs",
+    "smoke": "node --env-file-if-exists=.env scripts/smoke-api.mjs",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:migrate:dev": "prisma migrate dev",
