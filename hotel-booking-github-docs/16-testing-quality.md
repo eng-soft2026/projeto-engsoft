@@ -21,6 +21,14 @@
 - integração;
 - end-to-end.
 
+## Testes de integração
+
+- Ficam em `tests/integration/**` e rodam com `npm run test:integration` (`vitest.integration.config.js`), fora do `npm test`.
+- Usam MySQL e Redis reais (`npm run db:up`) com variáveis de `.env.test` (copiado de `.env.test.example`, nunca versionado) ou do ambiente. O nome do banco precisa terminar em `_test` e o `REDIS_URL` precisa apontar para um banco lógico dedicado (índice maior que 0); caso contrário a execução aborta.
+- O `globalSetup` roda `prisma migrate deploy` uma vez, criando o banco de teste se ele não existir.
+- Helpers em `tests/integration/helpers/`: `resetDatabase()` apaga todas as tabelas (exceto `_prisma_migrations`) em ordem de FK lida do `information_schema`, `seedBaseData()` reaplica o seed base e `flushRedis()` limpa o banco lógico de teste com `FLUSHDB`.
+- Os arquivos rodam em série (`fileParallelism: false`), porque compartilham o mesmo banco.
+
 ## Casos críticos
 
 ### Disponibilidade

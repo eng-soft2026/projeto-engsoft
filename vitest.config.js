@@ -1,5 +1,7 @@
 import { defineConfig } from "vitest/config";
 
+const INTEGRATION_TEST_FILES = "tests/integration/**";
+
 const DOM_TEST_FILES = [
     "tests/components/**/*.test.{js,jsx}",
     "tests/hooks/**/*.test.{js,jsx}",
@@ -20,7 +22,7 @@ export default defineConfig({
                     name: "unit",
                     environment: "node",
                     include: ["tests/**/*.test.{js,jsx}"],
-                    exclude: DOM_TEST_FILES,
+                    exclude: [...DOM_TEST_FILES, INTEGRATION_TEST_FILES],
                 },
             },
             {
