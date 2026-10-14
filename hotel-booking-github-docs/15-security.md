@@ -66,6 +66,15 @@ NOMINATIM_USER_AGENT=
 
 Manter `.env.example` sem segredos reais.
 
+O `.gitignore` cobre `.env`, `.env.test` e `.env*.local`, e `tests/architecture/gitignore-secrets.test.js` falha se algum deles deixar de ser ignorado ou se outro arquivo de ambiente além dos `.example` for versionado.
+
+## Dependências e varredura de segredos
+
+- O job `security` do CI roda `npm run audit:check`: falha em qualquer advisory `high` ou `critical` das dependências de produção (`npm audit --omit=dev`) que não esteja em `scripts/npm-audit-allowlist.json`. Cada exceção registra o ID GHSA, o pacote, o motivo e a data da revisão, e o script avisa quando uma exceção deixou de ser reportada.
+- O mesmo job roda o gitleaks (imagem Docker com versão fixa) sobre todo o histórico, com `--redact`, para que nenhum valor apareça no log.
+- O Dependabot (`.github/dependabot.yml`) abre PRs semanais para npm e GitHub Actions.
+- Se um segredo for encontrado, ele deve ser revogado e trocado; apagar o commit não basta.
+
 ## Validação
 
 Toda entrada deve ser revalidada no servidor.

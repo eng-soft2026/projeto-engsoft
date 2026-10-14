@@ -1,0 +1,14 @@
+[
+    {
+        "id": "GHSA-ggr8-5vv4-36mx",
+        "packageName": "deepmerge-ts",
+        "reason": "Pulled only by the prisma CLI (prisma > @prisma/config), a devDependency that npm counts as production because it is an optional peer of @prisma/client. The only fix npm offers is prisma 6 (semver major downgrade).",
+        "reviewedAt": "2026-10-14"
+    },
+    {
+        "id": "GHSA-3f6p-5ww8-9rcr",
+        "packageName": "mysql2",
+        "reason": "Pulled only by the prisma CLI (prisma > mysql2), a devDependency that npm counts as production because it is an optional peer of @prisma/client; the application connects through @prisma/adapter-mariadb. The only fix npm offers is prisma 6 (semver major downgrade).",
+        "reviewedAt": "2026-10-14"
+    }
+]
