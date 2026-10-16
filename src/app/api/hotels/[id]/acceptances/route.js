@@ -15,7 +15,7 @@ export async function GET(request, context) {
         const acceptances = await acceptanceService.listAcceptances(user, id);
         return jsonSuccess(acceptances);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -32,6 +32,6 @@ export async function PUT(request, context) {
         );
         return jsonSuccess(acceptances);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

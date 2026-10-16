@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const policies = await policyService.listPolicies(user, id);
         return jsonSuccess(policies);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -30,6 +30,6 @@ export async function POST(request, context) {
         const policy = await policyService.createPolicy(manager, id, input);
         return jsonSuccess(policy, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

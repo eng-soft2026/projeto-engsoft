@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const hotel = await hotelService.getHotel(user, id);
         return jsonSuccess(hotel);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -30,6 +30,6 @@ export async function PATCH(request, context) {
         const hotel = await hotelService.updateHotel(manager, id, changes);
         return jsonSuccess(hotel);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

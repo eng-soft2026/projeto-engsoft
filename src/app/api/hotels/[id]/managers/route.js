@@ -21,6 +21,6 @@ export async function POST(request, context) {
         const manager = await hotelManagerService.addManager(owner, id, input);
         return jsonSuccess(manager, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

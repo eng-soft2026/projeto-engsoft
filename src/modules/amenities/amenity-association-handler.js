@@ -22,7 +22,7 @@ export function createAmenityAssociationHandlers(target, paramsSchema) {
             );
             return jsonSuccess(amenities);
         } catch (error) {
-            return jsonError(error);
+            return jsonError(error, request);
         }
     }
 
@@ -40,7 +40,7 @@ export function createAmenityAssociationHandlers(target, paramsSchema) {
             );
             return jsonSuccess(amenities);
         } catch (error) {
-            return jsonError(error);
+            return jsonError(error, request);
         }
     }
 

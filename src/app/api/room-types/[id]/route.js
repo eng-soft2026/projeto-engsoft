@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const roomType = await roomTypeService.getRoomType(user, id);
         return jsonSuccess(roomType);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -34,7 +34,7 @@ export async function PATCH(request, context) {
         );
         return jsonSuccess(roomType);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -45,6 +45,6 @@ export async function DELETE(request, context) {
         const result = await roomTypeService.deleteRoomType(manager, id);
         return jsonSuccess(result);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

@@ -16,6 +16,6 @@ export async function GET(request) {
         const hotels = await hotelService.listHotelsForReview(admin, query);
         return jsonSuccess(hotels);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

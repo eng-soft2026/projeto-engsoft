@@ -5,12 +5,12 @@ import { requireAuth } from "../../../../modules/auth/guards.js";
 import { updateProfileSchema } from "../../../../schemas/user-schemas.js";
 import { userService } from "../../../../services/user-service.js";
 
-export async function GET() {
+export async function GET(request) {
     try {
         const user = await requireAuth();
         return jsonSuccess(user);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -22,6 +22,6 @@ export async function PATCH(request) {
         const updatedUser = await userService.updateProfile(user.id, changes);
         return jsonSuccess(updatedUser);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

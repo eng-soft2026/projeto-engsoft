@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const unit = await unitService.getUnit(user, id);
         return jsonSuccess(unit);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -30,6 +30,6 @@ export async function PATCH(request, context) {
         const unit = await unitService.updateUnit(manager, id, changes);
         return jsonSuccess(unit);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

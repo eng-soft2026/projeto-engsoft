@@ -1,5 +1,6 @@
 import { CredentialsSignin } from "next-auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../../../src/lib/logger.js";
 import { POST } from "../../../../src/app/api/auth/login/route.js";
 
 const { signIn, getProfileByEmail } = vi.hoisted(() => ({
@@ -110,7 +111,7 @@ describe("POST /api/auth/login", () => {
     });
 
     it("returns 500 INTERNAL_ERROR for other Auth.js failures", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(logger, "error").mockImplementation(() => {});
         signIn.mockRejectedValueOnce(new Error("MissingSecret"));
 
         const response = await POST(

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
     ARCHITECTURE_RULES,
-    PENDING_LOGGER_MIGRATION,
     findRule,
     findViolations,
 } from "../helpers/architecture-rules.js";
@@ -98,8 +97,8 @@ const FIXTURES = {
             content: 'logger.info("room created", { roomId: room.id });',
         },
         allowed: {
-            path: "src/lib/redis.js",
-            content: 'console.error("Redis client error:", error.message);',
+            path: "src/lib/logger.js",
+            content: 'console.error("logger destination failed");',
         },
     },
     "environment-in-config": {
@@ -176,17 +175,6 @@ describe("architecture guard rules", () => {
         const file = FIXTURES["route-without-repository"].violating;
 
         expect(findViolations(rule, [file])).toEqual([`${file.path}:3`]);
-    });
-
-    it("keeps only files that still use console in the pending logger migration", () => {
-        const filesUsingConsole = sourceFiles
-            .filter((file) => file.path.startsWith("src/"))
-            .filter((file) => /\bconsole\s*\.\s*\w+/.test(file.content))
-            .map((file) => file.path);
-
-        expect(PENDING_LOGGER_MIGRATION.toSorted()).toEqual(
-            filesUsingConsole.toSorted(),
-        );
     });
 
     it("lets the eslint directives through but flags the other line comments", () => {

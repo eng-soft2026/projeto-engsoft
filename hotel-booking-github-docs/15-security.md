@@ -29,6 +29,14 @@ Nunca retornar:
 - credenciais;
 - dados internos desnecessários.
 
+## Logs
+
+- A aplicação registra logs só por `src/lib/logger.js` (pino), nunca por `console.*`; `tests/architecture/architecture-rules.test.js` falha em qualquer `console.*` em `src/`.
+- Formato: JSON por linha em produção (`NODE_ENV=production`) e linha legível em desenvolvimento. O nível vem de `LOG_LEVEL` (`fatal`, `error`, `warn`, `info`, `debug`, `trace` ou `silent`; valor inválido ou ausente vira `info`).
+- Redação recursiva, em qualquer profundidade e sem diferenciar maiúsculas: chaves que contêm `password`, `token`, `secret`, `authorization` ou `cookie`, ou que começam com `stripe`, viram `[REDACTED]`; chaves que contêm `cpf` são mascaradas, mantendo só os 2 últimos dígitos (`*********25`).
+- `serializeError`: em produção, só `name` e `code` (mais `message` quando o erro é um `DomainError`, cuja mensagem é escrita pela aplicação), porque a mensagem do Prisma pode repetir argumentos da query; em desenvolvimento, também `message` e `stack`. O envelope da API nunca traz mensagem interna nem stack (`INTERNAL_ERROR`).
+- Erro inesperado num Route Handler é registrado com o `requestId` do cabeçalho `x-request-id`; sem o cabeçalho, um UUID é gerado só para o log.
+
 ## Variáveis de ambiente
 
 Exemplo:
@@ -38,6 +46,7 @@ DATABASE_URL=
 REDIS_URL=
 AUTH_SECRET=
 AUTH_URL=
+LOG_LEVEL=
 ADMIN_NAME=
 ADMIN_EMAIL=
 ADMIN_CPF=

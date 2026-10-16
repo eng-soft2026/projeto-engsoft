@@ -18,6 +18,6 @@ export async function DELETE(request, context) {
         await hotelManagerService.removeManager(owner, id, userId);
         return jsonSuccess({ removed: true });
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

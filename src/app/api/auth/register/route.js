@@ -13,6 +13,6 @@ export async function POST(request) {
         const user = await userService.createUser(input);
         return jsonSuccess(user, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
