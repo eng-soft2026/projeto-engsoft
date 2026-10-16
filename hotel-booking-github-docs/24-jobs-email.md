@@ -58,6 +58,8 @@ correlationId
 createdAt
 ```
 
+`correlationId` é o `requestId` da requisição que publicou o job (`getCurrentRequestId()` de `src/lib/request-store.js`, doc 15); job publicado fora de uma requisição gera um UUID próprio.
+
 ## Idempotência
 
 Obrigatória especialmente para:

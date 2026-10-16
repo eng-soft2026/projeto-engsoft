@@ -9,27 +9,37 @@ import {
     updateUnitSchema,
 } from "../../../../schemas/unit-schemas.js";
 import { unitService } from "../../../../services/unit-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
-export async function GET(request, context) {
-    try {
-        const user = await requireRole([USER_ROLES.MANAGER, USER_ROLES.ADMIN]);
-        const { id } = await parseRouteParams(context, unitParamsSchema);
-        const unit = await unitService.getUnit(user, id);
-        return jsonSuccess(unit);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const GET = withRequestLogging(
+    "/api/units/[id]",
+    async (request, context) => {
+        try {
+            const user = await requireRole([
+                USER_ROLES.MANAGER,
+                USER_ROLES.ADMIN,
+            ]);
+            const { id } = await parseRouteParams(context, unitParamsSchema);
+            const unit = await unitService.getUnit(user, id);
+            return jsonSuccess(unit);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);
 
-export async function PATCH(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, unitParamsSchema);
-        const body = await readJsonBody(request);
-        const changes = parseWithSchema(updateUnitSchema, body);
-        const unit = await unitService.updateUnit(manager, id, changes);
-        return jsonSuccess(unit);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const PATCH = withRequestLogging(
+    "/api/units/[id]",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, unitParamsSchema);
+            const body = await readJsonBody(request);
+            const changes = parseWithSchema(updateUnitSchema, body);
+            const unit = await unitService.updateUnit(manager, id, changes);
+            return jsonSuccess(unit);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);

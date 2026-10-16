@@ -48,7 +48,9 @@ describe("/api/hotels", () => {
 
     describe("GET", () => {
         it("lists the hotels of the authenticated manager", async () => {
-            const response = await GET();
+            const response = await GET(
+                new Request("http://localhost/api/hotels"),
+            );
 
             expect(response.status).toBe(200);
             expect(await response.json()).toEqual({
@@ -64,7 +66,9 @@ describe("/api/hotels", () => {
                 new UnauthorizedError("Faça login para continuar."),
             );
 
-            const response = await GET();
+            const response = await GET(
+                new Request("http://localhost/api/hotels"),
+            );
 
             expect(response.status).toBe(401);
             expect((await response.json()).error.code).toBe("UNAUTHORIZED");
@@ -76,7 +80,9 @@ describe("/api/hotels", () => {
                 new ForbiddenError("Sem acesso."),
             );
 
-            const response = await GET();
+            const response = await GET(
+                new Request("http://localhost/api/hotels"),
+            );
 
             expect(response.status).toBe(403);
             expect((await response.json()).error.code).toBe("FORBIDDEN");

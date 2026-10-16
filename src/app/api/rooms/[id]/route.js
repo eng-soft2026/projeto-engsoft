@@ -9,38 +9,51 @@ import {
     updateRoomSchema,
 } from "../../../../schemas/room-schemas.js";
 import { roomService } from "../../../../services/room-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
-export async function GET(request, context) {
-    try {
-        const user = await requireRole([USER_ROLES.MANAGER, USER_ROLES.ADMIN]);
-        const { id } = await parseRouteParams(context, roomParamsSchema);
-        const room = await roomService.getRoom(user, id);
-        return jsonSuccess(room);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const GET = withRequestLogging(
+    "/api/rooms/[id]",
+    async (request, context) => {
+        try {
+            const user = await requireRole([
+                USER_ROLES.MANAGER,
+                USER_ROLES.ADMIN,
+            ]);
+            const { id } = await parseRouteParams(context, roomParamsSchema);
+            const room = await roomService.getRoom(user, id);
+            return jsonSuccess(room);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);
 
-export async function PATCH(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, roomParamsSchema);
-        const body = await readJsonBody(request);
-        const changes = parseWithSchema(updateRoomSchema, body);
-        const room = await roomService.updateRoom(manager, id, changes);
-        return jsonSuccess(room);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const PATCH = withRequestLogging(
+    "/api/rooms/[id]",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, roomParamsSchema);
+            const body = await readJsonBody(request);
+            const changes = parseWithSchema(updateRoomSchema, body);
+            const room = await roomService.updateRoom(manager, id, changes);
+            return jsonSuccess(room);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);
 
-export async function DELETE(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, roomParamsSchema);
-        const result = await roomService.deleteRoom(manager, id);
-        return jsonSuccess(result);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const DELETE = withRequestLogging(
+    "/api/rooms/[id]",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, roomParamsSchema);
+            const result = await roomService.deleteRoom(manager, id);
+            return jsonSuccess(result);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);

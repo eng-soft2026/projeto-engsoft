@@ -13,7 +13,9 @@ describe("POST /api/auth/logout", () => {
     });
 
     it("ends the session without redirecting", async () => {
-        const response = await POST();
+        const response = await POST(
+            new Request("http://localhost/api/auth/logout", { method: "POST" }),
+        );
 
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ success: true, data: null });
@@ -24,7 +26,9 @@ describe("POST /api/auth/logout", () => {
         vi.spyOn(logger, "error").mockImplementation(() => {});
         signOut.mockRejectedValueOnce(new Error("boom"));
 
-        const response = await POST();
+        const response = await POST(
+            new Request("http://localhost/api/auth/logout", { method: "POST" }),
+        );
 
         expect(response.status).toBe(500);
         expect((await response.json()).error.code).toBe("INTERNAL_ERROR");

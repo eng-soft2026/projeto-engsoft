@@ -5,10 +5,11 @@ import { parseWithSchema } from "../../../lib/validation.js";
 import { requireRole } from "../../../modules/auth/guards.js";
 import { createAmenitySchema } from "../../../schemas/amenity-schemas.js";
 import { amenityService } from "../../../services/amenity-service.js";
+import { withRequestLogging } from "../../../lib/request-logging.js";
 
 const CREATED_STATUS = 201;
 
-export async function GET(request) {
+export const GET = withRequestLogging("/api/amenities", async (request) => {
     try {
         const manager = await requireRole([USER_ROLES.MANAGER]);
         const amenities = await amenityService.listAmenities(manager);
@@ -16,9 +17,9 @@ export async function GET(request) {
     } catch (error) {
         return jsonError(error, request);
     }
-}
+});
 
-export async function POST(request) {
+export const POST = withRequestLogging("/api/amenities", async (request) => {
     try {
         const manager = await requireRole([USER_ROLES.MANAGER]);
         const body = await readJsonBody(request);
@@ -28,4 +29,4 @@ export async function POST(request) {
     } catch (error) {
         return jsonError(error, request);
     }
-}
+});

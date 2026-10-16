@@ -1,5 +1,6 @@
 import pino from "pino";
 import { DomainError } from "./errors.js";
+import { readRequestLogContext } from "./request-store.js";
 
 const DEFAULT_LOG_LEVEL = "info";
 const LOGGER_METHODS = ["debug", "info", "warn", "error"];
@@ -147,6 +148,7 @@ export function createLogger({
     level = resolveLogLevel(),
     isProduction = isProductionEnvironment(),
     destination = process.stdout,
+    readContext = readRequestLogContext,
 } = {}) {
     const output = isProduction
         ? destination
@@ -168,7 +170,10 @@ export function createLogger({
             method,
             (message, context = {}) => {
                 instance[method](
-                    redactLogData(context, { isProduction }),
+                    redactLogData(
+                        { ...readContext(), ...context },
+                        { isProduction },
+                    ),
                     message,
                 );
             },

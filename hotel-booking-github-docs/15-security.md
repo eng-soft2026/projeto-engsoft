@@ -35,7 +35,11 @@ Nunca retornar:
 - Formato: JSON por linha em produção (`NODE_ENV=production`) e linha legível em desenvolvimento. O nível vem de `LOG_LEVEL` (`fatal`, `error`, `warn`, `info`, `debug`, `trace` ou `silent`; valor inválido ou ausente vira `info`).
 - Redação recursiva, em qualquer profundidade e sem diferenciar maiúsculas: chaves que contêm `password`, `token`, `secret`, `authorization` ou `cookie`, ou que começam com `stripe`, viram `[REDACTED]`; chaves que contêm `cpf` são mascaradas, mantendo só os 2 últimos dígitos (`*********25`).
 - `serializeError`: em produção, só `name` e `code` (mais `message` quando o erro é um `DomainError`, cuja mensagem é escrita pela aplicação), porque a mensagem do Prisma pode repetir argumentos da query; em desenvolvimento, também `message` e `stack`. O envelope da API nunca traz mensagem interna nem stack (`INTERNAL_ERROR`).
-- Erro inesperado num Route Handler é registrado com o `requestId` do cabeçalho `x-request-id`; sem o cabeçalho, um UUID é gerado só para o log.
+- Toda resposta da aplicação traz o cabeçalho `x-request-id`. `src/proxy.js` (o antigo middleware, no Next 16) roda em todas as rotas, menos `_next/static`, `_next/image` e `favicon.ico`: aceita o `x-request-id` recebido só se tiver até 64 caracteres e apenas letras, dígitos, `_`, `.`, `:` ou `-` (o mesmo formato que cabe em `AUDIT_LOG.request_id`); senão gera um UUID. O id segue no cabeçalho da requisição até o Route Handler e volta na resposta.
+- Todo Route Handler é envolvido por `withRequestLogging(rota, handler)` (`src/lib/request-logging.js`), que roda o handler dentro de um `AsyncLocalStorage` (`src/lib/request-store.js`) com `requestId` e a rota; os guards acrescentam o `userId`. Toda linha de log escrita durante a requisição carrega `requestId`, `userId` e `route`.
+- Uma linha `info` por requisição: `method`, `route` (o padrão do arquivo, como `/api/hotels/[id]`, nunca o caminho com ids nem a query string), `status` e `durationMs`. Corpo e cabeçalhos da requisição nunca entram no log. Exceção que escapa do handler é registrada com status 500 e relançada.
+- O `requestId` vai para `AUDIT_LOG.request_id` (por `getRequestContext`) e é o `correlationId` dos jobs publicados durante a requisição (`getCurrentRequestId()`).
+- Erro inesperado num Route Handler é registrado com o `requestId` da requisição; fora de uma requisição e sem o cabeçalho, um UUID é gerado só para o log.
 
 ## Variáveis de ambiente
 

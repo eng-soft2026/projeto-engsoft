@@ -10,6 +10,8 @@ import {
 } from "./errors.js";
 import { logger, serializeError } from "./logger.js";
 import { getRequestContext } from "./request-context.js";
+import { generateRequestId } from "./request-id.js";
+import { getCurrentRequestId } from "./request-store.js";
 
 const HTTP_STATUS_BY_ERROR_CLASS = [
     [ValidationError, 400],
@@ -31,8 +33,10 @@ export function getHttpStatus(error) {
 }
 
 function resolveRequestId(request) {
-    const requestId = request ? getRequestContext(request).requestId : null;
-    return requestId || crypto.randomUUID();
+    const requestId = request
+        ? getRequestContext(request).requestId
+        : getCurrentRequestId();
+    return requestId || generateRequestId();
 }
 
 function logUnexpectedError(error, request) {

@@ -7,29 +7,39 @@ import { requireRole } from "../../../../../modules/auth/guards.js";
 import { hotelParamsSchema } from "../../../../../schemas/hotel-schemas.js";
 import { createUnitSchema } from "../../../../../schemas/unit-schemas.js";
 import { unitService } from "../../../../../services/unit-service.js";
+import { withRequestLogging } from "../../../../../lib/request-logging.js";
 
 const CREATED_STATUS = 201;
 
-export async function GET(request, context) {
-    try {
-        const user = await requireRole([USER_ROLES.MANAGER, USER_ROLES.ADMIN]);
-        const { id } = await parseRouteParams(context, hotelParamsSchema);
-        const units = await unitService.listUnits(user, id);
-        return jsonSuccess(units);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const GET = withRequestLogging(
+    "/api/hotels/[id]/units",
+    async (request, context) => {
+        try {
+            const user = await requireRole([
+                USER_ROLES.MANAGER,
+                USER_ROLES.ADMIN,
+            ]);
+            const { id } = await parseRouteParams(context, hotelParamsSchema);
+            const units = await unitService.listUnits(user, id);
+            return jsonSuccess(units);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);
 
-export async function POST(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, hotelParamsSchema);
-        const body = await readJsonBody(request);
-        const input = parseWithSchema(createUnitSchema, body);
-        const unit = await unitService.createUnit(manager, id, input);
-        return jsonSuccess(unit, CREATED_STATUS);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const POST = withRequestLogging(
+    "/api/hotels/[id]/units",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, hotelParamsSchema);
+            const body = await readJsonBody(request);
+            const input = parseWithSchema(createUnitSchema, body);
+            const unit = await unitService.createUnit(manager, id, input);
+            return jsonSuccess(unit, CREATED_STATUS);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);

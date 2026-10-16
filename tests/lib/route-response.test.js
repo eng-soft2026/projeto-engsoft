@@ -9,6 +9,7 @@ import {
     ValidationError,
 } from "../../src/lib/errors.js";
 import { logger } from "../../src/lib/logger.js";
+import { runWithRequestStore } from "../../src/lib/request-store.js";
 import {
     getHttpStatus,
     jsonError,
@@ -107,6 +108,19 @@ describe("jsonError", () => {
         expect(context.requestId).toMatch(
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
         );
+    });
+
+    it("logs the request id of the current request store", () => {
+        const loggerError = vi
+            .spyOn(logger, "error")
+            .mockImplementation(() => {});
+
+        runWithRequestStore({ requestId: "req-store" }, () =>
+            jsonError(new Error("boom")),
+        );
+
+        const [, context] = loggerError.mock.calls[0];
+        expect(context.requestId).toBe("req-store");
     });
 
     it("does not log domain errors", () => {

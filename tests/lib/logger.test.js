@@ -8,6 +8,7 @@ import {
     resolveLogLevel,
     serializeError,
 } from "../../src/lib/logger.js";
+import { runWithRequestStore } from "../../src/lib/request-store.js";
 
 function createMemoryDestination() {
     const lines = [];
@@ -210,6 +211,43 @@ describe("createLogger", () => {
         logger.error("error entry");
 
         expect(destination.lines).toHaveLength(1);
+    });
+
+    it("adds the request id, the user id and the route of the current request", () => {
+        const { logger, readEntries } = createProductionLogger();
+
+        runWithRequestStore(
+            { requestId: "req-1", userId: "user-1", route: "/api/hotels/[id]" },
+            () => logger.info("hotel loaded", { hotelCount: 1 }),
+        );
+        logger.info("outside a request");
+
+        const [insideEntry, outsideEntry] = readEntries();
+        expect(insideEntry).toMatchObject({
+            msg: "hotel loaded",
+            requestId: "req-1",
+            userId: "user-1",
+            route: "/api/hotels/[id]",
+            hotelCount: 1,
+        });
+        expect(outsideEntry).not.toHaveProperty("requestId");
+        expect(outsideEntry).not.toHaveProperty("route");
+    });
+
+    it("lets the explicit context override the request store fields", () => {
+        const destination = createMemoryDestination();
+        const logger = createLogger({
+            isProduction: true,
+            destination,
+            readContext: () => ({ requestId: "from-store", route: "/api" }),
+        });
+
+        logger.info("entry", { requestId: "explicit" });
+
+        expect(JSON.parse(destination.lines[0])).toMatchObject({
+            requestId: "explicit",
+            route: "/api",
+        });
     });
 
     it("writes readable lines outside production", () => {
