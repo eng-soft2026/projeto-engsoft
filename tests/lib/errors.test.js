@@ -42,6 +42,7 @@ const SPEC_CODES = [
     "VALIDATION_ERROR",
     "USER_ALREADY_EXISTS",
     "INTERNAL_ERROR",
+    "SERVICE_UNAVAILABLE",
 ];
 
 describe("ERROR_CODES", () => {
