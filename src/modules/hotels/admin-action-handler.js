@@ -22,7 +22,7 @@ export function createAdminHotelActionHandler({ schema, perform }) {
             );
             return jsonSuccess(hotel);
         } catch (error) {
-            return jsonError(error);
+            return jsonError(error, request);
         }
     };
 }

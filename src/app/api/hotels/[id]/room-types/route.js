@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const roomTypes = await roomTypeService.listRoomTypes(user, id);
         return jsonSuccess(roomTypes);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -34,6 +34,6 @@ export async function POST(request, context) {
         );
         return jsonSuccess(roomType, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

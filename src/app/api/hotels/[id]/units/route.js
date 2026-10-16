@@ -17,7 +17,7 @@ export async function GET(request, context) {
         const units = await unitService.listUnits(user, id);
         return jsonSuccess(units);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -30,6 +30,6 @@ export async function POST(request, context) {
         const unit = await unitService.createUnit(manager, id, input);
         return jsonSuccess(unit, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

@@ -8,13 +8,13 @@ import { amenityService } from "../../../services/amenity-service.js";
 
 const CREATED_STATUS = 201;
 
-export async function GET() {
+export async function GET(request) {
     try {
         const manager = await requireRole([USER_ROLES.MANAGER]);
         const amenities = await amenityService.listAmenities(manager);
         return jsonSuccess(amenities);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -26,6 +26,6 @@ export async function POST(request) {
         const amenity = await amenityService.createAmenity(manager, input);
         return jsonSuccess(amenity, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

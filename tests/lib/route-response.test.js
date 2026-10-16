@@ -8,6 +8,7 @@ import {
     UnauthorizedError,
     ValidationError,
 } from "../../src/lib/errors.js";
+import { logger } from "../../src/lib/logger.js";
 import {
     getHttpStatus,
     jsonError,
@@ -46,6 +47,7 @@ describe("jsonSuccess", () => {
 describe("jsonError", () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllEnvs();
     });
 
     it("returns the error envelope of a DomainError with its status", async () => {
@@ -60,32 +62,60 @@ describe("jsonError", () => {
         });
     });
 
-    it("hides unexpected errors behind INTERNAL_ERROR", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
+    it("hides unexpected errors behind INTERNAL_ERROR without message or stack", async () => {
+        vi.spyOn(logger, "error").mockImplementation(() => {});
         const response = jsonError(new Error("secret internal detail"));
         const body = await response.json();
 
         expect(response.status).toBe(500);
         expect(body.error.code).toBe("INTERNAL_ERROR");
         expect(JSON.stringify(body)).not.toContain("secret internal detail");
+        expect(Object.keys(body.error).toSorted()).toEqual(["code", "message"]);
     });
 
-    it("logs only the name and code of unexpected errors", () => {
-        const consoleError = vi
-            .spyOn(console, "error")
+    it("logs unexpected errors in production with the request id, name and code only", () => {
+        vi.stubEnv("NODE_ENV", "production");
+        const loggerError = vi
+            .spyOn(logger, "error")
             .mockImplementation(() => {});
         const error = Object.assign(new Error("passwordHash=abc"), {
             code: "P2002",
         });
+        const request = new Request("http://localhost/api/hotels", {
+            headers: { "x-request-id": "req-123" },
+        });
 
-        jsonError(error);
+        jsonError(error, request);
 
-        expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+        expect(JSON.stringify(loggerError.mock.calls)).not.toContain(
             "passwordHash",
         );
-        expect(consoleError).toHaveBeenCalledWith(expect.any(String), {
-            name: "Error",
-            code: "P2002",
+        expect(loggerError).toHaveBeenCalledWith(expect.any(String), {
+            requestId: "req-123",
+            error: { name: "Error", code: "P2002" },
         });
+    });
+
+    it("generates a request id for the log when the header is missing", () => {
+        const loggerError = vi
+            .spyOn(logger, "error")
+            .mockImplementation(() => {});
+
+        jsonError(new Error("boom"));
+
+        const [, context] = loggerError.mock.calls[0];
+        expect(context.requestId).toMatch(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        );
+    });
+
+    it("does not log domain errors", () => {
+        const loggerError = vi
+            .spyOn(logger, "error")
+            .mockImplementation(() => {});
+
+        jsonError(new NotFoundError(ERROR_CODES.HOTEL_NOT_FOUND, "Não."));
+
+        expect(loggerError).not.toHaveBeenCalled();
     });
 });

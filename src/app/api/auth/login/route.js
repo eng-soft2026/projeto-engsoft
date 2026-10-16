@@ -42,6 +42,6 @@ export async function POST(request) {
         const user = await userService.getProfileByEmail(credentials.email);
         return jsonSuccess(user);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

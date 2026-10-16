@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../../../../src/lib/logger.js";
 import { POST as approve } from "../../../../../src/app/api/admin/hotels/[id]/approve/route.js";
 import { POST as block } from "../../../../../src/app/api/admin/hotels/[id]/block/route.js";
 import { POST as requestChanges } from "../../../../../src/app/api/admin/hotels/[id]/request-changes/route.js";
@@ -262,7 +263,7 @@ describe.each(ROUTES)(
         });
 
         it("hides unexpected errors, such as an audit log failure, behind 500 INTERNAL_ERROR", async () => {
-            vi.spyOn(console, "error").mockImplementation(() => {});
+            vi.spyOn(logger, "error").mockImplementation(() => {});
             service.mockRejectedValueOnce(
                 new Error("insert into audit_log failed: password=hunter2"),
             );

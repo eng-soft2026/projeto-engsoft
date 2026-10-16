@@ -8,13 +8,13 @@ import { hotelService } from "../../../services/hotel-service.js";
 
 const CREATED_STATUS = 201;
 
-export async function GET() {
+export async function GET(request) {
     try {
         const manager = await requireRole([USER_ROLES.MANAGER]);
         const hotels = await hotelService.listManagedHotels(manager);
         return jsonSuccess(hotels);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }
 
@@ -26,6 +26,6 @@ export async function POST(request) {
         const hotel = await hotelService.createHotel(manager, input);
         return jsonSuccess(hotel, CREATED_STATUS);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

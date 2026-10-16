@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../../../src/lib/logger.js";
 import { POST } from "../../../../src/app/api/auth/logout/route.js";
 
 const { signOut } = vi.hoisted(() => ({ signOut: vi.fn() }));
@@ -20,7 +21,7 @@ describe("POST /api/auth/logout", () => {
     });
 
     it("returns 500 INTERNAL_ERROR when Auth.js fails", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(logger, "error").mockImplementation(() => {});
         signOut.mockRejectedValueOnce(new Error("boom"));
 
         const response = await POST();

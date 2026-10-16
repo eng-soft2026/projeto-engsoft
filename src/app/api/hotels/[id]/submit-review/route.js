@@ -12,6 +12,6 @@ export async function POST(request, context) {
         const hotel = await hotelService.submitForReview(manager, id);
         return jsonSuccess(hotel);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
 }

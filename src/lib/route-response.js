@@ -8,6 +8,8 @@ import {
     UnauthorizedError,
     ValidationError,
 } from "./errors.js";
+import { logger, serializeError } from "./logger.js";
+import { getRequestContext } from "./request-context.js";
 
 const HTTP_STATUS_BY_ERROR_CLASS = [
     [ValidationError, 400],
@@ -28,10 +30,15 @@ export function getHttpStatus(error) {
     return match ? match[1] : DEFAULT_DOMAIN_ERROR_STATUS;
 }
 
-function logUnexpectedError(error) {
-    console.error("Unexpected error in route handler", {
-        name: error?.name,
-        code: error?.code,
+function resolveRequestId(request) {
+    const requestId = request ? getRequestContext(request).requestId : null;
+    return requestId || crypto.randomUUID();
+}
+
+function logUnexpectedError(error, request) {
+    logger.error("Unexpected error in route handler", {
+        requestId: resolveRequestId(request),
+        error: serializeError(error),
     });
 }
 
@@ -39,14 +46,14 @@ export function jsonSuccess(data, status = 200) {
     return Response.json(successResponse(data), { status });
 }
 
-export function jsonError(error) {
+export function jsonError(error, request) {
     if (error instanceof DomainError) {
         return Response.json(errorResponse(error.code, error.message), {
             status: getHttpStatus(error),
         });
     }
 
-    logUnexpectedError(error);
+    logUnexpectedError(error, request);
     return Response.json(
         errorResponse(ERROR_CODES.INTERNAL_ERROR, INTERNAL_ERROR_MESSAGE),
         { status: INTERNAL_ERROR_STATUS },
