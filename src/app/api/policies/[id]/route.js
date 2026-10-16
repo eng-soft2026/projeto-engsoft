@@ -9,27 +9,41 @@ import {
     updatePolicySchema,
 } from "../../../../schemas/policy-schemas.js";
 import { policyService } from "../../../../services/policy-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
-export async function GET(request, context) {
-    try {
-        const user = await requireRole([USER_ROLES.MANAGER, USER_ROLES.ADMIN]);
-        const { id } = await parseRouteParams(context, policyParamsSchema);
-        const policy = await policyService.getPolicy(user, id);
-        return jsonSuccess(policy);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const GET = withRequestLogging(
+    "/api/policies/[id]",
+    async (request, context) => {
+        try {
+            const user = await requireRole([
+                USER_ROLES.MANAGER,
+                USER_ROLES.ADMIN,
+            ]);
+            const { id } = await parseRouteParams(context, policyParamsSchema);
+            const policy = await policyService.getPolicy(user, id);
+            return jsonSuccess(policy);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);
 
-export async function PATCH(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, policyParamsSchema);
-        const body = await readJsonBody(request);
-        const changes = parseWithSchema(updatePolicySchema, body);
-        const policy = await policyService.updatePolicy(manager, id, changes);
-        return jsonSuccess(policy);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const PATCH = withRequestLogging(
+    "/api/policies/[id]",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, policyParamsSchema);
+            const body = await readJsonBody(request);
+            const changes = parseWithSchema(updatePolicySchema, body);
+            const policy = await policyService.updatePolicy(
+                manager,
+                id,
+                changes,
+            );
+            return jsonSuccess(policy);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);

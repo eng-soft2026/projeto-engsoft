@@ -4,14 +4,18 @@ import { jsonError, jsonSuccess } from "../../../../../lib/route-response.js";
 import { requireRole } from "../../../../../modules/auth/guards.js";
 import { hotelParamsSchema } from "../../../../../schemas/hotel-schemas.js";
 import { hotelService } from "../../../../../services/hotel-service.js";
+import { withRequestLogging } from "../../../../../lib/request-logging.js";
 
-export async function POST(request, context) {
-    try {
-        const manager = await requireRole([USER_ROLES.MANAGER]);
-        const { id } = await parseRouteParams(context, hotelParamsSchema);
-        const hotel = await hotelService.submitForReview(manager, id);
-        return jsonSuccess(hotel);
-    } catch (error) {
-        return jsonError(error, request);
-    }
-}
+export const POST = withRequestLogging(
+    "/api/hotels/[id]/submit-review",
+    async (request, context) => {
+        try {
+            const manager = await requireRole([USER_ROLES.MANAGER]);
+            const { id } = await parseRouteParams(context, hotelParamsSchema);
+            const hotel = await hotelService.submitForReview(manager, id);
+            return jsonSuccess(hotel);
+        } catch (error) {
+            return jsonError(error, request);
+        }
+    },
+);

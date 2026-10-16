@@ -4,8 +4,9 @@ import { parseWithSchema } from "../../../../lib/validation.js";
 import { requireRole } from "../../../../modules/auth/guards.js";
 import { listHotelsQuerySchema } from "../../../../schemas/hotel-schemas.js";
 import { hotelService } from "../../../../services/hotel-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
-export async function GET(request) {
+export const GET = withRequestLogging("/api/admin/hotels", async (request) => {
     try {
         const admin = await requireRole([USER_ROLES.ADMIN]);
         const { searchParams } = new URL(request.url);
@@ -18,4 +19,4 @@ export async function GET(request) {
     } catch (error) {
         return jsonError(error, request);
     }
-}
+});

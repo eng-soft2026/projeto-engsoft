@@ -42,6 +42,9 @@ vi.mock("../../../../../src/services/hotel-service.js", () => ({
 
 const ADMIN = Object.freeze({ id: "admin-1", role: "ADMIN" });
 
+const UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const REQUEST_HEADERS = Object.freeze({
     "x-request-id": "req-1",
     "x-forwarded-for": "203.0.113.7, 10.0.0.1",
@@ -279,7 +282,7 @@ describe.each(ROUTES)(
             expect(JSON.stringify(error)).not.toContain("hunter2");
         });
 
-        it("passes null for the request context values that are absent", async () => {
+        it("generates the request id and passes null for the other absent context values", async () => {
             await handler(
                 createJsonRequest(
                     `http://localhost/api/admin/hotels/${HOTEL_ID}/${name}`,
@@ -290,7 +293,7 @@ describe.each(ROUTES)(
             );
 
             expect(service.mock.calls[0][3]).toEqual({
-                requestId: null,
+                requestId: expect.stringMatching(UUID_PATTERN),
                 ipAddress: null,
                 userAgent: null,
             });

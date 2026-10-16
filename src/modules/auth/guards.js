@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { ForbiddenError, UnauthorizedError } from "../../lib/errors.js";
+import { setRequestUserId } from "../../lib/request-store.js";
 import { authService } from "../../services/auth-service.js";
 import { auth } from "./auth.js";
 
@@ -15,7 +16,11 @@ export async function getCurrentUser() {
     if (!userId) {
         return null;
     }
-    return authService.findActiveUser(userId);
+    const user = await authService.findActiveUser(userId);
+    if (user) {
+        setRequestUserId(user.id);
+    }
+    return user;
 }
 
 export async function requireAuth() {
