@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../../../src/lib/logger.js";
 import { POST } from "../../../../src/app/api/auth/register/route.js";
 import { ConflictError, ERROR_CODES } from "../../../../src/lib/errors.js";
 
@@ -123,7 +124,7 @@ describe("POST /api/auth/register", () => {
     });
 
     it("returns 500 INTERNAL_ERROR without details for unexpected errors", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(logger, "error").mockImplementation(() => {});
         createUser.mockRejectedValueOnce(new Error("connection refused"));
 
         const response = await POST(createRequest(VALID_BODY));

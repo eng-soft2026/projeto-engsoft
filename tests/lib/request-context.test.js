@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRequestContext } from "../../src/lib/request-context.js";
+import { runWithRequestStore } from "../../src/lib/request-store.js";
 
 function createRequest(headers) {
     return new Request("http://localhost/api/admin/hotels", { headers });
@@ -51,5 +52,15 @@ describe("getRequestContext", () => {
             ipAddress: null,
             userAgent: null,
         });
+    });
+
+    it("prefers the request id of the current request store", () => {
+        const request = createRequest({ "x-request-id": "bad id with spaces" });
+
+        const context = runWithRequestStore({ requestId: "req-store" }, () =>
+            getRequestContext(request),
+        );
+
+        expect(context.requestId).toBe("req-store");
     });
 });

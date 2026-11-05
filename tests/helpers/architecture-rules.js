@@ -60,12 +60,6 @@ function findLineCommentLines(content, path) {
         .map((message) => message.line);
 }
 
-export const PENDING_LOGGER_MIGRATION = [
-    "src/lib/redis.js",
-    "src/lib/route-response.js",
-    "src/services/hotel-service.js",
-];
-
 export const ARCHITECTURE_RULES = [
     {
         id: "prisma-client-singleton",
@@ -111,7 +105,7 @@ export const ARCHITECTURE_RULES = [
         id: "console-through-logger",
         description: "console is only used by the logger",
         roots: SOURCE_ROOTS,
-        allowed: PENDING_LOGGER_MIGRATION,
+        allowed: ["src/lib/logger.js"],
         findLines: findLinesMatching(/\bconsole\s*\.\s*\w+/),
     },
     {

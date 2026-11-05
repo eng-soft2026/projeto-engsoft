@@ -28,6 +28,7 @@
 - O `globalSetup` roda `prisma migrate deploy` uma vez, criando o banco de teste se ele não existir.
 - Helpers em `tests/integration/helpers/`: `resetDatabase()` apaga todas as tabelas (exceto `_prisma_migrations`) em ordem de FK lida do `information_schema`, `seedBaseData()` reaplica o seed base e `flushRedis()` limpa o banco lógico de teste com `FLUSHDB`.
 - Os arquivos rodam em série (`fileParallelism: false`), porque compartilham o mesmo banco.
+- No CI, o job `integration` (`.github/workflows/ci.yml`) roda em todo push e PR para `main` com os services `mysql:8.4` e `redis:7`, aplica as migrações com `npm run prisma:migrate:deploy` e executa `npm run test:integration`, com `DATABASE_URL` e `REDIS_URL` definidos no job (banco `_test`, Redis no índice 15).
 
 ## Casos críticos
 

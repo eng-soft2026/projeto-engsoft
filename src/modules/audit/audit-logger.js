@@ -6,12 +6,11 @@ import {
     AUDIT_RESULTS,
 } from "../../constants/audit.js";
 import { ValidationError } from "../../lib/errors.js";
+import { isValidRequestId } from "../../lib/request-id.js";
 import { auditLogRepository as defaultAuditLogRepository } from "../../repositories/audit-log-repository.js";
 
 const USER_AGENT_MAX_LENGTH = 255;
-const REQUEST_ID_MAX_LENGTH = 64;
 const IP_ADDRESS_MAX_LENGTH = 45;
-const REQUEST_ID_PATTERN = /^[\w.:-]+$/;
 
 export function normalizeAuditReason(reason) {
     const trimmedReason = typeof reason === "string" ? reason.trim() : "";
@@ -34,11 +33,7 @@ function normalizeIpAddress(value) {
 }
 
 function normalizeRequestId(value) {
-    const isStorable =
-        typeof value === "string" &&
-        value.length <= REQUEST_ID_MAX_LENGTH &&
-        REQUEST_ID_PATTERN.test(value);
-    return isStorable ? value : null;
+    return isValidRequestId(value) ? value : null;
 }
 
 function normalizeUserAgent(value) {

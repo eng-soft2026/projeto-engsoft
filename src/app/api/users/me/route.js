@@ -4,17 +4,18 @@ import { parseWithSchema } from "../../../../lib/validation.js";
 import { requireAuth } from "../../../../modules/auth/guards.js";
 import { updateProfileSchema } from "../../../../schemas/user-schemas.js";
 import { userService } from "../../../../services/user-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
-export async function GET() {
+export const GET = withRequestLogging("/api/users/me", async (request) => {
     try {
         const user = await requireAuth();
         return jsonSuccess(user);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
-}
+});
 
-export async function PATCH(request) {
+export const PATCH = withRequestLogging("/api/users/me", async (request) => {
     try {
         const user = await requireAuth();
         const body = await readJsonBody(request);
@@ -22,6 +23,6 @@ export async function PATCH(request) {
         const updatedUser = await userService.updateProfile(user.id, changes);
         return jsonSuccess(updatedUser);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
-}
+});

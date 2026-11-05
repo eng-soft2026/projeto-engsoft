@@ -29,7 +29,9 @@ describe("/api/amenities", () => {
     });
 
     it("GET lists the amenities of a manager", async () => {
-        const response = await GET();
+        const response = await GET(
+            new Request("http://localhost/api/amenities"),
+        );
 
         expect(response.status).toBe(200);
         expect((await response.json()).data).toEqual([{ id: "a1" }]);
@@ -68,6 +70,8 @@ describe("/api/amenities", () => {
     it("answers 401 without a session", async () => {
         requireRole.mockRejectedValue(new UnauthorizedError());
 
-        expect((await GET()).status).toBe(401);
+        expect(
+            (await GET(new Request("http://localhost/api/amenities"))).status,
+        ).toBe(401);
     });
 });

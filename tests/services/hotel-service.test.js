@@ -147,12 +147,15 @@ function createWorld(initialHotel) {
         }),
     };
 
+    const logger = { error: vi.fn() };
+
     const service = createHotelService({
         hotelRepository,
         hotelReviewNoteRepository,
         auditLogger,
         transactionRunner,
         hotelEvents,
+        logger,
     });
 
     return {
@@ -163,6 +166,7 @@ function createWorld(initialHotel) {
         auditLogger,
         transactionRunner,
         hotelEvents,
+        logger,
         service,
     };
 }
@@ -559,19 +563,21 @@ describe("hotelService", () => {
             expect(hotelEvents.publish).not.toHaveBeenCalled();
         });
 
-        it("still succeeds when the event publisher fails, logging only the error name and code", async () => {
-            const consoleError = vi
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
-            const { service, hotelEvents } = createWorld(buildHotel(DRAFT));
+        it("still succeeds when the event publisher fails, logging the event type and the serialized error", async () => {
+            const { service, hotelEvents, logger } = createWorld(
+                buildHotel(DRAFT),
+            );
             hotelEvents.publish.mockRejectedValueOnce(new Error("queue down"));
 
             const hotel = await service.submitForReview(MANAGER, HOTEL_ID);
 
             expect(hotel.status).toBe("UNDER_REVIEW");
-            expect(consoleError).toHaveBeenCalledWith(
+            expect(logger.error).toHaveBeenCalledWith(
                 "Failed to publish hotel event",
-                { type: "HOTEL_SUBMITTED", name: "Error", code: undefined },
+                {
+                    type: "HOTEL_SUBMITTED",
+                    error: expect.objectContaining({ name: "Error" }),
+                },
             );
         });
     });
@@ -898,10 +904,7 @@ describe("hotelService", () => {
             expect(world.auditLogger.recordAdminAction).not.toHaveBeenCalled();
         });
 
-        it("still succeeds when the event publisher fails, logging only the error name and code", async () => {
-            const consoleError = vi
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+        it("still succeeds when the event publisher fails, logging the event type and the serialized error", async () => {
             const world = createWorld(buildHotel(UNDER_REVIEW));
             world.hotelEvents.publish.mockRejectedValueOnce(
                 new Error("queue down"),
@@ -914,9 +917,12 @@ describe("hotelService", () => {
             );
 
             expect(hotel.status).toBe(PUBLISHED);
-            expect(consoleError).toHaveBeenCalledWith(
+            expect(world.logger.error).toHaveBeenCalledWith(
                 "Failed to publish hotel event",
-                { type: "HOTEL_APPROVED", name: "Error", code: undefined },
+                {
+                    type: "HOTEL_APPROVED",
+                    error: expect.objectContaining({ name: "Error" }),
+                },
             );
         });
 

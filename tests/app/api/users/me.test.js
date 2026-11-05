@@ -41,7 +41,9 @@ describe("/api/users/me", () => {
 
     describe("GET", () => {
         it("returns the authenticated user", async () => {
-            const response = await GET();
+            const response = await GET(
+                new Request("http://localhost/api/users/me"),
+            );
 
             expect(response.status).toBe(200);
             expect(await response.json()).toEqual({
@@ -55,7 +57,9 @@ describe("/api/users/me", () => {
                 new UnauthorizedError("Faça login para continuar."),
             );
 
-            const response = await GET();
+            const response = await GET(
+                new Request("http://localhost/api/users/me"),
+            );
 
             expect(response.status).toBe(401);
             expect((await response.json()).error.code).toBe("UNAUTHORIZED");

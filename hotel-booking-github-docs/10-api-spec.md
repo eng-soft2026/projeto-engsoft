@@ -58,6 +58,7 @@ INVALID_CNPJ
 VALIDATION_ERROR
 USER_ALREADY_EXISTS
 INTERNAL_ERROR
+SERVICE_UNAVAILABLE
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -65,6 +66,7 @@ INTERNAL_ERROR
 - `INVALID_HOTEL_STATUS`: a ação não é permitida para o status atual do hotel (por exemplo, editar um hotel que não está em `DRAFT` ou aprovar um hotel que não está em `UNDER_REVIEW`). Também é devolvido quando outro usuário muda o status durante a requisição. Responde `409`.
 - `USER_ALREADY_EXISTS`: e-mail ou CPF já cadastrado. Um único código para os dois casos, para não revelar qual dado já existe.
 - `INTERNAL_ERROR`: erro inesperado. A `message` é genérica; detalhes ficam apenas no log do servidor (sem dados sensíveis).
+- `SERVICE_UNAVAILABLE`: uma dependência obrigatória (MySQL, Redis) não respondeu. Usado só por `GET /api/health/ready`, com status `503`.
 
 ## Status HTTP
 
@@ -250,6 +252,17 @@ GET /api/admin/review-reports
     - `block`: `PUBLISHED` ou `UNDER_REVIEW` → `BLOCKED`, com `HOTEL_REVIEW_NOTE` (RN121).
     - `unblock`: `BLOCKED` → `PUBLISHED` ou `DRAFT`, conforme o `targetStatus` do corpo, obrigatório e sem valor padrão (RN106), com `HOTEL_REVIEW_NOTE`.
 - O `AUDIT_LOG` guarda o IP, o `User-Agent` e o `x-request-id` da requisição quando disponíveis. O IP vem de `x-forwarded-for` (primeiro endereço) ou `x-real-ip` e é apenas informativo, pois o cliente pode forjá-lo (doc 15).
+
+### Health
+
+```text
+GET /api/health
+GET /api/health/ready
+```
+
+- Rotas públicas, sem cache (`Cache-Control: no-store`), usadas como healthcheck do container e do deploy. Seguem o envelope acima.
+- `health` (liveness): não consulta nenhuma dependência e responde `200` com `data: { "status": "ok" }`.
+- `health/ready` (readiness): checa o MySQL (`SELECT 1`) e o Redis (`PING`) em paralelo, cada um com timeout de 2 s. Com tudo `up`, responde `200` com `data: { "status": "ready", "components": { "mysql": "up", "redis": "up" } }`. Com algum componente `down`, responde `503` com `error.code = SERVICE_UNAVAILABLE` e, como exceção ao envelope de erro, também `data: { "status": "not_ready", "components": {...} }`. A resposta nunca traz URL, host, credencial ou mensagem do erro; o componente que falhou vai para o log do servidor (`warn`). O RabbitMQ entra na lista quando existir.
 
 ### Payments
 

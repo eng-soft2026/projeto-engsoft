@@ -10,6 +10,7 @@ import { parseWithSchema } from "../../../../lib/validation.js";
 import { signIn } from "../../../../modules/auth/auth.js";
 import { loginSchema } from "../../../../schemas/user-schemas.js";
 import { userService } from "../../../../services/user-service.js";
+import { withRequestLogging } from "../../../../lib/request-logging.js";
 
 const AUTH_RETURN_REDIRECT_HEADER = "x-auth-return-redirect";
 
@@ -33,7 +34,7 @@ async function signInWithCredentials({ email, password }) {
     }
 }
 
-export async function POST(request) {
+export const POST = withRequestLogging("/api/auth/login", async (request) => {
     try {
         assertNoAuthRedirectHeader(request);
         const body = await readJsonBody(request);
@@ -42,6 +43,6 @@ export async function POST(request) {
         const user = await userService.getProfileByEmail(credentials.email);
         return jsonSuccess(user);
     } catch (error) {
-        return jsonError(error);
+        return jsonError(error, request);
     }
-}
+});

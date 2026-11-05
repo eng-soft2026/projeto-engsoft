@@ -1,4 +1,3 @@
-import { randomInt, randomUUID } from "node:crypto";
 import { USER_ROLES } from "../../../src/constants/user-roles.js";
 import { parseWithSchema } from "../../../src/lib/validation.js";
 import { createHotelSchema } from "../../../src/schemas/hotel-schemas.js";
@@ -11,40 +10,22 @@ import { roomService } from "../../../src/services/room-service.js";
 import { roomTypeService } from "../../../src/services/room-type-service.js";
 import { unitService } from "../../../src/services/unit-service.js";
 import { userService } from "../../../src/services/user-service.js";
+import {
+    buildHotel,
+    buildRoom,
+    buildRoomType,
+    buildUnit,
+    buildUser,
+} from "../../helpers/factories/index.js";
 
-export const TEST_PASSWORD = `Integration${randomUUID().slice(0, 8)}1`;
-export const VALID_CNPJ = "11222333000181";
-
-function calculateCpfDigit(digits) {
-    const weightStart = digits.length + 1;
-    const sum = digits.reduce(
-        (total, digit, index) => total + digit * (weightStart - index),
-        0,
-    );
-    const remainder = sum % 11;
-    return remainder < 2 ? 0 : 11 - remainder;
-}
-
-export function generateCpf() {
-    const base = Array.from({ length: 9 }, () => randomInt(0, 10));
-    if (new Set(base).size === 1) {
-        base[0] = (base[0] + 1) % 10;
-    }
-    const firstDigit = calculateCpfDigit(base);
-    const secondDigit = calculateCpfDigit([...base, firstDigit]);
-    return [...base, firstDigit, secondDigit].join("");
-}
+export {
+    TEST_PASSWORD,
+    VALID_CNPJ,
+    generateCpf,
+} from "../../helpers/factories/index.js";
 
 export function buildAccount(overrides = {}) {
-    const tag = randomUUID().slice(0, 8);
-    return {
-        name: `Integration User ${tag}`,
-        email: `integration-${tag}@example.com`,
-        cpf: generateCpf(),
-        password: TEST_PASSWORD,
-        role: USER_ROLES.MANAGER,
-        ...overrides,
-    };
+    return buildUser({ role: USER_ROLES.MANAGER, ...overrides });
 }
 
 export async function createUser(overrides = {}) {
@@ -62,35 +43,15 @@ export function createAdmin(overrides = {}) {
 }
 
 export function createDraftHotel(owner, overrides = {}) {
-    const input = parseWithSchema(createHotelSchema, {
-        name: "Hotel Integração",
-        description: "Hotel criado pelos testes de integração.",
-        category: "HOTEL",
-        cnpj: VALID_CNPJ,
-        email: owner.email,
-        ...overrides,
-    });
+    const input = parseWithSchema(
+        createHotelSchema,
+        buildHotel({ email: owner.email, ...overrides }),
+    );
     return hotelService.createHotel(owner, input);
 }
 
 export function buildUnitInput(overrides = {}) {
-    return parseWithSchema(createUnitSchema, {
-        name: "Unidade Centro",
-        email: "centro@example.com",
-        checkInTime: "14:00",
-        checkOutTime: "12:00",
-        overbookingPercentage: 5,
-        address: {
-            zipCode: "01001-000",
-            street: "Praça da Sé",
-            number: "100",
-            neighborhood: "Sé",
-            city: "São Paulo",
-            state: "SP",
-        },
-        phones: ["(11) 3333-4444"],
-        ...overrides,
-    });
+    return parseWithSchema(createUnitSchema, buildUnit(overrides));
 }
 
 export function createUnit(manager, hotelId, overrides = {}) {
@@ -98,25 +59,18 @@ export function createUnit(manager, hotelId, overrides = {}) {
 }
 
 export function createRoomType(manager, hotelId, overrides = {}) {
-    const input = parseWithSchema(createRoomTypeSchema, {
-        name: "Standard",
-        description: "Quarto padrão.",
-        maxGuests: 2,
-        areaM2: "20.50",
-        defaultPrice: "250.00",
-        beds: [{ bedType: "DOUBLE", quantity: 1 }],
-        ...overrides,
-    });
+    const input = parseWithSchema(
+        createRoomTypeSchema,
+        buildRoomType(overrides),
+    );
     return roomTypeService.createRoomType(manager, hotelId, input);
 }
 
 export function buildRoomInput(roomTypeId, overrides = {}) {
-    return parseWithSchema(createRoomSchema, {
-        roomTypeId,
-        number: "101",
-        floor: 1,
-        ...overrides,
-    });
+    return parseWithSchema(
+        createRoomSchema,
+        buildRoom({ roomTypeId, ...overrides }),
+    );
 }
 
 export function createRoom(manager, unitId, roomTypeId, overrides = {}) {

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ForbiddenError, UnauthorizedError } from "../../../src/lib/errors.js";
 import {
+    getRequestStore,
+    runWithRequestStore,
+} from "../../../src/lib/request-store.js";
+import {
     LOGIN_PATH,
     getCurrentUser,
     requireAuth,
@@ -63,6 +67,34 @@ describe("auth guards", () => {
             findActiveUser.mockResolvedValue(null);
 
             await expect(getCurrentUser()).resolves.toBeNull();
+        });
+
+        it("records the user id in the request store for the logs", async () => {
+            signInAs(CUSTOMER);
+
+            const store = await runWithRequestStore(
+                { requestId: "req-1" },
+                async () => {
+                    await getCurrentUser();
+                    return getRequestStore();
+                },
+            );
+
+            expect(store).toEqual({ requestId: "req-1", userId: "user-1" });
+        });
+
+        it("leaves the request store without a user id when there is no active user", async () => {
+            auth.mockResolvedValue({ user: { id: "user-1" } });
+
+            const store = await runWithRequestStore(
+                { requestId: "req-1" },
+                async () => {
+                    await getCurrentUser();
+                    return getRequestStore();
+                },
+            );
+
+            expect(store).toEqual({ requestId: "req-1" });
         });
     });
 

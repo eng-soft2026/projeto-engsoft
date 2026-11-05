@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../../../../src/lib/logger.js";
 import { POST as approve } from "../../../../../src/app/api/admin/hotels/[id]/approve/route.js";
 import { POST as block } from "../../../../../src/app/api/admin/hotels/[id]/block/route.js";
 import { POST as requestChanges } from "../../../../../src/app/api/admin/hotels/[id]/request-changes/route.js";
@@ -40,6 +41,9 @@ vi.mock("../../../../../src/services/hotel-service.js", () => ({
 }));
 
 const ADMIN = Object.freeze({ id: "admin-1", role: "ADMIN" });
+
+const UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const REQUEST_HEADERS = Object.freeze({
     "x-request-id": "req-1",
@@ -262,7 +266,7 @@ describe.each(ROUTES)(
         });
 
         it("hides unexpected errors, such as an audit log failure, behind 500 INTERNAL_ERROR", async () => {
-            vi.spyOn(console, "error").mockImplementation(() => {});
+            vi.spyOn(logger, "error").mockImplementation(() => {});
             service.mockRejectedValueOnce(
                 new Error("insert into audit_log failed: password=hunter2"),
             );
@@ -278,7 +282,7 @@ describe.each(ROUTES)(
             expect(JSON.stringify(error)).not.toContain("hunter2");
         });
 
-        it("passes null for the request context values that are absent", async () => {
+        it("generates the request id and passes null for the other absent context values", async () => {
             await handler(
                 createJsonRequest(
                     `http://localhost/api/admin/hotels/${HOTEL_ID}/${name}`,
@@ -289,7 +293,7 @@ describe.each(ROUTES)(
             );
 
             expect(service.mock.calls[0][3]).toEqual({
-                requestId: null,
+                requestId: expect.stringMatching(UUID_PATTERN),
                 ipAddress: null,
                 userAgent: null,
             });

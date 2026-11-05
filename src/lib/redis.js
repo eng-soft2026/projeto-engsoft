@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+import { logger, serializeError } from "./logger.js";
 
 const globalForRedis = globalThis;
 
@@ -9,7 +10,7 @@ function createRedisClient() {
     }
     const client = createClient({ url: redisUrl });
     client.on("error", (error) => {
-        console.error("Redis client error:", error.message);
+        logger.error("Redis client error", { error: serializeError(error) });
     });
     return client;
 }

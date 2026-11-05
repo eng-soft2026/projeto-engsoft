@@ -2,6 +2,7 @@ import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from "../constants/audit.js";
 import { HOTEL_STATUSES } from "../constants/hotel-statuses.js";
 import { USER_ROLES } from "../constants/user-roles.js";
 import { ERROR_CODES, ForbiddenError, NotFoundError } from "../lib/errors.js";
+import { logger as defaultLogger, serializeError } from "../lib/logger.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
     auditLogger as defaultAuditLogger,
@@ -69,15 +70,15 @@ export function createHotelService({
     auditLogger,
     transactionRunner,
     hotelEvents,
+    logger = defaultLogger,
 }) {
     async function publishEvent(event) {
         try {
             await hotelEvents.publish(event);
         } catch (error) {
-            console.error("Failed to publish hotel event", {
+            logger.error("Failed to publish hotel event", {
                 type: event.type,
-                name: error?.name,
-                code: error?.code,
+                error: serializeError(error),
             });
         }
     }
@@ -320,4 +321,5 @@ export const hotelService = createHotelService({
     auditLogger: defaultAuditLogger,
     transactionRunner: defaultTransactionRunner,
     hotelEvents: noopHotelEventPublisher,
+    logger: defaultLogger,
 });
