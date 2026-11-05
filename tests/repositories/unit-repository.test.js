@@ -10,6 +10,7 @@ function createFakePrisma() {
             create: vi.fn(async () => ({ id: "unit-1" })),
             findUnique: vi.fn(async () => null),
             findMany: vi.fn(async () => []),
+            count: vi.fn(async () => 0),
             update: vi.fn(async () => ({ id: "unit-1" })),
         },
         address: { update: vi.fn(async () => ({ id: "address-1" })) },
@@ -84,7 +85,20 @@ describe("unitRepository", () => {
         expect(prisma.hotelUnit.findMany).toHaveBeenCalledWith({
             where: { hotelId: "hotel-1" },
             select: UNIT_FIELDS,
-            orderBy: { createdAt: "asc" },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        });
+    });
+
+    it("paginates units and counts all units of the hotel", async () => {
+        await repository.listByHotel("hotel-1", { skip: 10, take: 5 });
+        await repository.countByHotel("hotel-1");
+
+        expect(prisma.hotelUnit.findMany.mock.calls[0][0]).toMatchObject({
+            skip: 10,
+            take: 5,
+        });
+        expect(prisma.hotelUnit.count).toHaveBeenCalledWith({
+            where: { hotelId: "hotel-1" },
         });
     });
 

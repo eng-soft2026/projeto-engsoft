@@ -1,5 +1,7 @@
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import { ConflictError, ERROR_CODES } from "../lib/errors.js";
 import { isUniqueConstraintViolation } from "../lib/prisma-errors.js";
+import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { amenityRepository as defaultAmenityRepository } from "../repositories/amenity-repository.js";
 
 function createAmenityAlreadyExistsError() {
@@ -10,8 +12,19 @@ function createAmenityAlreadyExistsError() {
 }
 
 export function createAmenityService({ amenityRepository }) {
-    function listAmenities(manager) {
-        return amenityRepository.listAvailableTo(manager.id);
+    async function listAmenities(
+        manager,
+        { page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
+        const skipTake = getSkipTake({ page, pageSize });
+        const [items, total] = await Promise.all([
+            amenityRepository.listAvailableTo(manager.id, skipTake),
+            amenityRepository.countAvailableTo(manager.id),
+        ]);
+        return {
+            items,
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
     async function createAmenity(manager, { name }) {

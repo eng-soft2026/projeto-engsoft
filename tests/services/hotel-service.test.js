@@ -91,9 +91,11 @@ function createWorld(initialHotel) {
         listByManager: vi.fn(async () =>
             state.hotel ? [{ ...state.hotel }] : [],
         ),
+        countByManager: vi.fn(async () => (state.hotel ? 1 : 0)),
         listForReview: vi.fn(async () =>
             state.hotel ? [{ ...state.hotel }] : [],
         ),
+        countForReview: vi.fn(async () => (state.hotel ? 1 : 0)),
         updateFieldsIfStatus: vi.fn(async (id, expectedStatus, data) => {
             if (!hasHotelWithStatus(id, expectedStatus)) {
                 return false;
@@ -231,12 +233,24 @@ describe("hotelService", () => {
         it("lists the hotels the manager owns or co-manages", async () => {
             const { service, hotelRepository } = createWorld(buildHotel(DRAFT));
 
-            const hotels = await service.listManagedHotels(MANAGER);
+            const result = await service.listManagedHotels(MANAGER, {
+                page: 2,
+                pageSize: 10,
+            });
 
             expect(hotelRepository.listByManager).toHaveBeenCalledWith(
                 "manager-1",
+                { skip: 10, take: 10 },
             );
-            expect(hotels).toHaveLength(1);
+            expect(hotelRepository.countByManager).toHaveBeenCalledWith(
+                "manager-1",
+            );
+            expect(result).toEqual({
+                items: [buildHotel(DRAFT)],
+                page: 2,
+                pageSize: 10,
+                total: 1,
+            });
         });
     });
 
@@ -248,12 +262,24 @@ describe("hotelService", () => {
 
             const hotels = await service.listHotelsForReview(ADMIN, {
                 status: "UNDER_REVIEW",
+                page: 3,
+                pageSize: 5,
             });
 
             expect(hotelRepository.listForReview).toHaveBeenCalledWith({
                 status: "UNDER_REVIEW",
+                skip: 10,
+                take: 5,
             });
-            expect(hotels).toHaveLength(1);
+            expect(hotelRepository.countForReview).toHaveBeenCalledWith({
+                status: "UNDER_REVIEW",
+            });
+            expect(hotels).toEqual({
+                items: [buildHotel(UNDER_REVIEW)],
+                page: 3,
+                pageSize: 5,
+                total: 1,
+            });
         });
 
         it("lists every status without a filter", async () => {
@@ -262,6 +288,11 @@ describe("hotelService", () => {
             await service.listHotelsForReview(ADMIN);
 
             expect(hotelRepository.listForReview).toHaveBeenCalledWith({
+                status: undefined,
+                skip: 0,
+                take: 20,
+            });
+            expect(hotelRepository.countForReview).toHaveBeenCalledWith({
                 status: undefined,
             });
         });

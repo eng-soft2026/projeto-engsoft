@@ -32,6 +32,28 @@ describe("paginationQuerySchema", () => {
         ).toEqual({ page: 1, pageSize: MAX_PAGE_SIZE });
     });
 
+    it("accepts a page with the largest safe offset at the maximum page size", () => {
+        const page = Math.floor(Number.MAX_SAFE_INTEGER / MAX_PAGE_SIZE) + 1;
+
+        expect(
+            parseWithSchema(paginationQuerySchema, {
+                page: String(page),
+                pageSize: String(MAX_PAGE_SIZE),
+            }),
+        ).toEqual({ page, pageSize: MAX_PAGE_SIZE });
+    });
+
+    it("rejects a page whose offset exceeds the safe integer limit", () => {
+        const page = Math.floor(Number.MAX_SAFE_INTEGER / MAX_PAGE_SIZE) + 2;
+
+        expect(() =>
+            parseWithSchema(paginationQuerySchema, {
+                page: String(page),
+                pageSize: String(MAX_PAGE_SIZE),
+            }),
+        ).toThrow(ValidationError);
+    });
+
     it("rejects a page size above the maximum", () => {
         expect(() =>
             parseWithSchema(paginationQuerySchema, {

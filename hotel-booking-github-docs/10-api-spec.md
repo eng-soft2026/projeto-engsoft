@@ -11,6 +11,29 @@
 }
 ```
 
+### Listas paginadas
+
+As rotas `GET /api/hotels`, `GET /api/admin/hotels`, `GET /api/hotels/:id/units`, `GET /api/hotels/:id/room-types`, `GET /api/units/:id/rooms` e `GET /api/amenities` aceitam os parâmetros opcionais de query:
+
+- `page`: número inteiro positivo da página; padrão `1`.
+- `pageSize`: número inteiro positivo de itens por página; padrão `20`, máximo `100`.
+
+Valores não inteiros, menores que `1` ou `pageSize` maior que `100` são inválidos e respondem `400 VALIDATION_ERROR`. Em caso de sucesso, essas rotas retornam:
+
+```json
+{
+    "success": true,
+    "data": {
+        "items": [],
+        "page": 1,
+        "pageSize": 20,
+        "total": 0
+    }
+}
+```
+
+`items` contém os registros da página solicitada; `page` e `pageSize` informam os valores aplicados (incluindo os padrões quando omitidos); `total` é a quantidade total de registros que correspondem aos filtros da consulta, antes da paginação.
+
 ### Erro
 
 ```json
@@ -120,7 +143,7 @@ POST /api/hotels/:id/policies
 ```
 
 - `POST /api/hotels`: apenas `MANAGER`. Corpo: `name`, `description`, `category`, `cnpj` (com ou sem máscara, numérico ou alfanumérico, RN119) e `email`. O proprietário é o usuário da sessão e o status inicial é sempre `DRAFT`; `status`, `ownerUserId` e `isActive` enviados no corpo são ignorados. Responde `201` com o hotel.
-- `GET /api/hotels`: apenas `MANAGER`. Lista os hotéis de que o usuário é proprietário ou gestor adicional, do mais recente ao mais antigo.
+- `GET /api/hotels?page=&pageSize=`: apenas `MANAGER`. Lista os hotéis de que o usuário é proprietário ou gestor adicional, do mais recente ao mais antigo, com paginação conforme o contrato de listas paginadas.
 - `GET /api/hotels/:id`: `MANAGER` proprietário, `MANAGER` gestor adicional ou `ADMIN`. Devolve o hotel, o resumo do proprietário (`id`, `name`, `email`) e as `reviewNotes` (`id`, `fromStatus`, `toStatus`, `notes`, `createdAt`), da mais recente para a mais antiga e sem o id do administrador. `managers` (`id`, `name`, `email` dos gestores adicionais) só vai para o proprietário e para o `ADMIN`. Hotel de quem não é gestor responde `404 HOTEL_NOT_FOUND`, sem revelar que ele existe.
 - `PATCH /api/hotels/:id`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT` (RN120); em outro status responde `409 INVALID_HOTEL_STATUS`. Aceita os campos do cadastro, ao menos um.
 - `POST /api/hotels/:id/submit-review`: proprietário ou gestor adicional; `DRAFT` → `UNDER_REVIEW`. Não recebe corpo.
@@ -145,7 +168,8 @@ GET /api/rooms/:id/amenities
 PUT /api/rooms/:id/amenities
 ```
 
-- `GET /api/amenities` (`MANAGER`): comodidades ativas globais e as criadas pelo próprio gestor. `POST /api/amenities` (`MANAGER`) recebe `name` (2 a 100 caracteres) e cria uma comodidade própria (`isGlobal: false`, RF027). Nome já usado por uma global ou pelo próprio gestor responde `409 AMENITY_ALREADY_EXISTS`. Comodidades globais só entram por seed (RN137).
+- `GET /api/amenities?page=&pageSize=` (`MANAGER`): comodidades ativas globais e as criadas pelo próprio gestor, em ordem alfabética, com paginação conforme o contrato de listas paginadas.
+- `POST /api/amenities` (`MANAGER`) recebe `name` (2 a 100 caracteres) e cria uma comodidade própria (`isGlobal: false`, RF027). Nome já usado por uma global ou pelo próprio gestor responde `409 AMENITY_ALREADY_EXISTS`. Comodidades globais só entram por seed (RN137).
 - `PUT` substitui o conjunto de comodidades do hotel, da unidade, do tipo ou do quarto (RF023-026). Corpo: `amenityIds`, lista (até 100) de UUIDs; repetidos são unidos e a lista vazia limpa o conjunto. Cada comodidade deve estar ativa e ser global ou criada pelo proprietário ou por um gestor adicional do hotel; senão `404 AMENITY_NOT_FOUND`. Só o `MANAGER` proprietário ou adicional, com o hotel em `DRAFT` (RN120, RN135). `GET` aceita também o `ADMIN`. Item de hotel alheio responde `404` (`HOTEL_NOT_FOUND`, `UNIT_NOT_FOUND`, `ROOM_TYPE_NOT_FOUND` ou `ROOM_NOT_FOUND`).
 
 ### Units
@@ -160,7 +184,7 @@ POST /api/units/:id/blocks
 
 - No código, o segmento dinâmico de `/api/hotels/...` chama-se `[id]`, porque o Next não aceita dois nomes diferentes no mesmo nível. Ele continua sendo o id do hotel.
 - `POST /api/hotels/:hotelId/units`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT` (RN124); em outro status responde `409 INVALID_HOTEL_STATUS`. Corpo: `name`, `email`, `checkInTime` e `checkOutTime` (`HH:mm`, RN022), `overbookingPercentage` (inteiro de 0 a 10, padrão 0, RN046-048), `address` (`zipCode`, `street`, `number`, `complement` opcional, `neighborhood`, `city`, `state`) e `phones` (1 a 5, RN125). `latitude` e `longitude` enviadas no corpo são ignoradas (RN126). Unidade, endereço e telefones são gravados na mesma transação. Responde `201` com a unidade.
-- `GET /api/hotels/:hotelId/units`: `MANAGER` proprietário, gestor adicional ou `ADMIN`. Lista as unidades do hotel, da mais antiga à mais recente. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`.
+- `GET /api/hotels/:hotelId/units?page=&pageSize=`: `MANAGER` proprietário, gestor adicional ou `ADMIN`. Lista as unidades do hotel, da mais antiga à mais recente, com paginação conforme o contrato de listas paginadas. Hotel de outro gestor responde `404 HOTEL_NOT_FOUND`.
 - `GET /api/units/:id`: `MANAGER` proprietário, gestor adicional ou `ADMIN`. Devolve a unidade com `address` (com `latitude` e `longitude`, hoje `null`) e `phones` (`id`, `phone`). Unidade de hotel alheio responde `404 UNIT_NOT_FOUND`.
 - `PATCH /api/units/:id`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT`. Aceita os campos do cadastro, ao menos um. `address` é enviado completo e `phones` substitui a lista (RN125, RN126). `isActive: false` desativa a unidade de forma definitiva; `isActive: true` responde `400`. Não há `DELETE` (RN127).
 - Um overbooking acima de 10, ou acima de `MAX_OVERBOOKING_PERCENT` quando ele é menor, responde `400 VALIDATION_ERROR`.
@@ -184,6 +208,8 @@ POST /api/rooms/:id/blocks
 
 - No código, o segmento dinâmico é `[id]` em todas as rotas (`/api/hotels/[id]/room-types`, `/api/units/[id]/rooms`), como nas unidades. Em `/api/units/:unitId/rooms`, `unitId` é o id da unidade. `POST /api/rooms/:id/blocks` não foi implementada (RF020).
 - Acesso: criar, alterar e apagar são do `MANAGER` proprietário ou adicional do hotel; as leituras (`GET`) também aceitam `ADMIN`. Hotel, unidade, tipo ou quarto de outro gestor responde `404`, sem revelar que existe. As regras de status do hotel estão no RN129.
+- `GET /api/hotels/:hotelId/room-types?page=&pageSize=`: lista os tipos de acomodação do hotel em ordem de criação crescente, com paginação conforme o contrato de listas paginadas.
+- `GET /api/units/:unitId/rooms?page=&pageSize=`: lista os quartos da unidade em ordem crescente pelo número do quarto, com paginação conforme o contrato de listas paginadas.
 - `POST /api/hotels/:hotelId/room-types`: `name`, `description`, `maxGuests` (1 a 50), `areaM2` e `defaultPrice` (positivos, até 2 casas decimais, aceitos como número ou texto) e `beds` (1 a 10 itens `{ bedType, quantity }`, `bedType` em `SINGLE | DOUBLE | QUEEN | KING | SOFA_BED`, sem repetir, RN128). Responde `201`; valores monetários e área voltam como texto com 2 casas (`"350.00"`).
 - `PATCH /api/room-types/:id`: ao menos um campo; `beds` substitui a lista; `isActive: false` desativa de forma definitiva e `isActive: true` responde `400`. Tipo desativado responde `409 ROOM_TYPE_INACTIVE`.
 - `POST /api/units/:unitId/rooms`: `roomTypeId` (do mesmo hotel da unidade, RN009, RN132), `number` (até 20 caracteres, único na unidade, RN008), `floor` (inteiro de -5 a 200), `isAccessible` (padrão `false`), `administrativeNotes` (opcional), `status` (`AVAILABLE`, `UNAVAILABLE` ou `MAINTENANCE`, padrão `AVAILABLE`, RN130) e `price` (opcional, preço do quarto, RN010). Responde `201`.
@@ -245,7 +271,7 @@ POST /api/admin/hotels/:id/unblock
 GET /api/admin/review-reports
 ```
 
-- `GET /api/admin/hotels?status=`: apenas `ADMIN`. Lista até 100 hotéis (`updatedAt` decrescente) com o resumo do proprietário (sem CPF). O filtro `status` (`DRAFT`, `UNDER_REVIEW`, `PUBLISHED` ou `BLOCKED`) é opcional; sem ele lista todos os status.
+- `GET /api/admin/hotels?status=&page=&pageSize=`: apenas `ADMIN`. Lista hotéis (`updatedAt` decrescente) com o resumo do proprietário (sem CPF), usando a paginação do contrato de listas paginadas. O filtro `status` (`DRAFT`, `UNDER_REVIEW`, `PUBLISHED` ou `BLOCKED`) é opcional e combina-se com a paginação; `total` considera somente os hotéis que correspondem ao status informado. Sem `status`, lista todos os status.
 - As quatro ações de hotel são exclusivas do `ADMIN`, exigem corpo JSON com `reason` (1 a 1000 caracteres, RN108), gravam o `AUDIT_LOG` na mesma transação da mudança de status (RN070, RN122) e respondem `200` com o hotel atualizado. Um status de origem incompatível responde `409 INVALID_HOTEL_STATUS`.
     - `approve`: `UNDER_REVIEW` → `PUBLISHED`.
     - `request-changes`: `UNDER_REVIEW` → `DRAFT`, com `HOTEL_REVIEW_NOTE` (RN105).

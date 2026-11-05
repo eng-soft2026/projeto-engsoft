@@ -86,6 +86,7 @@ function createWorld({
                 : null,
         ),
         listByHotel: vi.fn(async () => [buildStoredUnit()]),
+        countByHotel: vi.fn(async () => 1),
         updateFields: vi.fn(async () => {
             calls.push("updateFields");
         }),
@@ -312,11 +313,25 @@ describe("unitService.listUnits", () => {
     it("lists the units of the owner hotel with times as HH:mm", async () => {
         const world = createWorld();
 
-        const units = await world.service.listUnits(MANAGER, HOTEL_ID);
+        const result = await world.service.listUnits(MANAGER, HOTEL_ID, {
+            page: 2,
+            pageSize: 5,
+        });
 
-        expect(units).toHaveLength(1);
-        expect(units[0].checkInTime).toBe("14:00");
-        expect(units[0]).not.toHaveProperty("hotel");
+        expect(world.unitRepository.listByHotel).toHaveBeenCalledWith(
+            HOTEL_ID,
+            { skip: 5, take: 5 },
+        );
+        expect(world.unitRepository.countByHotel).toHaveBeenCalledWith(
+            HOTEL_ID,
+        );
+        expect(result).toMatchObject({
+            page: 2,
+            pageSize: 5,
+            total: 1,
+            items: [{ checkInTime: "14:00" }],
+        });
+        expect(result.items[0]).not.toHaveProperty("hotel");
     });
 
     it("lets the administrator read any hotel", async () => {
@@ -324,7 +339,12 @@ describe("unitService.listUnits", () => {
 
         await expect(
             world.service.listUnits(ADMIN, HOTEL_ID),
-        ).resolves.toHaveLength(1);
+        ).resolves.toMatchObject({
+            items: [expect.objectContaining({ id: UNIT_ID })],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
     });
 
     it("answers 404 for a hotel of another manager and for a customer", async () => {

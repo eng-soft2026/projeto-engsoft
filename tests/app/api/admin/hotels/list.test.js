@@ -33,31 +33,68 @@ describe("GET /api/admin/hotels", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(ADMIN);
-        listHotelsForReview.mockResolvedValue(HOTELS);
+        listHotelsForReview.mockResolvedValue({
+            items: HOTELS,
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
     });
 
     it("lists the hotels that wait for review, filtered by status", async () => {
         const response = await GET(createGetRequest("?status=UNDER_REVIEW"));
 
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ success: true, data: HOTELS });
+        expect(await response.json()).toEqual({
+            success: true,
+            data: { items: HOTELS, page: 1, pageSize: 20, total: 1 },
+        });
         expect(requireRole).toHaveBeenCalledWith(["ADMIN"]);
         expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {
             status: "UNDER_REVIEW",
+            page: 1,
+            pageSize: 20,
         });
     });
 
     it("lists every status without a filter", async () => {
         await GET(createGetRequest());
 
-        expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {});
+        expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {
+            page: 1,
+            pageSize: 20,
+        });
+    });
+
+    it("preserves status when custom pagination is provided", async () => {
+        await GET(createGetRequest("?status=UNDER_REVIEW&page=2&pageSize=7"));
+
+        expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {
+            status: "UNDER_REVIEW",
+            page: 2,
+            pageSize: 7,
+        });
     });
 
     it("ignores unknown query parameters", async () => {
         await GET(createGetRequest("?limit=100000&owner=manager-1"));
 
-        expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {});
+        expect(listHotelsForReview).toHaveBeenCalledWith(ADMIN, {
+            page: 1,
+            pageSize: 20,
+        });
     });
+
+    it.each(["?page=0", "?pageSize=101", "?page=1.5"])(
+        "returns 400 for invalid pagination %s",
+        async (query) => {
+            const response = await GET(createGetRequest(query));
+
+            expect(response.status).toBe(400);
+            expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+            expect(listHotelsForReview).not.toHaveBeenCalled();
+        },
+    );
 
     it.each(["ARCHIVED", "", "draft"])(
         "returns 400 for the status %j",
