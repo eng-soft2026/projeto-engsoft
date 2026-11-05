@@ -12,6 +12,7 @@ function createFakePrisma() {
             create: vi.fn(async () => ({ id: "room-1" })),
             findUnique: vi.fn(async () => null),
             findMany: vi.fn(async () => []),
+            count: vi.fn(async () => 0),
             update: vi.fn(async () => ({ id: "room-1" })),
             delete: vi.fn(async () => ({ id: "room-1" })),
         },
@@ -41,6 +42,23 @@ describe("roomRepository", () => {
     it("reads only the open price row (valid_until null) in the public fields", () => {
         expect(ROOM_FIELDS.priceHistory.where).toEqual({ validUntil: null });
         expect(ROOM_FIELDS.priceHistory.take).toBe(1);
+    });
+
+    it("paginates rooms in stable order and counts all rooms of the unit", async () => {
+        await repository.listByUnit("unit-1", { skip: 10, take: 5 });
+        await repository.countByUnit("unit-1");
+
+        expect(prisma.room.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { unitId: "unit-1" },
+                orderBy: [{ number: "asc" }, { id: "asc" }],
+                skip: 10,
+                take: 5,
+            }),
+        );
+        expect(prisma.room.count).toHaveBeenCalledWith({
+            where: { unitId: "unit-1" },
+        });
     });
 
     it("create nests the first type history row and the first price row", async () => {

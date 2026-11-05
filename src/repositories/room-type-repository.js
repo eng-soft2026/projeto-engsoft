@@ -50,11 +50,19 @@ export function createRoomTypeRepository(getClient = getPrisma) {
             });
         },
 
-        listByHotel(hotelId, client = getClient()) {
+        listByHotel(hotelId, { skip, take } = {}, client = getClient()) {
             return client.roomType.findMany({
                 where: { hotelId },
                 select: ROOM_TYPE_FIELDS,
-                orderBy: { createdAt: "asc" },
+                orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
+            });
+        },
+
+        countByHotel(hotelId, client = getClient()) {
+            return client.roomType.count({
+                where: { hotelId },
             });
         },
 
