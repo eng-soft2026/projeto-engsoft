@@ -5,7 +5,6 @@ Working notes for Claude Code and the team. The spec in `hotel-booking-github-do
 ## Tooling gaps (fix, then remove from this list)
 
 - [ ] Vitest still runs with `passWithNoTests`. Remove it once the availability tests from `16-testing-quality.md` cover the main flows.
-- [ ] Obsolete root `README.md` (old "resort" scope). Rewrite it or mark it obsolete and point to `hotel-booking-github-docs/`.
 - [ ] Legacy entities in `src/domain/` use Portuguese names and 2-space indentation. Migrate into `src/modules/` when touched.
 
 ## Done
@@ -138,3 +137,4 @@ Add one line per decision made during implementation: date, decision, doc update
 - 2026-10-14: The architecture guards (QA-17) freeze the three current `console.*` users in `PENDING_LOGGER_MIGRATION` instead of waiting for the logger; a test fails if the list differs from the files that use `console`, so QA-18 must empty it. Only `//` comments are banned (DT012), not block comments, and `scripts/` stays outside the rules (`scripts/check-mysql-constraints.mjs` uses `$transaction`). Doc: `CLAUDE.md`.
 - 2026-10-14: QA-24: `mariadb` is forced to 3.5.4 under `@prisma/adapter-mariadb` (`overrides`, the adapter pins 3.4.5); `GHSA-ggr8-5vv4-36mx` (`deepmerge-ts`) and `GHSA-3f6p-5ww8-9rcr` (`mysql2`) stay in `scripts/npm-audit-allowlist.json` because they come only from the `prisma` CLI (a devDependency that npm counts as production as an optional peer of `@prisma/client`) and the only fix npm offers is prisma 6. The audit filters `npm audit --json` through a script because npm cannot ignore advisory IDs. Secret scanning runs the gitleaks Docker image instead of `gitleaks-action`, which needs a paid license on organization repositories. The `security` job stays out of the ruleset for now (team decision). Doc: 15, `CLAUDE.md`.
 - 2026-10-14: QA-04: the integration tests call the services directly (not the Route Handlers); the 400 cases parse the input with the real Zod schema and the 401 case runs `requireAuth` with only `auth()` mocked, so the HTTP mapping stays covered by `tests/app/api/**` and `npm run smoke`. History rows are compared by `valid_until` (closed first) because `valid_from` is `DATETIME(0)` and two changes in the same second tie. Doc: none.
+- Issue #<239> (README): README rewritten with the current scope, stack, run steps, test commands and the documentation map.
