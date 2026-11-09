@@ -69,11 +69,19 @@ export function createUnitRepository(getClient = getPrisma) {
             });
         },
 
-        listByHotel(hotelId, client = getClient()) {
+        listByHotel(hotelId, { skip, take } = {}, client = getClient()) {
             return client.hotelUnit.findMany({
                 where: { hotelId },
                 select: UNIT_FIELDS,
-                orderBy: { createdAt: "asc" },
+                orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
+            });
+        },
+
+        countByHotel(hotelId, client = getClient()) {
+            return client.hotelUnit.count({
+                where: { hotelId },
             });
         },
 

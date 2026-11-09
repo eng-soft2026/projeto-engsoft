@@ -62,11 +62,19 @@ export function createRoomRepository(getClient = getPrisma) {
             });
         },
 
-        listByUnit(unitId, client = getClient()) {
+        listByUnit(unitId, { skip, take } = {}, client = getClient()) {
             return client.room.findMany({
                 where: { unitId },
                 select: ROOM_FIELDS,
-                orderBy: { number: "asc" },
+                orderBy: [{ number: "asc" }, { id: "asc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
+            });
+        },
+
+        countByUnit(unitId, client = getClient()) {
+            return client.room.count({
+                where: { unitId },
             });
         },
 
