@@ -5,6 +5,7 @@ import { jsonError, jsonSuccess } from "../../../../../lib/route-response.js";
 import { parseWithSchema } from "../../../../../lib/validation.js";
 import { requireRole } from "../../../../../modules/auth/guards.js";
 import { hotelParamsSchema } from "../../../../../schemas/hotel-schemas.js";
+import { paginationQuerySchema } from "../../../../../schemas/pagination.js";
 import { createRoomTypeSchema } from "../../../../../schemas/room-type-schemas.js";
 import { roomTypeService } from "../../../../../services/room-type-service.js";
 import { withRequestLogging } from "../../../../../lib/request-logging.js";
@@ -20,8 +21,17 @@ export const GET = withRequestLogging(
                 USER_ROLES.ADMIN,
             ]);
             const { id } = await parseRouteParams(context, hotelParamsSchema);
-            const roomTypes = await roomTypeService.listRoomTypes(user, id);
-            return jsonSuccess(roomTypes);
+            const { searchParams } = new URL(request.url);
+            const pagination = parseWithSchema(
+                paginationQuerySchema,
+                Object.fromEntries(searchParams),
+            );
+            const result = await roomTypeService.listRoomTypes(
+                user,
+                id,
+                pagination,
+            );
+            return jsonSuccess(result);
         } catch (error) {
             return jsonError(error, request);
         }
