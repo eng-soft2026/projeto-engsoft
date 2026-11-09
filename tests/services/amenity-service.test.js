@@ -7,6 +7,7 @@ const MANAGER = Object.freeze({ id: "manager-1", role: "MANAGER" });
 function createWorld({ isTaken = false, createError } = {}) {
     const amenityRepository = {
         listAvailableTo: vi.fn(async () => [{ id: "a1" }]),
+        countAvailableTo: vi.fn(async () => 1),
         existsVisibleByName: vi.fn(async () => isTaken),
         create: vi.fn(async (data) => {
             if (createError) {
@@ -25,10 +26,22 @@ describe("amenityService.listAmenities", () => {
     it("lists the global amenities and the ones created by the manager", async () => {
         const { service, amenityRepository } = createWorld();
 
-        const amenities = await service.listAmenities(MANAGER);
+        const result = await service.listAmenities(MANAGER, {
+            page: 2,
+            pageSize: 5,
+        });
 
-        expect(amenities).toEqual([{ id: "a1" }]);
+        expect(result).toEqual({
+            items: [{ id: "a1" }],
+            page: 2,
+            pageSize: 5,
+            total: 1,
+        });
         expect(amenityRepository.listAvailableTo).toHaveBeenCalledWith(
+            MANAGER.id,
+            { skip: 5, take: 5 },
+        );
+        expect(amenityRepository.countAvailableTo).toHaveBeenCalledWith(
             MANAGER.id,
         );
     });

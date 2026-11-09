@@ -1,7 +1,9 @@
 import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from "../constants/audit.js";
 import { HOTEL_STATUSES } from "../constants/hotel-statuses.js";
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import { USER_ROLES } from "../constants/user-roles.js";
 import { ERROR_CODES, ForbiddenError, NotFoundError } from "../lib/errors.js";
+import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { logger as defaultLogger, serializeError } from "../lib/logger.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
@@ -107,13 +109,35 @@ export function createHotelService({
         });
     }
 
-    async function listManagedHotels(manager) {
-        return hotelRepository.listByManager(manager.id);
+    async function listManagedHotels(
+        manager,
+        { page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
+        const skipTake = getSkipTake({ page, pageSize });
+        const [items, total] = await Promise.all([
+            hotelRepository.listByManager(manager.id, skipTake),
+            hotelRepository.countByManager(manager.id),
+        ]);
+        return {
+            items,
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
-    async function listHotelsForReview(admin, { status } = {}) {
+    async function listHotelsForReview(
+        admin,
+        { status, page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
         assertAdmin(admin);
-        return hotelRepository.listForReview({ status });
+        const skipTake = getSkipTake({ page, pageSize });
+        const [items, total] = await Promise.all([
+            hotelRepository.listForReview({ status, ...skipTake }),
+            hotelRepository.countForReview({ status }),
+        ]);
+        return {
+            items,
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
     async function getHotel(user, hotelId) {

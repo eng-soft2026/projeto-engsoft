@@ -123,15 +123,29 @@ const QUERIES = [
     ["hotel.create", () => hotels.create(NEW_HOTEL)],
     ["hotel.findById", () => hotels.findById(ID)],
     ["hotel.findByIdWithReviewNotes", () => hotels.findByIdWithReviewNotes(ID)],
-    ["hotel.listByManager", () => hotels.listByManager(ID)],
+    [
+        "hotel.listByManager",
+        () => hotels.listByManager(ID, { skip: 10, take: 20 }),
+    ],
+    ["hotel.countByManager", () => hotels.countByManager(ID)],
     ["hotelManager.exists", () => hotelManagers.exists(ID, ID)],
     ["hotelManager.create", () => hotelManagers.create(ID, ID)],
     ["hotelManager.delete", () => hotelManagers.delete(ID, ID)],
     [
         "hotel.listForReview with a status",
-        () => hotels.listForReview({ status: "UNDER_REVIEW" }),
+        () =>
+            hotels.listForReview({
+                status: "UNDER_REVIEW",
+                skip: 10,
+                take: 20,
+            }),
     ],
     ["hotel.listForReview without a status", () => hotels.listForReview({})],
+    [
+        "hotel.countForReview with a status",
+        () => hotels.countForReview({ status: "UNDER_REVIEW" }),
+    ],
+    ["hotel.countForReview without a status", () => hotels.countForReview({})],
     [
         "hotel.updateFieldsIfStatus",
         () =>
@@ -177,7 +191,11 @@ const QUERIES = [
     ["hotelUnit.create", () => units.create(NEW_UNIT)],
     ["hotelUnit.findById", () => units.findById(ID)],
     ["hotelUnit.findByIdWithHotel", () => units.findByIdWithHotel(ID)],
-    ["hotelUnit.listByHotel", () => units.listByHotel(ID)],
+    [
+        "hotelUnit.listByHotel",
+        () => units.listByHotel(ID, { skip: 10, take: 20 }),
+    ],
+    ["hotelUnit.countByHotel", () => units.countByHotel(ID)],
     [
         "hotelUnit.updateFields",
         () =>
@@ -194,7 +212,11 @@ const QUERIES = [
     ["roomType.create", () => roomTypes.create(NEW_ROOM_TYPE)],
     ["roomType.findById", () => roomTypes.findById(ID)],
     ["roomType.findByIdWithHotel", () => roomTypes.findByIdWithHotel(ID)],
-    ["roomType.listByHotel", () => roomTypes.listByHotel(ID)],
+    [
+        "roomType.listByHotel",
+        () => roomTypes.listByHotel(ID, { skip: 10, take: 20 }),
+    ],
+    ["roomType.countByHotel", () => roomTypes.countByHotel(ID)],
     [
         "roomType.updateFields",
         () =>
@@ -221,7 +243,8 @@ const QUERIES = [
         () => rooms.create({ ...NEW_ROOM, price: undefined }),
     ],
     ["room.findByIdWithAccess", () => rooms.findByIdWithAccess(ID)],
-    ["room.listByUnit", () => rooms.listByUnit(ID)],
+    ["room.listByUnit", () => rooms.listByUnit(ID, { skip: 10, take: 20 })],
+    ["room.countByUnit", () => rooms.countByUnit(ID)],
     [
         "room.updateFields",
         () =>
@@ -249,7 +272,11 @@ const QUERIES = [
         "amenity.create",
         () => amenities.create({ createdByUserId: ID, name: "Piscina" }),
     ],
-    ["amenity.findMany (available)", () => amenities.listAvailableTo(ID)],
+    [
+        "amenity.findMany (available)",
+        () => amenities.listAvailableTo(ID, { skip: 10, take: 20 }),
+    ],
+    ["amenity.count (available)", () => amenities.countAvailableTo(ID)],
     [
         "amenity.findMany (by ids)",
         () => amenities.findIdsAvailableTo([ID], [ID]),
