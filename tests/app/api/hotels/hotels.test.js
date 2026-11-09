@@ -35,9 +35,12 @@ describe("/api/hotels", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listManagedHotels.mockResolvedValue([
-            { id: "hotel-1", status: "DRAFT" },
-        ]);
+        listManagedHotels.mockResolvedValue({
+            items: [{ id: "hotel-1", status: "DRAFT" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         createHotel.mockImplementation(async (owner, input) => ({
             id: "hotel-1",
             ownerUserId: owner.id,
@@ -47,7 +50,7 @@ describe("/api/hotels", () => {
     });
 
     describe("GET", () => {
-        it("lists the hotels of the authenticated manager", async () => {
+        it("lists the manager hotels with default pagination", async () => {
             const response = await GET(
                 new Request("http://localhost/api/hotels"),
             );
@@ -55,10 +58,39 @@ describe("/api/hotels", () => {
             expect(response.status).toBe(200);
             expect(await response.json()).toEqual({
                 success: true,
-                data: [{ id: "hotel-1", status: "DRAFT" }],
+                data: {
+                    items: [{ id: "hotel-1", status: "DRAFT" }],
+                    page: 1,
+                    pageSize: 20,
+                    total: 1,
+                },
             });
             expect(requireRole).toHaveBeenCalledWith(["MANAGER"]);
-            expect(listManagedHotels).toHaveBeenCalledWith(MANAGER);
+            expect(listManagedHotels).toHaveBeenCalledWith(MANAGER, {
+                page: 1,
+                pageSize: 20,
+            });
+        });
+
+        it("passes custom pagination to the service", async () => {
+            await GET(
+                new Request("http://localhost/api/hotels?page=3&pageSize=8"),
+            );
+
+            expect(listManagedHotels).toHaveBeenCalledWith(MANAGER, {
+                page: 3,
+                pageSize: 8,
+            });
+        });
+
+        it("returns 400 for invalid pagination parameters", async () => {
+            const response = await GET(
+                new Request("http://localhost/api/hotels?pageSize=101"),
+            );
+
+            expect(response.status).toBe(400);
+            expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+            expect(listManagedHotels).not.toHaveBeenCalled();
         });
 
         it("returns 401 UNAUTHORIZED without a session", async () => {

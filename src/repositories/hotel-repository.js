@@ -25,8 +25,6 @@ export const OWNER_SUMMARY_FIELDS = Object.freeze({
     email: true,
 });
 
-export const HOTEL_REVIEW_LIST_LIMIT = 100;
-
 const HOTEL_WITH_ACCESS_FIELDS = Object.freeze({
     ...PUBLIC_HOTEL_FIELDS,
     ...MANAGER_ACCESS_FIELDS,
@@ -81,7 +79,7 @@ export function createHotelRepository(getClient = getPrisma) {
             });
         },
 
-        listByManager(userId, client = getClient()) {
+        listByManager(userId, { skip, take } = {}, client = getClient()) {
             return client.hotel.findMany({
                 where: {
                     OR: [
@@ -90,16 +88,36 @@ export function createHotelRepository(getClient = getPrisma) {
                     ],
                 },
                 select: PUBLIC_HOTEL_FIELDS,
-                orderBy: { createdAt: "desc" },
+                orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
             });
         },
 
-        listForReview({ status }, client = getClient()) {
+        countByManager(userId, client = getClient()) {
+            return client.hotel.count({
+                where: {
+                    OR: [
+                        { ownerUserId: userId },
+                        { managers: { some: { userId } } },
+                    ],
+                },
+            });
+        },
+
+        listForReview({ status, skip, take } = {}, client = getClient()) {
             return client.hotel.findMany({
                 where: status ? { status } : {},
                 select: HOTEL_WITH_OWNER_FIELDS,
-                orderBy: { updatedAt: "desc" },
-                take: HOTEL_REVIEW_LIST_LIMIT,
+                orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
+            });
+        },
+
+        countForReview({ status } = {}, client = getClient()) {
+            return client.hotel.count({
+                where: status ? { status } : {},
             });
         },
 

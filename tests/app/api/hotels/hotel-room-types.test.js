@@ -41,17 +41,53 @@ describe("/api/hotels/:id/room-types", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listRoomTypes.mockResolvedValue([{ id: "type-1" }]);
+        listRoomTypes.mockResolvedValue({
+            items: [{ id: "type-1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         createRoomType.mockResolvedValue({ id: "type-1" });
     });
 
-    it("GET lists the room types for a manager or an admin", async () => {
+    it("GET lists room types with default pagination", async () => {
         const response = await GET(new Request(URL), createRouteContext());
 
         expect(response.status).toBe(200);
-        expect((await response.json()).data).toEqual([{ id: "type-1" }]);
+        expect((await response.json()).data).toEqual({
+            items: [{ id: "type-1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         expect(requireRole).toHaveBeenCalledWith(["MANAGER", "ADMIN"]);
-        expect(listRoomTypes).toHaveBeenCalledWith(MANAGER, HOTEL_ID);
+        expect(listRoomTypes).toHaveBeenCalledWith(MANAGER, HOTEL_ID, {
+            page: 1,
+            pageSize: 20,
+        });
+    });
+
+    it("GET passes custom pagination to the service", async () => {
+        await GET(
+            new Request(`${URL}?page=2&pageSize=9`),
+            createRouteContext(),
+        );
+
+        expect(listRoomTypes).toHaveBeenCalledWith(MANAGER, HOTEL_ID, {
+            page: 2,
+            pageSize: 9,
+        });
+    });
+
+    it("GET returns 400 for invalid pagination parameters", async () => {
+        const response = await GET(
+            new Request(`${URL}?pageSize=0`),
+            createRouteContext(),
+        );
+
+        expect(response.status).toBe(400);
+        expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+        expect(listRoomTypes).not.toHaveBeenCalled();
     });
 
     it("POST creates the type with the money as a 2-place string and answers 201", async () => {

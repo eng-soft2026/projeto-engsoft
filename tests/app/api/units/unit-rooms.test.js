@@ -37,16 +37,56 @@ describe("/api/units/:id/rooms", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listRooms.mockResolvedValue([{ id: "room-1" }]);
+        listRooms.mockResolvedValue({
+            items: [{ id: "room-1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         createRoom.mockResolvedValue({ id: "room-1" });
     });
 
-    it("GET lists the rooms of the unit", async () => {
+    it("GET lists rooms with default pagination", async () => {
         const response = await GET(new Request(URL), createRouteContext());
 
         expect(response.status).toBe(200);
-        expect(listRooms).toHaveBeenCalledWith(MANAGER, UNIT_ID);
+        expect(await response.json()).toEqual({
+            success: true,
+            data: {
+                items: [{ id: "room-1" }],
+                page: 1,
+                pageSize: 20,
+                total: 1,
+            },
+        });
+        expect(listRooms).toHaveBeenCalledWith(MANAGER, UNIT_ID, {
+            page: 1,
+            pageSize: 20,
+        });
         expect(requireRole).toHaveBeenCalledWith(["MANAGER", "ADMIN"]);
+    });
+
+    it("GET passes custom pagination to the service", async () => {
+        await GET(
+            new Request(`${URL}?page=3&pageSize=4`),
+            createRouteContext(),
+        );
+
+        expect(listRooms).toHaveBeenCalledWith(MANAGER, UNIT_ID, {
+            page: 3,
+            pageSize: 4,
+        });
+    });
+
+    it("GET returns 400 for invalid pagination parameters", async () => {
+        const response = await GET(
+            new Request(`${URL}?page=1.5`),
+            createRouteContext(),
+        );
+
+        expect(response.status).toBe(400);
+        expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+        expect(listRooms).not.toHaveBeenCalled();
     });
 
     it("POST creates the room with the defaults and a 2-place price, answering 201", async () => {

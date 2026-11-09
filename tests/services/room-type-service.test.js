@@ -56,6 +56,7 @@ function createWorld({
             id === TYPE_ID ? { ...storedType, hotel: { ...hotel } } : null,
         ),
         listByHotel: vi.fn(async () => [storedType]),
+        countByHotel: vi.fn(async () => 1),
         updateFields: vi.fn(async () => {}),
         replaceBeds: vi.fn(async () => {}),
         hasRoomReferences: vi.fn(async () => hasRoomReferences),
@@ -138,14 +139,33 @@ describe("roomTypeService reads", () => {
     });
 
     it("lets the admin read and list", async () => {
-        const { service } = createWorld();
+        const { service, roomTypeRepository } = createWorld();
 
         await expect(
             service.getRoomType(ADMIN, TYPE_ID),
         ).resolves.toBeDefined();
         await expect(
-            service.listRoomTypes(ADMIN, HOTEL_ID),
-        ).resolves.toHaveLength(1);
+            service.listRoomTypes(ADMIN, HOTEL_ID, {
+                page: 2,
+                pageSize: 5,
+            }),
+        ).resolves.toMatchObject({
+            items: [
+                expect.objectContaining({
+                    id: TYPE_ID,
+                    areaM2: "42.50",
+                    defaultPrice: "350.00",
+                }),
+            ],
+            page: 2,
+            pageSize: 5,
+            total: 1,
+        });
+        expect(roomTypeRepository.listByHotel).toHaveBeenCalledWith(HOTEL_ID, {
+            skip: 5,
+            take: 5,
+        });
+        expect(roomTypeRepository.countByHotel).toHaveBeenCalledWith(HOTEL_ID);
     });
 
     it("answers 404 for a manager outside the hotel", async () => {

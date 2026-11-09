@@ -35,11 +35,19 @@ export function createAmenityRepository(getClient = getPrisma) {
             });
         },
 
-        listAvailableTo(userId, client = getClient()) {
+        listAvailableTo(userId, { skip, take } = {}, client = getClient()) {
             return client.amenity.findMany({
                 where: buildAvailabilityFilter([userId]),
                 select: AMENITY_FIELDS,
-                orderBy: { name: "asc" },
+                orderBy: [{ name: "asc" }, { id: "asc" }],
+                ...(skip !== undefined && { skip }),
+                ...(take !== undefined && { take }),
+            });
+        },
+
+        countAvailableTo(userId, client = getClient()) {
+            return client.amenity.count({
+                where: buildAvailabilityFilter([userId]),
             });
         },
 
