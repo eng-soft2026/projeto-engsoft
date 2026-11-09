@@ -3,19 +3,24 @@ import { jsonError, jsonSuccess } from "../../../../lib/route-response.js";
 import { parseWithSchema } from "../../../../lib/validation.js";
 import { requireRole } from "../../../../modules/auth/guards.js";
 import { listHotelsQuerySchema } from "../../../../schemas/hotel-schemas.js";
+import { paginationQuerySchema } from "../../../../schemas/pagination.js";
 import { hotelService } from "../../../../services/hotel-service.js";
 import { withRequestLogging } from "../../../../lib/request-logging.js";
+
+const adminHotelsQuerySchema = paginationQuerySchema.extend(
+    listHotelsQuerySchema.shape,
+);
 
 export const GET = withRequestLogging("/api/admin/hotels", async (request) => {
     try {
         const admin = await requireRole([USER_ROLES.ADMIN]);
         const { searchParams } = new URL(request.url);
         const query = parseWithSchema(
-            listHotelsQuerySchema,
+            adminHotelsQuerySchema,
             Object.fromEntries(searchParams),
         );
-        const hotels = await hotelService.listHotelsForReview(admin, query);
-        return jsonSuccess(hotels);
+        const result = await hotelService.listHotelsForReview(admin, query);
+        return jsonSuccess(result);
     } catch (error) {
         return jsonError(error, request);
     }

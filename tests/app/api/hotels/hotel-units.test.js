@@ -46,20 +46,56 @@ describe("/api/hotels/:id/units", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listUnits.mockResolvedValue([{ id: "unit-1" }]);
+        listUnits.mockResolvedValue({
+            items: [{ id: "unit-1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         createUnit.mockResolvedValue({ id: "unit-1" });
     });
 
     describe("GET", () => {
-        it("lists the units of the hotel", async () => {
+        it("lists the units with default pagination", async () => {
             const response = await GET(new Request(URL), createRouteContext());
 
             expect(response.status).toBe(200);
             expect(await response.json()).toEqual({
                 success: true,
-                data: [{ id: "unit-1" }],
+                data: {
+                    items: [{ id: "unit-1" }],
+                    page: 1,
+                    pageSize: 20,
+                    total: 1,
+                },
             });
-            expect(listUnits).toHaveBeenCalledWith(MANAGER, HOTEL_ID);
+            expect(listUnits).toHaveBeenCalledWith(MANAGER, HOTEL_ID, {
+                page: 1,
+                pageSize: 20,
+            });
+        });
+
+        it("passes custom pagination to the service", async () => {
+            await GET(
+                new Request(`${URL}?page=4&pageSize=6`),
+                createRouteContext(),
+            );
+
+            expect(listUnits).toHaveBeenCalledWith(MANAGER, HOTEL_ID, {
+                page: 4,
+                pageSize: 6,
+            });
+        });
+
+        it("returns 400 for invalid pagination parameters", async () => {
+            const response = await GET(
+                new Request(`${URL}?page=0`),
+                createRouteContext(),
+            );
+
+            expect(response.status).toBe(400);
+            expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+            expect(listUnits).not.toHaveBeenCalled();
         });
 
         it("accepts managers and administrators", async () => {

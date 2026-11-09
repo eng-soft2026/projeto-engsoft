@@ -1,6 +1,8 @@
 import { SYSTEM_SETTING_KEYS } from "../constants/system-settings.js";
 import { PLATFORM_MAX_OVERBOOKING_PERCENT } from "../constants/unit.js";
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import { ERROR_CODES, NotFoundError, ValidationError } from "../lib/errors.js";
+import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
     canManageHotel,
@@ -127,13 +129,24 @@ export function createUnitService({
         return presentUnit(unit);
     }
 
-    async function listUnits(user, hotelId) {
+    async function listUnits(
+        user,
+        hotelId,
+        { page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
         const hotel = await hotelRepository.findById(hotelId);
         if (!hotel || !canViewHotel(user, hotel)) {
             throw createHotelNotFoundError();
         }
-        const units = await unitRepository.listByHotel(hotelId);
-        return units.map(presentUnit);
+        const skipTake = getSkipTake({ page, pageSize });
+        const [units, total] = await Promise.all([
+            unitRepository.listByHotel(hotelId, skipTake),
+            unitRepository.countByHotel(hotelId),
+        ]);
+        return {
+            items: units.map(presentUnit),
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
     async function getUnit(user, unitId) {

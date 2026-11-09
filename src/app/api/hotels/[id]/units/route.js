@@ -5,6 +5,7 @@ import { jsonError, jsonSuccess } from "../../../../../lib/route-response.js";
 import { parseWithSchema } from "../../../../../lib/validation.js";
 import { requireRole } from "../../../../../modules/auth/guards.js";
 import { hotelParamsSchema } from "../../../../../schemas/hotel-schemas.js";
+import { paginationQuerySchema } from "../../../../../schemas/pagination.js";
 import { createUnitSchema } from "../../../../../schemas/unit-schemas.js";
 import { unitService } from "../../../../../services/unit-service.js";
 import { withRequestLogging } from "../../../../../lib/request-logging.js";
@@ -20,8 +21,13 @@ export const GET = withRequestLogging(
                 USER_ROLES.ADMIN,
             ]);
             const { id } = await parseRouteParams(context, hotelParamsSchema);
-            const units = await unitService.listUnits(user, id);
-            return jsonSuccess(units);
+            const { searchParams } = new URL(request.url);
+            const pagination = parseWithSchema(
+                paginationQuerySchema,
+                Object.fromEntries(searchParams),
+            );
+            const result = await unitService.listUnits(user, id, pagination);
+            return jsonSuccess(result);
         } catch (error) {
             return jsonError(error, request);
         }

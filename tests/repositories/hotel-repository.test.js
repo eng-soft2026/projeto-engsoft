@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    HOTEL_REVIEW_LIST_LIMIT,
     MANAGER_ACCESS_FIELDS,
     OWNER_SUMMARY_FIELDS,
     PUBLIC_HOTEL_FIELDS,
@@ -13,6 +12,7 @@ function createFakePrisma() {
             create: vi.fn(async () => ({ id: "hotel-1" })),
             findUnique: vi.fn(async () => null),
             findMany: vi.fn(async () => []),
+            count: vi.fn(async () => 0),
             updateMany: vi.fn(async () => ({ count: 1 })),
         },
     };
@@ -94,19 +94,45 @@ describe("hotelRepository", () => {
                 ],
             },
             select: PUBLIC_HOTEL_FIELDS,
-            orderBy: { createdAt: "desc" },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         });
     });
 
-    it("listForReview filters by status, includes the owner summary and caps the list", async () => {
-        await repository.listForReview({ status: "UNDER_REVIEW" });
+    it("paginates manager hotels and counts all matching hotels", async () => {
+        await repository.listByManager("manager-1", { skip: 20, take: 10 });
+        await repository.countByManager("manager-1");
+
+        expect(prisma.hotel.findMany.mock.calls[0][0]).toMatchObject({
+            skip: 20,
+            take: 10,
+        });
+        expect(prisma.hotel.count).toHaveBeenCalledWith({
+            where: {
+                OR: [
+                    { ownerUserId: "manager-1" },
+                    { managers: { some: { userId: "manager-1" } } },
+                ],
+            },
+        });
+    });
+
+    it("listForReview filters by status, paginates and includes the owner summary", async () => {
+        await repository.listForReview({
+            status: "UNDER_REVIEW",
+            skip: 20,
+            take: 10,
+        });
 
         const [query] = prisma.hotel.findMany.mock.calls[0];
         expect(query.where).toEqual({ status: "UNDER_REVIEW" });
         expect(query.select.owner).toEqual({ select: OWNER_SUMMARY_FIELDS });
-        expect(query.orderBy).toEqual({ updatedAt: "desc" });
-        expect(query.take).toBe(HOTEL_REVIEW_LIST_LIMIT);
-        expect(HOTEL_REVIEW_LIST_LIMIT).toBe(100);
+        expect(query.orderBy).toEqual([{ updatedAt: "desc" }, { id: "desc" }]);
+        expect(query.skip).toBe(20);
+        expect(query.take).toBe(10);
+        await repository.countForReview({ status: "UNDER_REVIEW" });
+        expect(prisma.hotel.count).toHaveBeenCalledWith({
+            where: { status: "UNDER_REVIEW" },
+        });
     });
 
     it("listForReview lists every status without a filter", async () => {
@@ -114,6 +140,8 @@ describe("hotelRepository", () => {
 
         const [query] = prisma.hotel.findMany.mock.calls[0];
         expect(query.where).toEqual({});
+        await repository.countForReview({});
+        expect(prisma.hotel.count).toHaveBeenCalledWith({ where: {} });
     });
 
     describe("updateStatusIfCurrent", () => {

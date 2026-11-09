@@ -24,18 +24,49 @@ describe("/api/amenities", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requireRole.mockResolvedValue(MANAGER);
-        listAmenities.mockResolvedValue([{ id: "a1" }]);
+        listAmenities.mockResolvedValue({
+            items: [{ id: "a1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         createAmenity.mockResolvedValue({ id: "a2" });
     });
 
-    it("GET lists the amenities of a manager", async () => {
+    it("GET lists amenities with default pagination", async () => {
         const response = await GET(
             new Request("http://localhost/api/amenities"),
         );
 
         expect(response.status).toBe(200);
-        expect((await response.json()).data).toEqual([{ id: "a1" }]);
+        expect((await response.json()).data).toEqual({
+            items: [{ id: "a1" }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+        });
         expect(requireRole).toHaveBeenCalledWith(["MANAGER"]);
+        expect(listAmenities).toHaveBeenCalledWith(MANAGER, {
+            page: 1,
+            pageSize: 20,
+        });
+    });
+
+    it("GET passes custom pagination to the service", async () => {
+        await GET(new Request(`${URL}?page=5&pageSize=15`));
+
+        expect(listAmenities).toHaveBeenCalledWith(MANAGER, {
+            page: 5,
+            pageSize: 15,
+        });
+    });
+
+    it("GET returns 400 for invalid pagination parameters", async () => {
+        const response = await GET(new Request(`${URL}?pageSize=101`));
+
+        expect(response.status).toBe(400);
+        expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+        expect(listAmenities).not.toHaveBeenCalled();
     });
 
     it("POST creates the amenity and answers 201", async () => {
