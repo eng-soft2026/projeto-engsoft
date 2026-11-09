@@ -1,4 +1,6 @@
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import { ConflictError, ERROR_CODES, NotFoundError } from "../lib/errors.js";
+import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
     canManageHotel,
@@ -115,13 +117,24 @@ export function createRoomTypeService({
         return presentRoomType(roomType);
     }
 
-    async function listRoomTypes(user, hotelId) {
+    async function listRoomTypes(
+        user,
+        hotelId,
+        { page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
         const hotel = await hotelRepository.findById(hotelId);
         if (!hotel || !canViewHotel(user, hotel)) {
             throw createHotelNotFoundError();
         }
-        const roomTypes = await roomTypeRepository.listByHotel(hotelId);
-        return roomTypes.map(presentRoomType);
+        const skipTake = getSkipTake({ page, pageSize });
+        const [roomTypes, total] = await Promise.all([
+            roomTypeRepository.listByHotel(hotelId, skipTake),
+            roomTypeRepository.countByHotel(hotelId),
+        ]);
+        return {
+            items: roomTypes.map(presentRoomType),
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
     async function getRoomType(user, roomTypeId) {

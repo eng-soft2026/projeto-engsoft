@@ -12,6 +12,7 @@ function createFakePrisma() {
             create: vi.fn(async () => ({ id: "a1" })),
             findMany: vi.fn(async () => [{ id: "a1" }]),
             findFirst: vi.fn(async () => null),
+            count: vi.fn(async () => 0),
         },
         hotelAmenity: association(),
         unitAmenity: association(),
@@ -42,9 +43,29 @@ describe("amenityRepository", () => {
     it("listAvailableTo returns active global amenities and the ones of the user", async () => {
         await repository.listAvailableTo("u1");
 
-        expect(prisma.amenity.findMany.mock.calls[0][0].where).toEqual({
-            isActive: true,
-            OR: [{ isGlobal: true }, { createdByUserId: { in: ["u1"] } }],
+        expect(prisma.amenity.findMany.mock.calls[0][0]).toEqual({
+            where: {
+                isActive: true,
+                OR: [{ isGlobal: true }, { createdByUserId: { in: ["u1"] } }],
+            },
+            select: expect.any(Object),
+            orderBy: [{ name: "asc" }, { id: "asc" }],
+        });
+    });
+
+    it("paginates visible amenities and counts with the same availability filter", async () => {
+        await repository.listAvailableTo("u1", { skip: 10, take: 5 });
+        await repository.countAvailableTo("u1");
+
+        expect(prisma.amenity.findMany.mock.calls[0][0]).toMatchObject({
+            skip: 10,
+            take: 5,
+        });
+        expect(prisma.amenity.count).toHaveBeenCalledWith({
+            where: {
+                isActive: true,
+                OR: [{ isGlobal: true }, { createdByUserId: { in: ["u1"] } }],
+            },
         });
     });
 

@@ -74,6 +74,7 @@ function createWorld({
                 : null,
         ),
         listByUnit: vi.fn(async () => [room]),
+        countByUnit: vi.fn(async () => 1),
         updateFields: vi.fn(async () => {}),
         changeRoomType: vi.fn(async () => {}),
         changePrice: vi.fn(async () => {}),
@@ -268,12 +269,22 @@ describe("roomService reads", () => {
     });
 
     it("lets the admin read and lists the rooms of the unit", async () => {
-        const { service } = createWorld();
+        const { service, roomRepository } = createWorld();
 
         await expect(service.getRoom(ADMIN, ROOM_ID)).resolves.toBeDefined();
-        await expect(service.listRooms(ADMIN, UNIT_ID)).resolves.toHaveLength(
-            1,
-        );
+        await expect(
+            service.listRooms(ADMIN, UNIT_ID, { page: 2, pageSize: 5 }),
+        ).resolves.toMatchObject({
+            items: [expect.objectContaining({ id: ROOM_ID })],
+            page: 2,
+            pageSize: 5,
+            total: 1,
+        });
+        expect(roomRepository.listByUnit).toHaveBeenCalledWith(UNIT_ID, {
+            skip: 5,
+            take: 5,
+        });
+        expect(roomRepository.countByUnit).toHaveBeenCalledWith(UNIT_ID);
     });
 
     it("answers 404 for a manager outside the hotel", async () => {

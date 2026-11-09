@@ -1,10 +1,12 @@
 import { ROOM_STATUSES } from "../constants/room-statuses.js";
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import {
     ConflictError,
     ERROR_CODES,
     NotFoundError,
     ValidationError,
 } from "../lib/errors.js";
+import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { isUniqueConstraintViolation } from "../lib/prisma-errors.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
@@ -192,13 +194,24 @@ export function createRoomService({
         return presentRoom(room);
     }
 
-    async function listRooms(user, unitId) {
+    async function listRooms(
+        user,
+        unitId,
+        { page = 1, pageSize = DEFAULT_PAGE_SIZE } = {},
+    ) {
         const unit = await unitRepository.findByIdWithHotel(unitId);
         if (!unit || !canViewHotel(user, unit.hotel)) {
             throw createUnitNotFoundError();
         }
-        const rooms = await roomRepository.listByUnit(unitId);
-        return rooms.map(presentRoom);
+        const skipTake = getSkipTake({ page, pageSize });
+        const [rooms, total] = await Promise.all([
+            roomRepository.listByUnit(unitId, skipTake),
+            roomRepository.countByUnit(unitId),
+        ]);
+        return {
+            items: rooms.map(presentRoom),
+            ...buildPageMeta({ page, pageSize, total }),
+        };
     }
 
     async function getRoom(user, roomId) {
