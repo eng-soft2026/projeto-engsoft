@@ -290,7 +290,7 @@ describe("additional hotel managers against MySQL", () => {
         });
         await expect(listManagerRows()).resolves.toHaveLength(1);
         const managed = await hotelService.listManagedHotels(coManager);
-        expect(managed.map(({ id }) => id)).toEqual([hotel.id]);
+        expect(managed.items.map(({ id }) => id)).toEqual([hotel.id]);
         const updated = await hotelService.updateHotel(coManager, hotel.id, {
             name: "Hotel Coadministrado",
         });
