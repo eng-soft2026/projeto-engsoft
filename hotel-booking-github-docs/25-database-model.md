@@ -64,6 +64,20 @@ Cada usuário possui apenas um role.
 
 `email` é gravado em minúsculas e `cpf` com 11 dígitos, sem máscara (RN117). O cadastro público só cria `CUSTOMER` ou `MANAGER`; `ADMIN` vem do seed (RN116). `password_hash` nunca é selecionado nas consultas que alimentam respostas da API.
 
+### PASSWORD_RESET_TOKEN
+
+```text
+PASSWORD_RESET_TOKEN
+- id PK
+- user_id FK
+- token_hash UNIQUE
+- expires_at
+- used_at nullable
+- created_at
+```
+
+Token de recuperação de senha (RF004). O token enviado por e-mail tem 32 bytes aleatórios em base64url e só o seu hash SHA-256 (64 caracteres hexadecimais) é gravado. Vale 1 hora e é de uso único: redefinir a senha preenche `used_at`, e um novo pedido do mesmo usuário invalida os tokens ainda ativos (preenchendo `used_at`). Os registros não são apagados.
+
 ## 4. Hotéis e gestores
 
 ### HOTEL

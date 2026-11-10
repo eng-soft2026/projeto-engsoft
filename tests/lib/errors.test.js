@@ -45,6 +45,7 @@ const SPEC_CODES = [
     "INTERNAL_ERROR",
     "SERVICE_UNAVAILABLE",
     "RATE_LIMITED",
+    "INVALID_RESET_TOKEN",
 ];
 
 describe("ERROR_CODES", () => {

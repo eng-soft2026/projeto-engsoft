@@ -157,4 +157,23 @@ describe("prisma migrations", () => {
         );
         expect(body).toMatch(/INDEX `\w+`\(`user_id`, `created_at`\)/);
     });
+
+    it("stores only the hash of a password reset token, unique (RF004)", () => {
+        const [, body] = readAllMigrationsSql().match(
+            /CREATE TABLE `password_reset_token` \(([\s\S]*?)\n\) /,
+        );
+
+        expect(body).toContain("`token_hash` CHAR(64) NOT NULL");
+        expect(body).toContain("`expires_at` DATETIME(3) NOT NULL");
+        expect(body).toContain("`used_at` DATETIME(3) NULL");
+        expect(body).not.toMatch(/`token`/);
+        expect(body).toMatch(/UNIQUE INDEX `\w+`\(`token_hash`\)/);
+        expect(body).toMatch(/INDEX `\w+`\(`user_id`, `used_at`\)/);
+    });
+
+    it("keeps the password reset token owner as a RESTRICT foreign key to user", () => {
+        expect(readAllMigrationsSql()).toMatch(
+            /ALTER TABLE `password_reset_token` ADD CONSTRAINT `\w+` FOREIGN KEY \(`user_id`\) REFERENCES `user`\(`id`\) ON DELETE RESTRICT/,
+        );
+    });
 });

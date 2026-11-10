@@ -1,0 +1,3 @@
+f182ec7baf15eedf2ddd24a6b2c9c04222d4e4db:tests/app/api/auth/reset-password.test.js:generic-api-key:16
+f182ec7baf15eedf2ddd24a6b2c9c04222d4e4db:tests/schemas/user-schemas.test.js:generic-api-key:193
+f182ec7baf15eedf2ddd24a6b2c9c04222d4e4db:tests/services/password-reset-service.test.js:generic-api-key:15

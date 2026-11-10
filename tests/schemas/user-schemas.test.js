@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+    forgotPasswordSchema,
     loginSchema,
     registerUserSchema,
+    resetPasswordSchema,
     updateProfileSchema,
     userAccountSchema,
 } from "../../src/schemas/user-schemas.js";
@@ -167,6 +169,70 @@ describe("loginSchema", () => {
         });
 
         expect(issue.message).toBe("Informe a senha.");
+    });
+});
+
+describe("forgotPasswordSchema", () => {
+    it("normalizes the e-mail", () => {
+        expect(
+            forgotPasswordSchema.parse({ email: " ANA@EXAMPLE.COM " }),
+        ).toEqual({ email: "ana@example.com" });
+    });
+
+    it("rejects an invalid e-mail", () => {
+        const result = forgotPasswordSchema.safeParse({
+            email: "not-an-email",
+        });
+
+        expect(result.success).toBe(false);
+    });
+});
+
+describe("resetPasswordSchema", () => {
+    const VALID_RESET = Object.freeze({
+        token: "token-de-recuperacao",
+        newPassword: "novaSenha1",
+    });
+
+    it("accepts a token and a valid new password", () => {
+        expect(resetPasswordSchema.parse(VALID_RESET)).toEqual(VALID_RESET);
+    });
+
+    it.each([
+        ["abc123", "A senha deve ter pelo menos 8 caracteres."],
+        ["12345678", "A senha deve conter pelo menos uma letra."],
+        ["abcdefgh", "A senha deve conter pelo menos um número."],
+        ["a1".repeat(37), "A senha deve ter no máximo 72 bytes."],
+        [`1${"é".repeat(36)}`, "A senha deve ter no máximo 72 bytes."],
+    ])("applies the password policy to %s", (newPassword, message) => {
+        const issue = firstIssue(resetPasswordSchema, {
+            ...VALID_RESET,
+            newPassword,
+        });
+
+        expect(issue.message).toBe(message);
+    });
+
+    it("accepts a new password with exactly 72 bytes", () => {
+        const result = resetPasswordSchema.safeParse({
+            ...VALID_RESET,
+            newPassword: "a1".repeat(36),
+        });
+
+        expect(result.success).toBe(true);
+    });
+
+    it.each([
+        ["", "Informe o token de recuperação."],
+        ["   ", "Informe o token de recuperação."],
+        ["a".repeat(257), "Token de recuperação inválido."],
+    ])("rejects the token %j", (token, message) => {
+        const issue = firstIssue(resetPasswordSchema, {
+            ...VALID_RESET,
+            token,
+        });
+
+        expect(issue.message).toBe(message);
     });
 });
 
