@@ -73,4 +73,53 @@ describe("Header", () => {
             within(navigation).queryByRole("link", { name: "Cadastrar" }),
         ).not.toBeInTheDocument();
     });
+
+    it("shows the customer links to a customer", () => {
+        renderWithUser(<Header user={SIGNED_IN_USER} />);
+
+        const navigation = screen.getByRole("navigation", {
+            name: "Navegação principal",
+        });
+
+        expect(
+            within(navigation).getByRole("link", { name: "Minhas reservas" }),
+        ).toHaveAttribute("href", "/reservations");
+        expect(
+            within(navigation).queryByRole("link", { name: "Painel admin" }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the manager area link to a manager and never the admin one", () => {
+        renderWithUser(
+            <Header user={{ ...SIGNED_IN_USER, role: "MANAGER" }} />,
+        );
+
+        const navigation = screen.getByRole("navigation", {
+            name: "Navegação principal",
+        });
+
+        expect(
+            within(navigation).getByRole("link", { name: "Painel do gestor" }),
+        ).toHaveAttribute("href", "/manager");
+        expect(
+            within(navigation).queryByRole("link", { name: "Painel admin" }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the admin area link to an admin", () => {
+        renderWithUser(<Header user={{ ...SIGNED_IN_USER, role: "ADMIN" }} />);
+
+        const navigation = screen.getByRole("navigation", {
+            name: "Navegação principal",
+        });
+
+        expect(
+            within(navigation).getByRole("link", { name: "Painel admin" }),
+        ).toHaveAttribute("href", "/admin");
+        expect(
+            within(navigation).queryByRole("link", {
+                name: "Painel do gestor",
+            }),
+        ).not.toBeInTheDocument();
+    });
 });

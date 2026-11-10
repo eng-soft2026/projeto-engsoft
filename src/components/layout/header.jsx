@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Hotel } from "lucide-react";
 import { LogoutButton } from "./logout-button.jsx";
 import { MobileMenu } from "./mobile-menu.jsx";
-import { getDefaultNavigationLinks } from "./navigation-links.js";
+import { getNavigationItems } from "./navigation-links.js";
 
 function getFirstName(name) {
     return name.trim().split(/\s+/)[0];
@@ -10,7 +10,7 @@ function getFirstName(name) {
 
 export function Header({
     user = null,
-    links = getDefaultNavigationLinks(user),
+    links = getNavigationItems(user?.role),
 }) {
     const isSignedIn = Boolean(user);
 
