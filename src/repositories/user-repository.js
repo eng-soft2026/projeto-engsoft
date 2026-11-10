@@ -68,8 +68,8 @@ export function createUserRepository(getClient = getPrisma) {
             });
         },
 
-        update(id, data) {
-            return getClient().user.update({
+        update(id, data, client = getClient()) {
+            return client.user.update({
                 where: { id },
                 data,
                 select: PUBLIC_USER_FIELDS,

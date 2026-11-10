@@ -53,6 +53,13 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
                 "A manager creates amenities within their own scope.",
         },
         {
+            path: "/api/auth/forgot-password",
+            method: "POST",
+            access: "public",
+            resourceAccess:
+                "Always answers the same body, so it never reveals whether the e-mail has an account.",
+        },
+        {
             path: "/api/auth/login",
             method: "POST",
             access: "public",
@@ -68,6 +75,13 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             path: "/api/auth/register",
             method: "POST",
             access: "public",
+        },
+        {
+            path: "/api/auth/reset-password",
+            method: "POST",
+            access: "public",
+            resourceAccess:
+                "The single-use reset token identifies the account; no session needed.",
         },
         {
             path: "/api/auth/[...nextauth]",

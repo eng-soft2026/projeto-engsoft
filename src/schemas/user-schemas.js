@@ -11,6 +11,7 @@ const NAME_MIN_LENGTH = 2;
 const NAME_MAX_LENGTH = 150;
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_BYTES = 72;
+const RESET_TOKEN_MAX_LENGTH = 256;
 
 function countUtf8Bytes(value) {
     return new TextEncoder().encode(value).length;
@@ -92,6 +93,25 @@ export const loginSchema = z.object(
         password: requiredPasswordSchema,
     },
     { error: "Envie e-mail e senha." },
+);
+
+export const forgotPasswordSchema = z.object(
+    { email: emailSchema },
+    { error: "Envie o e-mail." },
+);
+
+export const resetPasswordSchema = z.object(
+    {
+        token: z
+            .string({ error: "Informe o token de recuperação." })
+            .trim()
+            .min(1, { error: "Informe o token de recuperação." })
+            .max(RESET_TOKEN_MAX_LENGTH, {
+                error: "Token de recuperação inválido.",
+            }),
+        newPassword: passwordSchema,
+    },
+    { error: "Envie o token e a nova senha." },
 );
 
 export const updateProfileSchema = z

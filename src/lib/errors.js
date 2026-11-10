@@ -33,6 +33,7 @@ export const ERROR_CODES = Object.freeze({
     INTERNAL_ERROR: "INTERNAL_ERROR",
     SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
     RATE_LIMITED: "RATE_LIMITED",
+    INVALID_RESET_TOKEN: "INVALID_RESET_TOKEN",
 });
 
 export class DomainError extends Error {

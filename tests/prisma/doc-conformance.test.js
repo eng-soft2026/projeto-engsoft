@@ -13,7 +13,7 @@ const DOC_PATH = join(
 );
 
 const DOC_TABLES_BY_SECTION = {
-    3: ["USER"],
+    3: ["USER", "PASSWORD_RESET_TOKEN"],
     4: ["HOTEL", "HOTEL_MANAGER", "HOTEL_REVIEW_NOTE"],
     5: ["ACCEPTANCE_TYPE", "HOTEL_ACCEPTANCE"],
     6: ["HOTEL_POLICY"],

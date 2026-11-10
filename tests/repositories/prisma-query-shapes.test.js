@@ -8,10 +8,12 @@ import { createHotelManagerRepository } from "../../src/repositories/hotel-manag
 import { createHotelPolicyRepository } from "../../src/repositories/hotel-policy-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
+import { createPasswordResetTokenRepository } from "../../src/repositories/password-reset-token-repository.js";
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
 import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
 import { createUnitRepository } from "../../src/repositories/unit-repository.js";
+import { createUserRepository } from "../../src/repositories/user-repository.js";
 
 const DATABASE_REACHED = "database reached";
 const ID = "3f1c2a4e-8b7d-4c6a-9e21-5d0b7a1c9f33";
@@ -50,6 +52,8 @@ const amenities = createAmenityRepository(() => prisma);
 const acceptances = createHotelAcceptanceRepository(() => prisma);
 const policies = createHotelPolicyRepository(() => prisma);
 const transactions = createTransactionRunner(() => prisma);
+const passwordResetTokens = createPasswordResetTokenRepository(() => prisma);
+const users = createUserRepository(() => prisma);
 
 const NEW_HOTEL = {
     ownerUserId: ID,
@@ -345,6 +349,39 @@ const QUERIES = [
     [
         "systemSetting.findUnique",
         () => systemSettings.findByKey("MAX_OVERBOOKING_PERCENT"),
+    ],
+    [
+        "passwordResetToken.create",
+        () =>
+            passwordResetTokens.create({
+                userId: ID,
+                tokenHash: "a".repeat(64),
+                expiresAt: new Date(),
+            }),
+    ],
+    [
+        "passwordResetToken.findUnique by token hash",
+        () => passwordResetTokens.findByTokenHash("a".repeat(64)),
+    ],
+    [
+        "passwordResetToken.updateMany marking one active token as used",
+        () =>
+            passwordResetTokens.markUsedIfActive({
+                id: ID,
+                usedAt: new Date(),
+            }),
+    ],
+    [
+        "passwordResetToken.updateMany invalidating the active tokens of a user",
+        () =>
+            passwordResetTokens.invalidateActiveByUser({
+                userId: ID,
+                usedAt: new Date(),
+            }),
+    ],
+    [
+        "user.update of the password hash",
+        () => users.update(ID, { passwordHash: "hash" }),
     ],
     [
         "$transaction with a callback",
