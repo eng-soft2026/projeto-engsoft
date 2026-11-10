@@ -8,6 +8,8 @@ export default [
             ".next/",
             "node_modules/",
             "coverage/",
+            "playwright-report/",
+            "test-results/",
             "src/domain/",
             "src/generated/",
         ],

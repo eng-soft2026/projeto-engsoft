@@ -12,3 +12,5 @@ coverage/
 .code-review-graph/
 .mcp.json
 src/generated/
+playwright-report/
+test-results/

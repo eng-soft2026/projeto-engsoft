@@ -6,3 +6,5 @@ package.json
 *.md
 src/domain/
 src/generated/
+playwright-report/
+test-results/
