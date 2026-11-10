@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     forgotPasswordSchema,
     loginSchema,
+    registerFormSchema,
     registerUserSchema,
     resetPasswordSchema,
     updateProfileSchema,
@@ -143,6 +144,28 @@ describe("password policy", () => {
         });
 
         expect(result.success).toBe(true);
+    });
+});
+
+describe("registerFormSchema", () => {
+    it("accepts a matching password confirmation", () => {
+        const data = registerFormSchema.parse({
+            ...VALID_REGISTRATION,
+            passwordConfirmation: VALID_REGISTRATION.password,
+        });
+
+        expect(data.passwordConfirmation).toBe(VALID_REGISTRATION.password);
+        expect(data.cpf).toBe("52998224725");
+    });
+
+    it("rejects a different password confirmation on its field", () => {
+        const issue = firstIssue(registerFormSchema, {
+            ...VALID_REGISTRATION,
+            passwordConfirmation: "outraSenha1",
+        });
+
+        expect(issue.path).toEqual(["passwordConfirmation"]);
+        expect(issue.message).toBe("As senhas não conferem.");
     });
 });
 

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { LogoutButton } from "./logout-button.jsx";
 
-export function MobileMenu({ links }) {
+export function MobileMenu({ links, isSignedIn = false }) {
     const [isOpen, setIsOpen] = useState(false);
     const menuId = useId();
 
@@ -52,6 +53,14 @@ export function MobileMenu({ links }) {
                                 </Link>
                             </li>
                         ))}
+                        {isSignedIn && (
+                            <li>
+                                <LogoutButton
+                                    onLoggedOut={closeMenu}
+                                    className="w-full justify-start"
+                                />
+                            </li>
+                        )}
                     </ul>
                 </nav>
             )}

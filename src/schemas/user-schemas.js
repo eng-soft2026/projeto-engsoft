@@ -27,6 +27,10 @@ function hasAnyProfileChange(data) {
     );
 }
 
+function hasMatchingPasswordConfirmation(data) {
+    return data.password === data.passwordConfirmation;
+}
+
 function hasCurrentPasswordWhenChangingPassword(data) {
     return data.newPassword === undefined || data.currentPassword !== undefined;
 }
@@ -86,6 +90,15 @@ export const registerUserSchema = userAccountSchema.extend({
         })
         .default(USER_ROLES.CUSTOMER),
 });
+
+export const registerFormSchema = registerUserSchema
+    .extend({
+        passwordConfirmation: z.string({ error: "Confirme a senha." }),
+    })
+    .refine(hasMatchingPasswordConfirmation, {
+        error: "As senhas não conferem.",
+        path: ["passwordConfirmation"],
+    });
 
 export const loginSchema = z.object(
     {

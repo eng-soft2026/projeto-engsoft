@@ -1,9 +1,19 @@
 import Link from "next/link";
 import { Hotel } from "lucide-react";
+import { LogoutButton } from "./logout-button.jsx";
 import { MobileMenu } from "./mobile-menu.jsx";
-import { GUEST_NAVIGATION_LINKS } from "./navigation-links.js";
+import { getDefaultNavigationLinks } from "./navigation-links.js";
 
-export function Header({ links = GUEST_NAVIGATION_LINKS }) {
+function getFirstName(name) {
+    return name.trim().split(/\s+/)[0];
+}
+
+export function Header({
+    user = null,
+    links = getDefaultNavigationLinks(user),
+}) {
+    const isSignedIn = Boolean(user);
+
     return (
         <header className="border-border bg-surface relative border-b">
             <div className="max-w-page px-gutter mx-auto flex h-16 items-center justify-between">
@@ -29,9 +39,19 @@ export function Header({ links = GUEST_NAVIGATION_LINKS }) {
                                 </Link>
                             </li>
                         ))}
+                        {isSignedIn && (
+                            <>
+                                <li className="text-muted-foreground px-3 text-sm">
+                                    Olá, {getFirstName(user.name)}
+                                </li>
+                                <li>
+                                    <LogoutButton />
+                                </li>
+                            </>
+                        )}
                     </ul>
                 </nav>
-                <MobileMenu links={links} />
+                <MobileMenu links={links} isSignedIn={isSignedIn} />
             </div>
         </header>
     );
