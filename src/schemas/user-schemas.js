@@ -31,6 +31,10 @@ function hasMatchingPasswordConfirmation(data) {
     return data.password === data.passwordConfirmation;
 }
 
+function hasMatchingNewPasswordConfirmation(data) {
+    return data.newPassword === data.newPasswordConfirmation;
+}
+
 function hasCurrentPasswordWhenChangingPassword(data) {
     return data.newPassword === undefined || data.currentPassword !== undefined;
 }
@@ -100,6 +104,15 @@ export const registerFormSchema = registerUserSchema
         path: ["passwordConfirmation"],
     });
 
+const newPasswordConfirmationSchema = z.string({
+    error: "Confirme a nova senha.",
+});
+
+const NEW_PASSWORD_MISMATCH = {
+    error: "As senhas não conferem.",
+    path: ["newPasswordConfirmation"],
+};
+
 export const loginSchema = z.object(
     {
         email: emailSchema,
@@ -144,3 +157,23 @@ export const updateProfileSchema = z
         error: "Informe a senha atual para alterar a senha.",
         path: ["currentPassword"],
     });
+
+export const profileDetailsFormSchema = z.object({
+    name: nameSchema,
+    email: emailSchema,
+});
+
+export const changePasswordFormSchema = z
+    .object({
+        currentPassword: currentPasswordSchema,
+        newPassword: passwordSchema,
+        newPasswordConfirmation: newPasswordConfirmationSchema,
+    })
+    .refine(hasMatchingNewPasswordConfirmation, NEW_PASSWORD_MISMATCH);
+
+export const resetPasswordFormSchema = z
+    .object({
+        newPassword: passwordSchema,
+        newPasswordConfirmation: newPasswordConfirmationSchema,
+    })
+    .refine(hasMatchingNewPasswordConfirmation, NEW_PASSWORD_MISMATCH);

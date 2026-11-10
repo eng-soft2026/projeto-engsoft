@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+    changePasswordFormSchema,
     forgotPasswordSchema,
     loginSchema,
+    profileDetailsFormSchema,
     registerFormSchema,
     registerUserSchema,
+    resetPasswordFormSchema,
     resetPasswordSchema,
     updateProfileSchema,
     userAccountSchema,
@@ -302,5 +305,89 @@ describe("updateProfileSchema", () => {
         expect(updateProfileSchema.parse({ email: " BIA@X.COM " })).toEqual({
             email: "bia@x.com",
         });
+    });
+});
+
+describe("profileDetailsFormSchema", () => {
+    it("normalizes name and e-mail", () => {
+        expect(
+            profileDetailsFormSchema.parse({
+                name: "  Ana Souza ",
+                email: " ANA@Example.com",
+            }),
+        ).toEqual({ name: "Ana Souza", email: "ana@example.com" });
+    });
+
+    it("requires both fields", () => {
+        expect(
+            profileDetailsFormSchema.safeParse({ name: "Ana Souza" }).success,
+        ).toBe(false);
+    });
+});
+
+describe("changePasswordFormSchema", () => {
+    const VALID_CHANGE = Object.freeze({
+        currentPassword: "senhaAtual1",
+        newPassword: "novaSenha1",
+        newPasswordConfirmation: "novaSenha1",
+    });
+
+    it("accepts a matching confirmation", () => {
+        expect(changePasswordFormSchema.parse(VALID_CHANGE)).toEqual(
+            VALID_CHANGE,
+        );
+    });
+
+    it("requires the current password", () => {
+        const issue = firstIssue(changePasswordFormSchema, {
+            ...VALID_CHANGE,
+            currentPassword: "",
+        });
+
+        expect(issue.path).toEqual(["currentPassword"]);
+        expect(issue.message).toBe("Informe a senha atual.");
+    });
+
+    it("applies the password policy to the new password", () => {
+        const issue = firstIssue(changePasswordFormSchema, {
+            ...VALID_CHANGE,
+            newPassword: "semnumero",
+            newPasswordConfirmation: "semnumero",
+        });
+
+        expect(issue.path).toEqual(["newPassword"]);
+    });
+
+    it("rejects a different confirmation on its field", () => {
+        const issue = firstIssue(changePasswordFormSchema, {
+            ...VALID_CHANGE,
+            newPasswordConfirmation: "outraSenha1",
+        });
+
+        expect(issue.path).toEqual(["newPasswordConfirmation"]);
+        expect(issue.message).toBe("As senhas não conferem.");
+    });
+});
+
+describe("resetPasswordFormSchema", () => {
+    it("accepts a matching confirmation", () => {
+        expect(
+            resetPasswordFormSchema.parse({
+                newPassword: "novaSenha1",
+                newPasswordConfirmation: "novaSenha1",
+            }),
+        ).toEqual({
+            newPassword: "novaSenha1",
+            newPasswordConfirmation: "novaSenha1",
+        });
+    });
+
+    it("rejects a different confirmation on its field", () => {
+        const issue = firstIssue(resetPasswordFormSchema, {
+            newPassword: "novaSenha1",
+            newPasswordConfirmation: "outraSenha1",
+        });
+
+        expect(issue.path).toEqual(["newPasswordConfirmation"]);
     });
 });

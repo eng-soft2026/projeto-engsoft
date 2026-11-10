@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "../../../components/ui/button.jsx";
 import { FormError } from "../../../components/ui/form-error.jsx";
@@ -50,6 +51,12 @@ export function LoginForm({ callbackUrl }) {
                     {...form.register("password")}
                 />
             </FormField>
+            <Link
+                href="/forgot-password"
+                className="text-primary self-end text-sm font-medium hover:underline"
+            >
+                Esqueci minha senha
+            </Link>
             <Button type="submit" isLoading={isSubmitting}>
                 Entrar
             </Button>

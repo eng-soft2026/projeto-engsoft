@@ -40,6 +40,14 @@ describe("LoginForm", () => {
         expect(apiFetch).not.toHaveBeenCalled();
     });
 
+    it("links to the password recovery", () => {
+        renderWithUser(<LoginForm />);
+
+        expect(
+            screen.getByRole("link", { name: "Esqueci minha senha" }),
+        ).toHaveAttribute("href", "/forgot-password");
+    });
+
     it("posts the normalized credentials and goes to the callback URL", async () => {
         apiFetch.mockResolvedValue({ id: "user-1" });
         const { user } = renderWithUser(
