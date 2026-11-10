@@ -5,6 +5,7 @@ import {
     ERROR_CODES,
     ForbiddenError,
     NotFoundError,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 } from "./errors.js";
@@ -19,6 +20,7 @@ const HTTP_STATUS_BY_ERROR_CLASS = [
     [ForbiddenError, 403],
     [NotFoundError, 404],
     [ConflictError, 409],
+    [RateLimitError, 429],
 ];
 const DEFAULT_DOMAIN_ERROR_STATUS = 400;
 const INTERNAL_ERROR_STATUS = 500;
@@ -46,6 +48,13 @@ function logUnexpectedError(error, request) {
     });
 }
 
+function buildErrorHeaders(error) {
+    if (error instanceof RateLimitError) {
+        return { "Retry-After": String(error.retryAfterSeconds) };
+    }
+    return undefined;
+}
+
 export function jsonSuccess(data, status = 200) {
     return Response.json(successResponse(data), { status });
 }
@@ -54,6 +63,7 @@ export function jsonError(error, request) {
     if (error instanceof DomainError) {
         return Response.json(errorResponse(error.code, error.message), {
             status: getHttpStatus(error),
+            headers: buildErrorHeaders(error),
         });
     }
 

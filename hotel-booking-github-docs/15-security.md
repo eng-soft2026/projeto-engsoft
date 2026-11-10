@@ -17,7 +17,7 @@
 - Login com e-mail inexistente também executa uma comparação bcrypt, para não revelar pelo tempo de resposta se o e-mail existe. Usuário inativo recebe o mesmo `INVALID_CREDENTIALS`.
 - `POST /api/auth/login` chama o `signIn` do servidor, que não passa pela checagem de CSRF do Auth.js. A rota exige `Content-Type: application/json` (formulários de outro site não conseguem enviar JSON sem preflight de CORS) e o cookie de sessão é `SameSite=Lax`.
 - Variáveis: `AUTH_SECRET` (obrigatória em produção) e `AUTH_URL` (necessária fora da Vercel para o Auth.js confiar no host). O usuário `ADMIN` inicial vem de `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_CPF` e `ADMIN_PASSWORD` no seed.
-- Ainda não implementado: limite de tentativas de login (o Auth.js deixa isso para a aplicação).
+- Limite de tentativas de login (o Auth.js deixa isso para a aplicação): 5 falhas seguidas na mesma chave bloqueiam o login por uma janela fixa de 15 min, contada a partir da primeira falha. A chave é o IP (primeiro endereço de `x-forwarded-for`, depois `x-real-ip`) mais o hash SHA-256 do e-mail normalizado, guardada no Redis (`login-attempts:<ip>:<hash>`) com TTL igual à janela; um login certo zera o contador. A checagem fica no `authorize` do provider credentials, então vale para `POST /api/auth/login` (responde `429 RATE_LIMITED` com `Retry-After`) e para o fluxo de formulário do Auth.js (redireciona com `code=rate_limited`). Se o Redis falhar ou demorar mais de 500 ms, o login segue sem limite e o servidor registra um `warn` (fail-open). O `x-forwarded-for` só é confiável atrás de um proxy que o reescreve; sem isso, quem forja o header troca de chave a cada tentativa.
 
 ## Dados sensíveis
 

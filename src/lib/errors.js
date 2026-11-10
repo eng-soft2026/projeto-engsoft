@@ -32,6 +32,7 @@ export const ERROR_CODES = Object.freeze({
     USER_ALREADY_EXISTS: "USER_ALREADY_EXISTS",
     INTERNAL_ERROR: "INTERNAL_ERROR",
     SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+    RATE_LIMITED: "RATE_LIMITED",
 });
 
 export class DomainError extends Error {
@@ -61,5 +62,12 @@ export class UnauthorizedError extends DomainError {
 export class ForbiddenError extends DomainError {
     constructor(message) {
         super(ERROR_CODES.FORBIDDEN, message);
+    }
+}
+
+export class RateLimitError extends DomainError {
+    constructor(message, retryAfterSeconds) {
+        super(ERROR_CODES.RATE_LIMITED, message);
+        this.retryAfterSeconds = retryAfterSeconds;
     }
 }

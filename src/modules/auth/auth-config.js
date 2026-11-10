@@ -1,16 +1,46 @@
 import Credentials from "next-auth/providers/credentials";
 import { loginSchema } from "../../schemas/user-schemas.js";
-import { authService } from "../../services/auth-service.js";
+import { authService as defaultAuthService } from "../../services/auth-service.js";
+import {
+    LoginRateLimitedError,
+    buildLoginAttemptKey,
+    loginRateLimiter,
+} from "./login-rate-limit.js";
 
 export const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
 
-export async function authorizeCredentials(credentials) {
-    const result = loginSchema.safeParse(credentials);
-    if (!result.success) {
-        return null;
-    }
-    return authService.verifyCredentials(result.data);
+export function createCredentialsAuthorizer({ authService, rateLimiter }) {
+    return async function authorize(credentials, request) {
+        const result = loginSchema.safeParse(credentials);
+        if (!result.success) {
+            return null;
+        }
+
+        const attemptKey = buildLoginAttemptKey({
+            email: result.data.email,
+            request,
+        });
+        const { isLimited, retryAfterSeconds } =
+            await rateLimiter.check(attemptKey);
+        if (isLimited) {
+            throw new LoginRateLimitedError(retryAfterSeconds);
+        }
+
+        const user = await authService.verifyCredentials(result.data);
+        if (!user) {
+            await rateLimiter.recordFailure(attemptKey);
+            return null;
+        }
+
+        await rateLimiter.reset(attemptKey);
+        return user;
+    };
 }
+
+export const authorizeCredentials = createCredentialsAuthorizer({
+    authService: defaultAuthService,
+    rateLimiter: loginRateLimiter,
+});
 
 export function addRoleToToken({ token, user }) {
     if (!user) {

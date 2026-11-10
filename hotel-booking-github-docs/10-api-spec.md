@@ -82,6 +82,7 @@ VALIDATION_ERROR
 USER_ALREADY_EXISTS
 INTERNAL_ERROR
 SERVICE_UNAVAILABLE
+RATE_LIMITED
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -90,6 +91,7 @@ SERVICE_UNAVAILABLE
 - `USER_ALREADY_EXISTS`: e-mail ou CPF já cadastrado. Um único código para os dois casos, para não revelar qual dado já existe.
 - `INTERNAL_ERROR`: erro inesperado. A `message` é genérica; detalhes ficam apenas no log do servidor (sem dados sensíveis).
 - `SERVICE_UNAVAILABLE`: uma dependência obrigatória (MySQL, Redis) não respondeu. Usado só por `GET /api/health/ready`, com status `503`.
+- `RATE_LIMITED`: muitas tentativas seguidas. Usado por `POST /api/auth/login` depois de 5 falhas na mesma combinação de IP e e-mail em 15 min (doc 15). Responde `429` com o header `Retry-After` (segundos até a janela expirar) e a mensagem "Muitas tentativas de login. Tente novamente em alguns minutos.".
 
 ## Status HTTP
 
@@ -101,6 +103,7 @@ UnauthorizedError   -> 401   (UNAUTHORIZED, INVALID_CREDENTIALS)
 ForbiddenError      -> 403
 NotFoundError       -> 404
 ConflictError       -> 409
+RateLimitError      -> 429   (RATE_LIMITED, com Retry-After)
 outro DomainError   -> 400
 erro inesperado     -> 500   (INTERNAL_ERROR)
 ```
@@ -120,7 +123,7 @@ PATCH /api/users/me
 ```
 
 - `register`: `name`, `email`, `cpf` (com ou sem máscara), `password` e `role` opcional (`CUSTOMER` padrão ou `MANAGER`, RN116). Responde `201` com o usuário, sem hash de senha.
-- `login`: `email` e `password`. Delega ao Auth.js (`signIn` com o provider de credenciais), que grava o cookie de sessão. Responde `200` com o usuário ou `401 INVALID_CREDENTIALS`.
+- `login`: `email` e `password`. Delega ao Auth.js (`signIn` com o provider de credenciais), que grava o cookie de sessão. Responde `200` com o usuário, `401 INVALID_CREDENTIALS` ou, depois de 5 falhas seguidas, `429 RATE_LIMITED` com `Retry-After` (doc 15).
 - `logout`: encerra a sessão do Auth.js e responde `200` com `data: null`.
 - `users/me`: `GET` retorna o perfil do usuário autenticado; `PATCH` aceita `name`, `email`, `newPassword` e `currentPassword` (obrigatória para trocar a senha). CPF e papel não são alteráveis (RN117).
 
