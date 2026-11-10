@@ -1,3 +1,6 @@
+import { Toaster } from "sonner";
+import { Footer } from "../components/layout/footer.jsx";
+import { Header } from "../components/layout/header.jsx";
 import "./globals.css";
 
 export const metadata = {
@@ -8,8 +11,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="pt-BR">
-            <body className="min-h-screen bg-white text-gray-900 antialiased">
-                {children}
+            <body className="bg-background text-foreground flex min-h-screen flex-col antialiased">
+                <Header />
+                <main className="flex flex-1 flex-col">{children}</main>
+                <Footer />
+                <Toaster position="top-right" richColors closeButton />
             </body>
         </html>
     );
