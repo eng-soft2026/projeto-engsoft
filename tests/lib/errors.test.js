@@ -5,6 +5,7 @@ import {
     ERROR_CODES,
     ForbiddenError,
     NotFoundError,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 } from "../../src/lib/errors.js";
@@ -43,6 +44,7 @@ const SPEC_CODES = [
     "USER_ALREADY_EXISTS",
     "INTERNAL_ERROR",
     "SERVICE_UNAVAILABLE",
+    "RATE_LIMITED",
 ];
 
 describe("ERROR_CODES", () => {
@@ -145,5 +147,17 @@ describe("ForbiddenError", () => {
 
         expect(error).toBeInstanceOf(DomainError);
         expect(error.code).toBe("FORBIDDEN");
+    });
+});
+
+describe("RateLimitError", () => {
+    it("uses the RATE_LIMITED code and keeps the retry delay", () => {
+        const error = new RateLimitError("Muitas tentativas.", 120);
+
+        expect(error).toBeInstanceOf(DomainError);
+        expect(error.name).toBe("RateLimitError");
+        expect(error.code).toBe(ERROR_CODES.RATE_LIMITED);
+        expect(error.message).toBe("Muitas tentativas.");
+        expect(error.retryAfterSeconds).toBe(120);
     });
 });

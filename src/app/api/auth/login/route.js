@@ -1,6 +1,7 @@
 import { CredentialsSignin } from "next-auth";
 import {
     ERROR_CODES,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 } from "../../../../lib/errors.js";
@@ -8,6 +9,7 @@ import { readJsonBody } from "../../../../lib/request-body.js";
 import { jsonError, jsonSuccess } from "../../../../lib/route-response.js";
 import { parseWithSchema } from "../../../../lib/validation.js";
 import { signIn } from "../../../../modules/auth/auth.js";
+import { LoginRateLimitedError } from "../../../../modules/auth/login-rate-limit.js";
 import { loginSchema } from "../../../../schemas/user-schemas.js";
 import { userService } from "../../../../services/user-service.js";
 import { withRequestLogging } from "../../../../lib/request-logging.js";
@@ -24,6 +26,12 @@ async function signInWithCredentials({ email, password }) {
     try {
         await signIn("credentials", { email, password, redirect: false });
     } catch (error) {
+        if (error instanceof LoginRateLimitedError) {
+            throw new RateLimitError(
+                "Muitas tentativas de login. Tente novamente em alguns minutos.",
+                error.retryAfterSeconds,
+            );
+        }
         if (error instanceof CredentialsSignin) {
             throw new UnauthorizedError(
                 "E-mail ou senha inválidos.",

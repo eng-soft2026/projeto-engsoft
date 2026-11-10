@@ -6,15 +6,33 @@ import {
     addRoleToToken,
     authConfig,
     authorizeCredentials,
+    createCredentialsAuthorizer,
 } from "../../../src/modules/auth/auth-config.js";
+import {
+    LoginRateLimitedError,
+    buildLoginAttemptKey,
+} from "../../../src/modules/auth/login-rate-limit.js";
 
-const { verifyCredentials } = vi.hoisted(() => ({
+const { verifyCredentials, loginRateLimiter } = vi.hoisted(() => ({
     verifyCredentials: vi.fn(),
+    loginRateLimiter: {
+        check: vi.fn(),
+        recordFailure: vi.fn(),
+        reset: vi.fn(),
+    },
 }));
 
 vi.mock("../../../src/services/auth-service.js", () => ({
     authService: { verifyCredentials },
 }));
+
+vi.mock(
+    "../../../src/modules/auth/login-rate-limit.js",
+    async (importOriginal) => ({
+        ...(await importOriginal()),
+        loginRateLimiter,
+    }),
+);
 
 const SESSION_USER = Object.freeze({
     id: "user-1",
@@ -23,9 +41,20 @@ const SESSION_USER = Object.freeze({
     role: "MANAGER",
 });
 
+function createRequest(ipAddress) {
+    return new Request("http://localhost/api/auth/callback/credentials", {
+        headers: { "x-forwarded-for": ipAddress },
+    });
+}
+
 describe("authorizeCredentials", () => {
     beforeEach(() => {
         verifyCredentials.mockReset();
+        loginRateLimiter.check.mockReset();
+        loginRateLimiter.check.mockResolvedValue({
+            isLimited: false,
+            retryAfterSeconds: 0,
+        });
     });
 
     it("verifies normalized credentials and returns the session user", async () => {
@@ -59,6 +88,83 @@ describe("authorizeCredentials", () => {
             authorizeCredentials({ email: "not-an-email", password: "" }),
         ).resolves.toBeNull();
         expect(verifyCredentials).not.toHaveBeenCalled();
+    });
+});
+
+describe("createCredentialsAuthorizer", () => {
+    const request = createRequest("203.0.113.7");
+    const attemptKey = buildLoginAttemptKey({
+        email: "ana@example.com",
+        request,
+    });
+    let authService;
+    let rateLimiter;
+    let authorize;
+
+    beforeEach(() => {
+        authService = { verifyCredentials: vi.fn() };
+        rateLimiter = {
+            check: vi.fn(async () => ({
+                isLimited: false,
+                retryAfterSeconds: 0,
+            })),
+            recordFailure: vi.fn(async () => {}),
+            reset: vi.fn(async () => {}),
+        };
+        authorize = createCredentialsAuthorizer({ authService, rateLimiter });
+    });
+
+    it("records a failure under the IP and e-mail key when the credentials are wrong", async () => {
+        authService.verifyCredentials.mockResolvedValueOnce(null);
+
+        await expect(
+            authorize(
+                { email: " ANA@EXAMPLE.COM ", password: "errada123" },
+                request,
+            ),
+        ).resolves.toBeNull();
+        expect(rateLimiter.check).toHaveBeenCalledWith(attemptKey);
+        expect(rateLimiter.recordFailure).toHaveBeenCalledWith(attemptKey);
+        expect(rateLimiter.reset).not.toHaveBeenCalled();
+    });
+
+    it("resets the counter after a successful sign in", async () => {
+        authService.verifyCredentials.mockResolvedValueOnce(SESSION_USER);
+
+        await expect(
+            authorize(
+                { email: "ana@example.com", password: "senhaSegura1" },
+                request,
+            ),
+        ).resolves.toBe(SESSION_USER);
+        expect(rateLimiter.reset).toHaveBeenCalledWith(attemptKey);
+        expect(rateLimiter.recordFailure).not.toHaveBeenCalled();
+    });
+
+    it("throws LoginRateLimitedError without checking the password when the key is limited", async () => {
+        rateLimiter.check.mockResolvedValueOnce({
+            isLimited: true,
+            retryAfterSeconds: 600,
+        });
+
+        const attempt = authorize(
+            { email: "ana@example.com", password: "senhaSegura1" },
+            request,
+        );
+
+        await expect(attempt).rejects.toBeInstanceOf(LoginRateLimitedError);
+        await expect(attempt).rejects.toMatchObject({
+            retryAfterSeconds: 600,
+        });
+        expect(authService.verifyCredentials).not.toHaveBeenCalled();
+        expect(rateLimiter.recordFailure).not.toHaveBeenCalled();
+    });
+
+    it("does not touch the counter when the input is invalid", async () => {
+        await expect(
+            authorize({ email: "not-an-email", password: "" }, request),
+        ).resolves.toBeNull();
+        expect(rateLimiter.check).not.toHaveBeenCalled();
     });
 });
 

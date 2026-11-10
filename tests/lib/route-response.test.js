@@ -5,6 +5,7 @@ import {
     ERROR_CODES,
     ForbiddenError,
     NotFoundError,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 } from "../../src/lib/errors.js";
@@ -23,6 +24,7 @@ describe("getHttpStatus", () => {
         [new ForbiddenError("Negado."), 403],
         [new NotFoundError(ERROR_CODES.USER_NOT_FOUND, "Não encontrado."), 404],
         [new ConflictError(ERROR_CODES.USER_ALREADY_EXISTS, "Já existe."), 409],
+        [new RateLimitError("Muitas tentativas.", 60), 429],
         [new DomainError(ERROR_CODES.HOLD_EXPIRED, "Expirou."), 400],
     ])("maps %s to %i", (error, status) => {
         expect(getHttpStatus(error)).toBe(status);
@@ -61,6 +63,25 @@ describe("jsonError", () => {
             success: false,
             error: { code: "USER_ALREADY_EXISTS", message: "Já existe." },
         });
+    });
+
+    it("returns 429 with the Retry-After header for a RateLimitError", async () => {
+        const response = jsonError(
+            new RateLimitError("Muitas tentativas.", 300),
+        );
+
+        expect(response.status).toBe(429);
+        expect(response.headers.get("Retry-After")).toBe("300");
+        expect(await response.json()).toEqual({
+            success: false,
+            error: { code: "RATE_LIMITED", message: "Muitas tentativas." },
+        });
+    });
+
+    it("sends no Retry-After header for other domain errors", () => {
+        const response = jsonError(new ValidationError("Inválido."));
+
+        expect(response.headers.has("Retry-After")).toBe(false);
     });
 
     it("hides unexpected errors behind INTERNAL_ERROR without message or stack", async () => {
