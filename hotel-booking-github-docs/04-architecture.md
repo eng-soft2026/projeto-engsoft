@@ -22,6 +22,8 @@ Prisma
 MySQL
 ```
 
+Formulários enviam os dados com `fetch` para as rotas `/api` (`apiFetch` em `src/lib/api-client.js` e o hook `useApiForm` em `src/hooks/use-api-form.js`), reaproveitando a mesma validação, autorização e envelope da API. Server Actions ficam só para casos em que simplificam leitura em Server Components; nunca duplicam uma regra que já está numa rota.
+
 ## Estrutura sugerida
 
 ```text
