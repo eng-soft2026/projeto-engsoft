@@ -18,7 +18,7 @@ test("failed login shows the error message", async ({ page }) => {
         password: "senha-errada-1",
     });
 
-    await expect(page.getByRole("alert")).toHaveText(
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
         "E-mail ou senha inválidos.",
     );
     await expect(page).toHaveURL(/\/login$/);
