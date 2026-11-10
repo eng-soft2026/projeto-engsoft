@@ -61,6 +61,9 @@ describe("Header", () => {
 
         expect(within(navigation).getByText("Olá, Ana")).toBeInTheDocument();
         expect(
+            within(navigation).getByRole("link", { name: "Meu perfil" }),
+        ).toHaveAttribute("href", "/profile");
+        expect(
             within(navigation).getByRole("button", { name: "Sair" }),
         ).toBeInTheDocument();
         expect(

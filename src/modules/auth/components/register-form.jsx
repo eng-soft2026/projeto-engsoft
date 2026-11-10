@@ -12,6 +12,7 @@ import { apiFetch } from "../../../lib/api-client.js";
 import { ERROR_CODES } from "../../../lib/errors.js";
 import { registerFormSchema } from "../../../schemas/user-schemas.js";
 import { buildAuthPageHref } from "../callback-url.js";
+import { PASSWORD_HINT } from "../password-hint.js";
 
 const REGISTER_DEFAULT_VALUES = {
     name: "",
@@ -31,9 +32,6 @@ const REGISTER_FIELD_ERROR_CODES = {
     [ERROR_CODES.USER_ALREADY_EXISTS]: "email",
     [ERROR_CODES.INVALID_CPF]: "cpf",
 };
-
-const PASSWORD_HINT =
-    "De 8 a 72 caracteres, com pelo menos uma letra e um número.";
 
 function sendRegistration({ name, email, cpf, password, role }) {
     return apiFetch("/api/auth/register", {

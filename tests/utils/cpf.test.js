@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidCpf, normalizeCpf } from "../../src/utils/cpf.js";
+import { formatCpf, isValidCpf, normalizeCpf } from "../../src/utils/cpf.js";
 
 describe("normalizeCpf", () => {
     it("keeps only the digits", () => {
@@ -44,5 +44,19 @@ describe("isValidCpf", () => {
     it("rejects values that are not strings", () => {
         expect(isValidCpf(52998224725)).toBe(false);
         expect(isValidCpf(undefined)).toBe(false);
+    });
+});
+
+describe("formatCpf", () => {
+    it("adds the mask to a normalized CPF", () => {
+        expect(formatCpf("52998224725")).toBe("529.982.247-25");
+    });
+
+    it("keeps an already masked CPF", () => {
+        expect(formatCpf("529.982.247-25")).toBe("529.982.247-25");
+    });
+
+    it("returns the digits when there are not 11 of them", () => {
+        expect(formatCpf("1234")).toBe("1234");
     });
 });

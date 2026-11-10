@@ -1,9 +1,14 @@
 const CPF_INPUT_PATTERN = /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/;
 const REPEATED_DIGITS_PATTERN = /^(\d)\1+$/;
 const BASE_DIGITS_LENGTH = 9;
+const FORMATTABLE_CPF_PATTERN = /^(\d{3})(\d{3})(\d{3})(\d{2})$/;
 
 export function normalizeCpf(value) {
     return String(value).replace(/\D/g, "");
+}
+
+export function formatCpf(value) {
+    return normalizeCpf(value).replace(FORMATTABLE_CPF_PATTERN, "$1.$2.$3-$4");
 }
 
 function calculateCheckDigit(digits) {
