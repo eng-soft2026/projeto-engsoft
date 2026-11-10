@@ -63,9 +63,33 @@ export function getErrorMessage(code) {
     return DEFAULT_ERROR_MESSAGE;
 }
 
+const SECONDS_PER_MINUTE = 60;
+
+function formatWaitTime(retryAfterSeconds) {
+    const minutes = Math.max(
+        1,
+        Math.ceil(retryAfterSeconds / SECONDS_PER_MINUTE),
+    );
+    return minutes === 1 ? "1 minuto" : `${minutes} minutos`;
+}
+
+function hasRetryAfter(error) {
+    return (
+        error.code === ERROR_CODES.RATE_LIMITED &&
+        Number.isInteger(error.retryAfterSeconds)
+    );
+}
+
+export function formatRateLimitMessage(retryAfterSeconds) {
+    return `Muitas tentativas. Tente novamente em ${formatWaitTime(retryAfterSeconds)}.`;
+}
+
 export function resolveErrorMessage(error) {
     if (!(error instanceof ApiError)) {
         return DEFAULT_ERROR_MESSAGE;
+    }
+    if (hasRetryAfter(error)) {
+        return formatRateLimitMessage(error.retryAfterSeconds);
     }
     return error.message || getErrorMessage(error.code);
 }

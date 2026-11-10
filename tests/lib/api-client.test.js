@@ -117,6 +117,49 @@ describe("apiFetch", () => {
         expect(onUnauthorized).not.toHaveBeenCalled();
     });
 
+    it("reads the Retry-After seconds of a rate-limited answer", async () => {
+        const { apiFetch } = createClient(
+            Response.json(
+                {
+                    success: false,
+                    error: {
+                        code: ERROR_CODES.RATE_LIMITED,
+                        message: "Muitas tentativas de login.",
+                    },
+                },
+                { status: 429, headers: { "Retry-After": "540" } },
+            ),
+        );
+
+        const error = await captureError(apiFetch("/api/auth/login"));
+
+        expect(error).toMatchObject({
+            code: ERROR_CODES.RATE_LIMITED,
+            status: 429,
+            retryAfterSeconds: 540,
+        });
+    });
+
+    it.each([[null], ["Wed, 21 Oct 2026 07:28:00 GMT"], ["-5"]])(
+        "leaves retryAfterSeconds null for the Retry-After %s",
+        async (retryAfter) => {
+            const headers = retryAfter ? { "Retry-After": retryAfter } : {};
+            const { apiFetch } = createClient(
+                Response.json(
+                    {
+                        success: false,
+                        error: { code: ERROR_CODES.RATE_LIMITED, message: "" },
+                    },
+                    { status: 429, headers },
+                ),
+            );
+
+            const error = await captureError(apiFetch("/api/auth/login"));
+
+            expect(error.retryAfterSeconds).toBeNull();
+        },
+    );
+
     it("throws NETWORK_ERROR with status 0 when the request fails", async () => {
         const fetchImpl = vi
             .fn()

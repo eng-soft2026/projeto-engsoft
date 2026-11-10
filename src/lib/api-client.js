@@ -9,11 +9,12 @@ const UNAUTHORIZED_STATUS = 401;
 const NETWORK_ERROR_STATUS = 0;
 
 export class ApiError extends Error {
-    constructor({ code, message = "", status }) {
+    constructor({ code, message = "", status, retryAfterSeconds = null }) {
         super(message);
         this.name = "ApiError";
         this.code = code;
         this.status = status;
+        this.retryAfterSeconds = retryAfterSeconds;
     }
 }
 
@@ -59,6 +60,14 @@ async function readPayload(response) {
     }
 }
 
+function readRetryAfterSeconds(response) {
+    const value = response.headers.get("Retry-After");
+    if (!value || !/^\d+$/.test(value.trim())) {
+        return null;
+    }
+    return Number.parseInt(value, 10);
+}
+
 function buildResponseError(response, payload) {
     const envelopeError = payload?.success === false ? payload.error : null;
     if (envelopeError?.code) {
@@ -66,6 +75,7 @@ function buildResponseError(response, payload) {
             code: envelopeError.code,
             message: envelopeError.message,
             status: response.status,
+            retryAfterSeconds: readRetryAfterSeconds(response),
         });
     }
 

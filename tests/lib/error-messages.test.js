@@ -3,6 +3,7 @@ import { ApiError, CLIENT_ERROR_CODES } from "../../src/lib/api-client.js";
 import {
     DEFAULT_ERROR_MESSAGE,
     ERROR_MESSAGES,
+    formatRateLimitMessage,
     getErrorMessage,
     resolveErrorMessage,
 } from "../../src/lib/error-messages.js";
@@ -59,9 +60,45 @@ describe("resolveErrorMessage", () => {
         );
     });
 
+    it("shows the wait time of a rate-limited answer", () => {
+        const error = new ApiError({
+            code: ERROR_CODES.RATE_LIMITED,
+            message: "Muitas tentativas de login.",
+            status: 429,
+            retryAfterSeconds: 541,
+        });
+
+        expect(resolveErrorMessage(error)).toBe(
+            "Muitas tentativas. Tente novamente em 10 minutos.",
+        );
+    });
+
+    it("keeps the server message of a rate-limited answer without wait time", () => {
+        const error = new ApiError({
+            code: ERROR_CODES.RATE_LIMITED,
+            message: "Muitas tentativas de login.",
+            status: 429,
+        });
+
+        expect(resolveErrorMessage(error)).toBe("Muitas tentativas de login.");
+    });
+
     it("hides the message of an error that did not come from the API", () => {
         expect(resolveErrorMessage(new TypeError("x is undefined"))).toBe(
             DEFAULT_ERROR_MESSAGE,
+        );
+    });
+});
+
+describe("formatRateLimitMessage", () => {
+    it.each([
+        [0, "1 minuto"],
+        [60, "1 minuto"],
+        [61, "2 minutos"],
+        [900, "15 minutos"],
+    ])("rounds %i seconds up to %s", (seconds, waitTime) => {
+        expect(formatRateLimitMessage(seconds)).toBe(
+            `Muitas tentativas. Tente novamente em ${waitTime}.`,
         );
     });
 });
