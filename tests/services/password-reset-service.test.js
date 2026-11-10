@@ -12,7 +12,7 @@ import {
 import { createFakeClock } from "../helpers/factories/index.js";
 import { createFakeRedis } from "../helpers/fake-redis.js";
 
-const RAW_TOKEN = "dG9rZW4tZGUtcmVjdXBlcmFjYW8tYWxlYXRvcmlv";
+const RAW_TOKEN = "token-de-recuperacao-aleatorio";
 const RAW_TOKEN_HASH = createHash("sha256").update(RAW_TOKEN).digest("hex");
 const IP_ADDRESS = "203.0.113.7";
 const NEW_PASSWORD = "novaSenha1";

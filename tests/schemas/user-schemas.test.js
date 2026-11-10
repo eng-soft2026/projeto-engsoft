@@ -190,7 +190,7 @@ describe("forgotPasswordSchema", () => {
 
 describe("resetPasswordSchema", () => {
     const VALID_RESET = Object.freeze({
-        token: "dG9rZW4tZGUtcmVjdXBlcmFjYW8",
+        token: "token-de-recuperacao",
         newPassword: "novaSenha1",
     });
 

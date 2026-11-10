@@ -13,7 +13,7 @@ vi.mock("../../../../src/services/password-reset-service.js", () => ({
 }));
 
 const VALID_BODY = Object.freeze({
-    token: "dG9rZW4tZGUtcmVjdXBlcmFjYW8",
+    token: "token-de-recuperacao",
     newPassword: "novaSenha1",
 });
 
