@@ -30,6 +30,15 @@
 - Os arquivos rodam em série (`fileParallelism: false`), porque compartilham o mesmo banco.
 - No CI, o job `integration` (`.github/workflows/ci.yml`) roda em todo push e PR para `main` com os services `mysql:8.4` e `redis:7`, aplica as migrações com `npm run prisma:migrate:deploy` e executa `npm run test:integration`, com `DATABASE_URL` e `REDIS_URL` definidos no job (banco `_test`, Redis no índice 15).
 
+## Testes end-to-end
+
+- Ficam em `e2e/**/*.spec.js` (Playwright, só chromium) e rodam com `npm run test:e2e` (`playwright.config.js`), fora do `npm test`. Na primeira vez localmente, instale o navegador com `npm run test:e2e:install`.
+- O `webServer` do Playwright roda `e2e/setup/prepare-database.mjs` (migrações, seed base e os usuários de teste), `npm run build` e `npm start` na porta 3100, para nunca reaproveitar um `npm run dev` da porta 3000 ligado ao banco de desenvolvimento. Usa o mesmo `.env.test` (ou o ambiente) dos testes de integração, com as mesmas travas (banco `_test`, Redis com índice maior que 0); não rode e2e e integração ao mesmo tempo, porque a integração apaga as tabelas.
+- O `AUTH_SECRET` do servidor de teste é gerado aleatoriamente a cada execução quando não vem do ambiente; nenhum segredo fica no repositório ou no CI.
+- Usuários de teste: um por papel (CUSTOMER, MANAGER, ADMIN) em `e2e/support/test-users.js`, com senhas fictícias de baixa entropia que só existem no banco `_test` descartável. O preparo é idempotente: cria o usuário ou restaura nome, papel, `is_active` e senha. Entre com `loginAs(page, role)` (`e2e/support/auth.js`).
+- Em falha ficam o trace e o screenshot (`test-results/`) e o relatório HTML (`playwright-report/`).
+- No CI, o job `e2e` (`.github/workflows/ci.yml`) roda em todo push e PR para `main` com os services `mysql:8.4` e `redis:7`, instala o chromium e executa `npm run test:e2e`; em falha publica `playwright-report/` e `test-results/` como o artefato `playwright-report`. Não é check obrigatório do ruleset `Protect Main`.
+
 ## Cobertura
 
 - `npm run test:coverage` roda os projetos `unit` e `dom` com `@vitest/coverage-v8` sobre `src/**`, exceto `src/generated/**`, `src/domain/**` (legado) e os `page.jsx`/`layout.jsx` de `src/app`. Os testes de integração não entram na medição.
