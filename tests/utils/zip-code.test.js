@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isValidZipCode, normalizeZipCode } from "../../src/utils/zip-code.js";
+import {
+    formatZipCode,
+    isValidZipCode,
+    normalizeZipCode,
+} from "../../src/utils/zip-code.js";
 
 describe("zip code", () => {
     it("accepts a CEP with or without mask", () => {
@@ -13,5 +17,17 @@ describe("zip code", () => {
 
     it("keeps only the digits", () => {
         expect(normalizeZipCode("01310-100")).toBe("01310100");
+    });
+
+    it.each([
+        ["", ""],
+        ["013", "013"],
+        ["01310", "01310"],
+        ["013101", "01310-1"],
+        ["01310100", "01310-100"],
+        ["01310-1009", "01310-100"],
+        ["ab01310100", "01310-100"],
+    ])("masks %s as %s", (value, expected) => {
+        expect(formatZipCode(value)).toBe(expected);
     });
 });

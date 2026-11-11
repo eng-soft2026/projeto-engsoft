@@ -16,7 +16,7 @@ Agent notes, terse. History of what was done lives in git, issues and PRs; rules
 - `hotelEvents.publish` and `passwordResetService` publisher are no-ops until RabbitMQ/e-mail (BE-80, BE-83).
 - `HotelService.submitForReview`: require an active unit with coordinates (after geocoding) and at least one hotel photo.
 - Geocoding (RN088) fills `address.latitude/longitude`; until then search and maps skip units without them.
-- Units: deactivated unit is still editable (decide); block overbooking change and deactivation with active reservations.
+- Units: deactivated unit is still editable in the API (the manager screen shows it read-only; decide the API rule); block overbooking change and deactivation with active reservations.
 - Audit log: query API and screen (doc 14, route not in doc 10), `result = FAILURE` for denied attempts, DB-level immutability (GRANT, triggers).
 - Prisma 8 drops `prisma.$transaction`; only `src/lib/transaction.js` and the seed use it.
 - Health: QA-16 lists `/api/health*` as `public` in `route-access.table.js`; BE-80 adds the RabbitMQ probe. Redis client has no `reconnectStrategy` (logs every retry).
