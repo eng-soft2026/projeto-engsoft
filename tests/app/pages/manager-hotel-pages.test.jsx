@@ -48,6 +48,8 @@ import {
     NewUnitLink,
 } from "../../../src/modules/units/components/managed-unit-list.jsx";
 import { UnitForm } from "../../../src/modules/units/components/unit-form.jsx";
+import { UnitLocationPanel } from "../../../src/modules/units/components/unit-location-panel.jsx";
+import { Decimal } from "../../../src/generated/prisma/internal/prismaNamespace.ts";
 
 const {
     requirePageRole,
@@ -500,6 +502,19 @@ describe("EditUnitPage", () => {
         hotelId: HOTEL_ID,
         name: "Unidade Centro",
         isActive: true,
+        address: Object.freeze({
+            city: "São Paulo",
+            latitude: new Decimal("-23.550520"),
+            longitude: new Decimal("-46.633308"),
+        }),
+    });
+    const CLIENT_UNIT = Object.freeze({
+        ...UNIT,
+        address: {
+            city: "São Paulo",
+            latitude: -23.55052,
+            longitude: -46.633308,
+        },
     });
 
     function buildUnitParams(unitId = UNIT_ID) {
@@ -523,11 +538,15 @@ describe("EditUnitPage", () => {
         expect(getUnit).toHaveBeenCalledWith(MANAGER, UNIT_ID);
         expect(findElementByType(element, UnitForm).props).toEqual({
             hotelId: HOTEL_ID,
-            unit: UNIT,
+            unit: CLIENT_UNIT,
+            isEditable: true,
+        });
+        expect(findElementByType(element, UnitLocationPanel).props).toEqual({
+            unit: CLIENT_UNIT,
             isEditable: true,
         });
         expect(findElementByType(element, DeactivateUnitButton).props).toEqual({
-            unit: UNIT,
+            unit: CLIENT_UNIT,
         });
     });
 
@@ -543,6 +562,9 @@ describe("EditUnitPage", () => {
         expect(findElementByType(element, UnitForm).props.isEditable).toBe(
             false,
         );
+        expect(
+            findElementByType(element, UnitLocationPanel).props.isEditable,
+        ).toBe(false);
         expect(findElementByType(element, DeactivateUnitButton)).toBeNull();
     });
 
