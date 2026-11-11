@@ -14,6 +14,8 @@ const EXPECTED_CHECK_CONSTRAINTS = Object.freeze([
     "room_price_history_price_check",
     "room_price_history_validity_check",
     "room_type_history_validity_check",
+    "room_price_period_price_check",
+    "room_price_period_dates_check",
 ]);
 
 const EXPECTED_AUDIT_LOG_INDEXES = Object.freeze([
@@ -221,6 +223,18 @@ function buildViolations(ids) {
             constraint: "room_type_history_validity_check",
             sql: "INSERT INTO room_type_history (id, room_id, room_type_id, valid_from, valid_until) VALUES (?, ?, ?, ?, '2025-01-01 00:00:00')",
             params: [randomUUID(), ids.room, ids.roomType, NOW],
+        },
+        {
+            label: "room_price_period.price = 0 is rejected",
+            constraint: "room_price_period_price_check",
+            sql: "INSERT INTO room_price_period (id, room_id, start_date, end_date, price, updated_at) VALUES (?, ?, '2026-01-01', '2026-01-01', 0, ?)",
+            params: [randomUUID(), ids.room, NOW],
+        },
+        {
+            label: "room_price_period.end_date < start_date is rejected",
+            constraint: "room_price_period_dates_check",
+            sql: "INSERT INTO room_price_period (id, room_id, start_date, end_date, price, updated_at) VALUES (?, ?, '2026-01-02', '2026-01-01', 10, ?)",
+            params: [randomUUID(), ids.room, NOW],
         },
     ];
 }
