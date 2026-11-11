@@ -51,7 +51,9 @@ describe("ManagedHotelList", () => {
 
         const items = screen.getAllByRole("listitem");
         expect(items).toHaveLength(2);
-        expect(within(items[0]).getByText("Pousada Serra Azul")).toBeVisible();
+        expect(
+            within(items[0]).getByRole("link", { name: "Pousada Serra Azul" }),
+        ).toHaveAttribute("href", "/manager/hotels/hotel-1");
         expect(within(items[0]).getByText("Rascunho")).toBeVisible();
         expect(
             within(items[0]).getByText("Pousada · CNPJ 11.222.333/0001-81"),

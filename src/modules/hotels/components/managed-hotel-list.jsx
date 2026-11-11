@@ -8,6 +8,7 @@ import {
     getHotelStatusLabel,
     getHotelStatusTone,
 } from "../hotel-status-labels.js";
+import { buildManagedHotelHref } from "../managed-hotel-routes.js";
 
 export const NEW_HOTEL_HREF = "/manager/hotels/new";
 
@@ -30,7 +31,12 @@ function ManagedHotelItem({ hotel }) {
     return (
         <li className="rounded-card border-border bg-surface flex flex-col gap-2 border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
-                <p className="text-foreground font-medium">{hotel.name}</p>
+                <Link
+                    href={buildManagedHotelHref(hotel.id)}
+                    className="text-foreground hover:text-primary focus-visible:ring-ring rounded-control font-medium focus-visible:ring-2 focus-visible:outline-none"
+                >
+                    {hotel.name}
+                </Link>
                 <p className="text-muted-foreground text-sm">
                     {hotel.category} · CNPJ {formatCnpj(hotel.cnpj)}
                 </p>
