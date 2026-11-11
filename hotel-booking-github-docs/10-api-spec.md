@@ -84,6 +84,11 @@ INTERNAL_ERROR
 SERVICE_UNAVAILABLE
 RATE_LIMITED
 INVALID_RESET_TOKEN
+INVALID_MEDIA_TYPE
+MEDIA_TOO_LARGE
+VIDEO_TOO_LONG
+MEDIA_NOT_FOUND
+MEDIA_IN_USE
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -94,6 +99,9 @@ INVALID_RESET_TOKEN
 - `SERVICE_UNAVAILABLE`: uma dependência obrigatória (MySQL, Redis) não respondeu. Usado só por `GET /api/health/ready`, com status `503`.
 - `RATE_LIMITED`: muitas tentativas seguidas. Usado por `POST /api/auth/login` depois de 5 falhas na mesma combinação de IP e e-mail em 15 min (doc 15). Responde `429` com o header `Retry-After` (segundos até a janela expirar) e a mensagem "Muitas tentativas de login. Tente novamente em alguns minutos.". Também usado por `POST /api/auth/forgot-password` (5 pedidos por IP e e-mail em 15 min, existindo a conta ou não) e por `POST /api/auth/reset-password` (10 tokens inválidos por IP em 15 min).
 - `INVALID_RESET_TOKEN`: token de recuperação de senha inexistente, expirado, já usado, substituído por um pedido mais novo ou de usuário inativo. Um único código e a mesma mensagem ("Link de recuperação inválido ou expirado. Solicite um novo.") para todos os casos. Responde `400`.
+- `INVALID_MEDIA_TYPE`, `MEDIA_TOO_LARGE` e `VIDEO_TOO_LONG`: arquivo com MIME, extensão, tamanho ou duração fora do doc 22. Respondem `400`.
+- `MEDIA_NOT_FOUND`: o Cloudinary não tem o asset pedido. Responde `404`.
+- `MEDIA_IN_USE`: o asset já está gravado numa tabela de imagem e só sai pela rota da galeria. Responde `409`.
 
 ## Status HTTP
 
@@ -318,6 +326,10 @@ Rotas não devem conter regra de negócio complexa. Devem validar, autorizar, de
 POST /api/media/sign-upload
 DELETE /api/media/:id
 ```
+
+- Só o `MANAGER` proprietário ou adicional do hotel do alvo (RN110). Alvo de outro hotel ou inexistente responde `404` (`HOTEL_NOT_FOUND`, `UNIT_NOT_FOUND` ou `ROOM_TYPE_NOT_FOUND`); outro papel, `403`. Nenhum binário passa pela API (RNF029): o cliente envia o arquivo direto ao Cloudinary.
+- `sign-upload`: corpo `scope` (`HOTEL`, `UNIT` ou `ROOM_TYPE`; `REVIEW` entra na BE-61), `targetId`, `fileName`, `mimeType`, `bytes` e `durationSeconds` (só vídeo). Exige o hotel em `DRAFT` (`409 INVALID_HOTEL_STATUS`). Valida MIME, extensão e tamanho declarados (doc 22) e responde `200` com `assetId`, `publicId` (`{pasta}/{targetId}/{assetId}`, gerado pela aplicação), `folder`, `resourceType`, `allowedFormats`, `maxBytes`, `uploadUrl`, `cloudName`, `apiKey`, `timestamp`, `signature` e `expiresAt` (`timestamp` + 1 h, validade da assinatura no Cloudinary). Nunca devolve o `CLOUDINARY_API_SECRET`.
+- `DELETE /api/media/:id?scope=...&targetId=...`: `:id` é o `assetId` devolvido pelo `sign-upload`; a rota remonta o `publicId` e apaga o asset do Cloudinary só se ele ainda não estiver numa tabela de imagem (senão `409 MEDIA_IN_USE`). Serve para limpar um upload cujo cadastro falhou. Responde `200` com `assetId` e `publicId`, ou `404 MEDIA_NOT_FOUND`.
 
 ## Promotions
 

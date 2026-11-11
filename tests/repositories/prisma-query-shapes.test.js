@@ -8,6 +8,7 @@ import { createHotelManagerRepository } from "../../src/repositories/hotel-manag
 import { createHotelPolicyRepository } from "../../src/repositories/hotel-policy-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
+import { createMediaReferenceRepository } from "../../src/repositories/media-reference-repository.js";
 import { createPasswordResetTokenRepository } from "../../src/repositories/password-reset-token-repository.js";
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
 import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
@@ -54,6 +55,7 @@ const policies = createHotelPolicyRepository(() => prisma);
 const transactions = createTransactionRunner(() => prisma);
 const passwordResetTokens = createPasswordResetTokenRepository(() => prisma);
 const users = createUserRepository(() => prisma);
+const mediaReferences = createMediaReferenceRepository(() => prisma);
 
 const NEW_HOTEL = {
     ownerUserId: ID,
@@ -382,6 +384,23 @@ const QUERIES = [
     [
         "user.update of the password hash",
         () => users.update(ID, { passwordHash: "hash" }),
+    ],
+    [
+        "hotelImage.findUnique by Cloudinary public id",
+        () =>
+            mediaReferences.isPublicIdReferenced("HOTEL", `hotels/${ID}/${ID}`),
+    ],
+    [
+        "unitImage.findUnique by Cloudinary public id",
+        () => mediaReferences.isPublicIdReferenced("UNIT", `units/${ID}/${ID}`),
+    ],
+    [
+        "roomTypeImage.findUnique by Cloudinary public id",
+        () =>
+            mediaReferences.isPublicIdReferenced(
+                "ROOM_TYPE",
+                `room-types/${ID}/${ID}`,
+            ),
     ],
     [
         "$transaction with a callback",

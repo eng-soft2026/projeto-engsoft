@@ -52,6 +52,13 @@ export const ERROR_MESSAGES = Object.freeze({
         "Muitas tentativas. Tente novamente em alguns minutos.",
     [ERROR_CODES.INVALID_RESET_TOKEN]:
         "Link de recuperação inválido ou expirado. Solicite um novo.",
+    [ERROR_CODES.INVALID_MEDIA_TYPE]: "Formato de arquivo não aceito.",
+    [ERROR_CODES.MEDIA_TOO_LARGE]:
+        "O arquivo excede o tamanho máximo permitido.",
+    [ERROR_CODES.VIDEO_TOO_LONG]: "O vídeo excede a duração máxima permitida.",
+    [ERROR_CODES.MEDIA_NOT_FOUND]: "Mídia não encontrada.",
+    [ERROR_CODES.MEDIA_IN_USE]:
+        "A mídia está em uso e não pode ser removida por aqui.",
     [CLIENT_ERROR_CODES.NETWORK_ERROR]:
         "Não foi possível conectar ao servidor. Verifique sua conexão.",
 });

@@ -227,6 +227,22 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             resourceAccess: "Only an authorized manager may create a unit.",
         },
         {
+            path: "/api/media/:id",
+            method: "DELETE",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager of the target's hotel may delete an unregistered asset.",
+        },
+        {
+            path: "/api/media/sign-upload",
+            method: "POST",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager of the target's hotel, in DRAFT, may sign an upload.",
+        },
+        {
             path: "/api/policies/:id",
             method: "GET",
             access: "roles",
