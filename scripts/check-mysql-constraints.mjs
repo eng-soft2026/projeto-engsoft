@@ -16,6 +16,12 @@ const EXPECTED_CHECK_CONSTRAINTS = Object.freeze([
     "room_type_history_validity_check",
     "room_price_period_price_check",
     "room_price_period_dates_check",
+    "hotel_image_bytes_check",
+    "hotel_image_dimensions_check",
+    "unit_image_bytes_check",
+    "unit_image_dimensions_check",
+    "room_type_image_bytes_check",
+    "room_type_image_dimensions_check",
 ]);
 
 const EXPECTED_AUDIT_LOG_INDEXES = Object.freeze([
@@ -168,6 +174,31 @@ async function insertFixture(client) {
     return ids;
 }
 
+function buildImageViolations(ids) {
+    const owners = [
+        { table: "hotel_image", column: "hotel_id", id: ids.hotel },
+        { table: "unit_image", column: "unit_id", id: ids.unit },
+        { table: "room_type_image", column: "room_type_id", id: ids.roomType },
+    ];
+    return owners.flatMap(({ table, column, id }) => {
+        const sql = `INSERT INTO ${table} (id, ${column}, cloudinary_public_id, url, position, format, bytes, width, height, updated_at) VALUES (?, ?, ?, 'https://example.com/probe.jpg', 0, 'jpg', ?, ?, 1, ?)`;
+        return [
+            {
+                label: `${table}.bytes = 0 is rejected`,
+                constraint: `${table}_bytes_check`,
+                sql,
+                params: [randomUUID(), id, `probe/${randomUUID()}`, 0, 1, NOW],
+            },
+            {
+                label: `${table}.width = 0 is rejected`,
+                constraint: `${table}_dimensions_check`,
+                sql,
+                params: [randomUUID(), id, `probe/${randomUUID()}`, 1, 0, NOW],
+            },
+        ];
+    });
+}
+
 function buildViolations(ids) {
     return [
         {
@@ -236,6 +267,7 @@ function buildViolations(ids) {
             sql: "INSERT INTO room_price_period (id, room_id, start_date, end_date, price, updated_at) VALUES (?, ?, '2026-01-02', '2026-01-01', 10, ?)",
             params: [randomUUID(), ids.room, NOW],
         },
+        ...buildImageViolations(ids),
     ];
 }
 

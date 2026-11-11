@@ -57,9 +57,6 @@ const DOC_TABLES_BY_SECTION = {
 };
 
 const PENDING_TABLES = [
-    "HOTEL_IMAGE",
-    "UNIT_IMAGE",
-    "ROOM_TYPE_IMAGE",
     "UNIT_BLOCK",
     "ROOM_BLOCK",
     "RESERVATION",

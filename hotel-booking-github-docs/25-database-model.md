@@ -526,6 +526,8 @@ ROOM_TYPE_IMAGE
 
 Quartos físicos não possuem galeria própria.
 
+Nas três tabelas: `cloudinary_public_id` é `VARCHAR(255)` e único; `url` é `VARCHAR(500)`; `position` é inteiro sem sinal; `format` (`VARCHAR(20)`), `bytes`, `width` e `height` são obrigatórios, com `CHECK (bytes > 0)` e `CHECK (width > 0 AND height > 0)`; há também `updated_at`, porque reordenar ou trocar a capa altera a linha; o índice é `(dono, position)`. A capa única, o limite de 10 imagens do hotel e a ordem são regras do service, não constraints. `ROOM_TYPE_IMAGE` não tem `is_cover`.
+
 ## 13. Bloqueios de disponibilidade
 
 ### UNIT_BLOCK
