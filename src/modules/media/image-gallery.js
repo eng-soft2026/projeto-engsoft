@@ -65,6 +65,7 @@ export function createImageGalleryService({
         createOwnerNotFoundError,
         createImageNotFoundError,
         createImageLimitError,
+        assertOwnerIsWritable = () => {},
     } = gallery;
 
     async function findManagedOwnerOrThrow(manager, ownerId, client) {
@@ -75,7 +76,8 @@ export function createImageGalleryService({
         return owner;
     }
 
-    function assertHotelIsEditable(owner) {
+    function assertGalleryIsEditable(owner) {
+        assertOwnerIsWritable(owner);
         if (!canEditHotel(owner.hotel.status)) {
             throw createInvalidHotelStatusError();
         }
@@ -83,7 +85,7 @@ export function createImageGalleryService({
 
     async function findEditableOwnerOrThrow(manager, ownerId) {
         const owner = await findManagedOwnerOrThrow(manager, ownerId);
-        assertHotelIsEditable(owner);
+        assertGalleryIsEditable(owner);
         return owner;
     }
 
@@ -95,7 +97,7 @@ export function createImageGalleryService({
                 ownerId,
                 client,
             );
-            assertHotelIsEditable(current);
+            assertGalleryIsEditable(current);
             const images = await imageRepository.listByOwner(ownerId, client);
             return work(client, images);
         });

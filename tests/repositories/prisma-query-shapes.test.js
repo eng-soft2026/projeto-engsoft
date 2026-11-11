@@ -14,6 +14,7 @@ import { createPasswordResetTokenRepository } from "../../src/repositories/passw
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
 import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
+import { createRoomTypeImageRepository } from "../../src/repositories/room-type-image-repository.js";
 import { createUnitImageRepository } from "../../src/repositories/unit-image-repository.js";
 import { createUnitRepository } from "../../src/repositories/unit-repository.js";
 import { createUserRepository } from "../../src/repositories/user-repository.js";
@@ -60,6 +61,7 @@ const users = createUserRepository(() => prisma);
 const mediaReferences = createMediaReferenceRepository(() => prisma);
 const hotelImages = createHotelImageRepository(() => prisma);
 const unitImages = createUnitImageRepository(() => prisma);
+const roomTypeImages = createRoomTypeImageRepository(() => prisma);
 
 const NEW_HOTEL_IMAGE = {
     hotelId: ID,
@@ -446,6 +448,24 @@ const QUERIES = [
     ],
     ["unitImage.clearCover", () => unitImages.clearCover(ID)],
     ["unitImage.delete", () => unitImages.delete(ID)],
+    ["roomTypeImage.listByOwner", () => roomTypeImages.listByOwner(ID)],
+    ["roomTypeImage.findById", () => roomTypeImages.findById(ID)],
+    [
+        "roomTypeImage.create",
+        () =>
+            roomTypeImages.create({
+                ...NEW_HOTEL_IMAGE,
+                hotelId: undefined,
+                isCover: undefined,
+                roomTypeId: ID,
+                cloudinaryPublicId: `room-types/${ID}/${ID}`,
+            }),
+    ],
+    [
+        "roomTypeImage.updateFields",
+        () => roomTypeImages.updateFields(ID, { position: 2 }),
+    ],
+    ["roomTypeImage.delete", () => roomTypeImages.delete(ID)],
     [
         "$transaction with a callback",
         () =>
