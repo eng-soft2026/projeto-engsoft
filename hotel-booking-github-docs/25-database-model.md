@@ -284,7 +284,7 @@ ADDRESS
 - updated_at
 ```
 
-`latitude` e `longitude` são `DECIMAL(9,6)` anuláveis. Quem as preenche é a geocodificação (Fase 3, RN088), nunca o cliente; até lá ficam `NULL`, em vez de um valor falso como `0,0`, que é um ponto válido no oceano. Ao alterar o endereço, o service volta as duas colunas a `NULL`, porque a coordenada antiga deixou de valer. Pesquisa e mapa devem ignorar unidades sem coordenadas, e a Fase 3 deve exigi-las antes de publicar o hotel.
+`latitude` e `longitude` são `DECIMAL(9,6)` anuláveis. Quem as preenche é a geocodificação (Fase 3, RN088) ou a correção manual do gestor (RN089), nunca o cadastro da unidade; até lá ficam `NULL`, em vez de um valor falso como `0,0`, que é um ponto válido no oceano. Ao alterar a localização do endereço (qualquer campo menos `complement`), o service volta as duas colunas a `NULL`, porque a coordenada antiga deixou de valer, e geocodifica de novo; a coordenada só é gravada se o endereço ainda for o geocodificado. O gestor corrige o marcador por `PATCH /api/units/:id/location` (RN089). Pesquisa e mapa devem ignorar unidades sem coordenadas, e a Fase 3 deve exigi-las antes de publicar o hotel.
 
 Cardinalidade:
 

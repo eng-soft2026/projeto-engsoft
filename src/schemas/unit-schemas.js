@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BRAZIL_COORDINATE_BOUNDS } from "../constants/geocoding.js";
 import {
     BRAZILIAN_STATES,
     MAX_UNIT_PHONES,
@@ -147,6 +148,43 @@ export const updateUnitSchema = z
     .refine(hasAnyUnitChange, {
         error: "Informe ao menos um campo para atualizar.",
     });
+
+const COORDINATE_PATTERN = /^-?\d{1,3}(\.\d{1,6})?$/;
+
+function createCoordinateSchema(label, min, max) {
+    return z
+        .union([z.number(), z.string().trim()], {
+            error: `Informe a ${label}.`,
+        })
+        .transform((value) => String(value))
+        .refine((value) => COORDINATE_PATTERN.test(value), {
+            error: `A ${label} deve ser um número com até 6 casas decimais.`,
+            abort: true,
+        })
+        .refine(
+            (value) => {
+                const coordinate = Number(value);
+                return coordinate >= min && coordinate <= max;
+            },
+            { error: `A ${label} deve ficar dentro do território brasileiro.` },
+        );
+}
+
+export const unitLocationSchema = z.object(
+    {
+        latitude: createCoordinateSchema(
+            "latitude",
+            BRAZIL_COORDINATE_BOUNDS.minLatitude,
+            BRAZIL_COORDINATE_BOUNDS.maxLatitude,
+        ),
+        longitude: createCoordinateSchema(
+            "longitude",
+            BRAZIL_COORDINATE_BOUNDS.minLongitude,
+            BRAZIL_COORDINATE_BOUNDS.maxLongitude,
+        ),
+    },
+    { error: "Envie a posição do marcador." },
+);
 
 export const unitParamsSchema = z.object(
     { id: z.uuid({ error: "Identificador de unidade inválido." }) },

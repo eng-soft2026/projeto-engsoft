@@ -13,7 +13,10 @@ function createFakePrisma() {
             count: vi.fn(async () => 0),
             update: vi.fn(async () => ({ id: "unit-1" })),
         },
-        address: { update: vi.fn(async () => ({ id: "address-1" })) },
+        address: {
+            update: vi.fn(async () => ({ id: "address-1" })),
+            updateMany: vi.fn(async () => ({ count: 1 })),
+        },
         unitPhone: {
             deleteMany: vi.fn(async () => ({ count: 1 })),
             createMany: vi.fn(async () => ({ count: 1 })),
@@ -120,6 +123,64 @@ describe("unitRepository", () => {
             data: { city: "Santos", latitude: null, longitude: null },
             select: { id: true },
         });
+    });
+
+    it("updateAddressFields updates only the given address fields", async () => {
+        await repository.updateAddressFields("unit-1", {
+            latitude: "-23.561414",
+            longitude: "-46.655881",
+        });
+
+        expect(prisma.address.update).toHaveBeenCalledWith({
+            where: { unitId: "unit-1" },
+            data: { latitude: "-23.561414", longitude: "-46.655881" },
+            select: { id: true },
+        });
+    });
+
+    it("updateCoordinatesIfAddressMatches writes only while the address is unchanged", async () => {
+        const address = {
+            zipCode: "01310100",
+            street: "Avenida Paulista",
+            number: "1000",
+            complement: "Bloco A",
+            neighborhood: "Bela Vista",
+            city: "São Paulo",
+            state: "SP",
+        };
+        const coordinates = {
+            latitude: "-23.561414",
+            longitude: "-46.655881",
+        };
+
+        const isStored = await repository.updateCoordinatesIfAddressMatches(
+            "unit-1",
+            address,
+            coordinates,
+        );
+
+        expect(isStored).toBe(true);
+        expect(prisma.address.updateMany).toHaveBeenCalledWith({
+            where: {
+                unitId: "unit-1",
+                zipCode: "01310100",
+                street: "Avenida Paulista",
+                number: "1000",
+                neighborhood: "Bela Vista",
+                city: "São Paulo",
+                state: "SP",
+            },
+            data: coordinates,
+        });
+
+        prisma.address.updateMany.mockResolvedValueOnce({ count: 0 });
+        await expect(
+            repository.updateCoordinatesIfAddressMatches(
+                "unit-1",
+                address,
+                coordinates,
+            ),
+        ).resolves.toBe(false);
     });
 
     it("replacePhones deletes the old phones before creating the new ones", async () => {

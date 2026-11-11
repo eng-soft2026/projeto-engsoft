@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     createUnitSchema,
+    unitLocationSchema,
     unitParamsSchema,
     updateUnitSchema,
 } from "../../src/schemas/unit-schemas.js";
@@ -218,5 +219,61 @@ describe("params schemas", () => {
     it("accepts UUIDs and rejects anything else", () => {
         expect(unitParamsSchema.safeParse({ id: UUID }).success).toBe(true);
         expect(unitParamsSchema.safeParse({ id: "1" }).success).toBe(false);
+    });
+});
+
+describe("unitLocationSchema (RN089)", () => {
+    it("accepts numbers and strings inside Brazil and returns strings", () => {
+        expect(
+            unitLocationSchema.parse({
+                latitude: -23.561414,
+                longitude: " -46.655881 ",
+            }),
+        ).toEqual({ latitude: "-23.561414", longitude: "-46.655881" });
+    });
+
+    it.each([
+        ["the north end (Monte Caburaí)", 5.27, -60.2],
+        ["the south end (Arroio Chuí)", -33.75, -53.4],
+        ["the west end (Nascente do Moa)", -7.53, -73.98],
+        ["Fernando de Noronha", -3.85, -32.42],
+        ["Martim Vaz", -20.5, -28.85],
+    ])("accepts %s", (label, latitude, longitude) => {
+        expect(
+            unitLocationSchema.safeParse({ latitude, longitude }).success,
+        ).toBe(true);
+    });
+
+    it.each([
+        ["Lisbon", { latitude: 38.72, longitude: -9.14 }],
+        ["Buenos Aires", { latitude: -34.6, longitude: -58.38 }],
+        ["the null island", { latitude: 0, longitude: 0 }],
+        ["a latitude north of Brazil", { latitude: 6, longitude: -60 }],
+        ["a longitude west of Brazil", { latitude: -10, longitude: -75 }],
+    ])("refuses %s", (label, input) => {
+        expect(issueMessage(unitLocationSchema, input)).toMatch(
+            /dentro do território brasileiro/,
+        );
+    });
+
+    it("refuses more than 6 decimals, text and missing fields", () => {
+        expect(
+            issueMessage(unitLocationSchema, {
+                latitude: "-23.5614141",
+                longitude: "-46.655881",
+            }),
+        ).toBe("A latitude deve ser um número com até 6 casas decimais.");
+        expect(
+            issueMessage(unitLocationSchema, {
+                latitude: "-23.56",
+                longitude: "abc",
+            }),
+        ).toBe("A longitude deve ser um número com até 6 casas decimais.");
+        expect(issueMessage(unitLocationSchema, { latitude: "-23.56" })).toBe(
+            "Informe a longitude.",
+        );
+        expect(issueMessage(unitLocationSchema, null)).toBe(
+            "Envie a posição do marcador.",
+        );
     });
 });
