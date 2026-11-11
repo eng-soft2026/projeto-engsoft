@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     buildManagedHotelHref,
     isSectionActive,
+    listManagedHotelSections,
     MANAGED_HOTEL_SECTIONS,
 } from "../../../src/modules/hotels/managed-hotel-routes.js";
 
@@ -24,6 +25,19 @@ describe("managed hotel routes", () => {
             "Gestores",
             "Políticas",
         ]);
+    });
+
+    it("lists the managers section only for the hotel owner", () => {
+        const ownerLabels = listManagedHotelSections(true).map(
+            ({ label }) => label,
+        );
+        const managerLabels = listManagedHotelSections(false).map(
+            ({ label }) => label,
+        );
+
+        expect(ownerLabels).toContain("Gestores");
+        expect(managerLabels).not.toContain("Gestores");
+        expect(managerLabels).toHaveLength(MANAGED_HOTEL_SECTIONS.length - 1);
     });
 
     it("marks the data section active only on the hotel root", () => {

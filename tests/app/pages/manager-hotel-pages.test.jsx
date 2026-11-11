@@ -10,6 +10,9 @@ import ManagedHotelLayout from "../../../src/app/(manager)/manager/hotels/[id]/l
 import ManagedHotelPage, {
     metadata as managedHotelMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/page.jsx";
+import HotelManagersPage, {
+    metadata as hotelManagersMetadata,
+} from "../../../src/app/(manager)/manager/hotels/[id]/managers/page.jsx";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import {
     ERROR_CODES,
@@ -18,6 +21,7 @@ import {
 } from "../../../src/lib/errors.js";
 import { CreateHotelForm } from "../../../src/modules/hotels/components/create-hotel-form.jsx";
 import { EditHotelForm } from "../../../src/modules/hotels/components/edit-hotel-form.jsx";
+import { HotelManagersPanel } from "../../../src/modules/hotels/components/hotel-managers-panel.jsx";
 import { HotelTabs } from "../../../src/modules/hotels/components/hotel-tabs.jsx";
 import { ManagedHotelHeader } from "../../../src/modules/hotels/components/managed-hotel-header.jsx";
 import {
@@ -157,11 +161,23 @@ describe("ManagedHotelLayout", () => {
         expect(requirePageRole).toHaveBeenCalledWith([USER_ROLES.MANAGER]);
         expect(getHotel).toHaveBeenCalledWith(MANAGER, HOTEL_ID);
         expect(findElementByType(element, ManagedHotelHeader).props).toEqual({
-            hotel: HOTEL,
+            hotel: { ...HOTEL, isOwner: true },
         });
         expect(findElementByType(element, HotelTabs).props).toEqual({
             hotelId: HOTEL_ID,
+            isOwner: true,
         });
+    });
+
+    it("hides the owner tabs from an additional manager", async () => {
+        getHotel.mockResolvedValue({ ...HOTEL, ownerUserId: "manager-9" });
+
+        const element = await ManagedHotelLayout({
+            children: "content",
+            params: buildParams(),
+        });
+
+        expect(findElementByType(element, HotelTabs).props.isOwner).toBe(false);
     });
 
     it("answers not found for an invalid identifier", async () => {
@@ -219,5 +235,53 @@ describe("ManagedHotelPage", () => {
             cnpj: "11222333000181",
             email: "contato@pousada.com",
         });
+    });
+});
+
+describe("HotelManagersPage", () => {
+    const OWNER = Object.freeze({
+        id: "manager-1",
+        name: "Ana Dona",
+        email: "ana@exemplo.com",
+    });
+    const MANAGERS = Object.freeze([
+        { id: "manager-2", name: "Bruno", email: "bruno@exemplo.com" },
+    ]);
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        requirePageRole.mockResolvedValue(MANAGER);
+    });
+
+    it("renders the managers panel for the owner", async () => {
+        getHotel.mockResolvedValue({
+            ...HOTEL,
+            owner: OWNER,
+            managers: MANAGERS,
+        });
+
+        const element = await HotelManagersPage({ params: buildParams() });
+
+        expect(hotelManagersMetadata.title).toBe(
+            "Gestores do hotel | Reserva de Hotéis",
+        );
+        expect(findElementByType(element, HotelManagersPanel).props).toEqual({
+            hotelId: HOTEL_ID,
+            owner: OWNER,
+            managers: MANAGERS,
+        });
+    });
+
+    it("answers not found for an additional manager", async () => {
+        getHotel.mockResolvedValue({
+            ...HOTEL,
+            ownerUserId: "manager-9",
+            owner: { ...OWNER, id: "manager-9" },
+        });
+
+        await expect(
+            HotelManagersPage({ params: buildParams() }),
+        ).rejects.toThrow("NEXT_NOT_FOUND");
+        expect(notFound).toHaveBeenCalled();
     });
 });
