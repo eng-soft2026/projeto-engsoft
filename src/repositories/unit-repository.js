@@ -101,6 +101,35 @@ export function createUnitRepository(getClient = getPrisma) {
             });
         },
 
+        updateAddressFields(unitId, data, client = getClient()) {
+            return client.address.update({
+                where: { unitId },
+                data,
+                select: { id: true },
+            });
+        },
+
+        async updateCoordinatesIfAddressMatches(
+            unitId,
+            address,
+            { latitude, longitude },
+            client = getClient(),
+        ) {
+            const { count } = await client.address.updateMany({
+                where: {
+                    unitId,
+                    zipCode: address.zipCode,
+                    street: address.street,
+                    number: address.number,
+                    neighborhood: address.neighborhood,
+                    city: address.city,
+                    state: address.state,
+                },
+                data: { latitude, longitude },
+            });
+            return count > 0;
+        },
+
         async replacePhones(unitId, phones, client = getClient()) {
             await client.unitPhone.deleteMany({ where: { unitId } });
             await client.unitPhone.createMany({

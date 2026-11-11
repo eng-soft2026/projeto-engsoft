@@ -234,6 +234,22 @@ const QUERIES = [
             }),
     ],
     ["address.update", () => units.replaceAddress(ID, NEW_UNIT.address)],
+    [
+        "address.update of some fields",
+        () =>
+            units.updateAddressFields(ID, {
+                latitude: "-23.561414",
+                longitude: "-46.655881",
+            }),
+    ],
+    [
+        "address.updateMany coordinates if the address matches",
+        () =>
+            units.updateCoordinatesIfAddressMatches(ID, NEW_UNIT.address, {
+                latitude: "-23.561414",
+                longitude: "-46.655881",
+            }),
+    ],
     ["unitPhone.deleteMany", () => units.replacePhones(ID, ["11912345678"])],
     ["roomType.create", () => roomTypes.create(NEW_ROOM_TYPE)],
     ["roomType.findById", () => roomTypes.findById(ID)],

@@ -2,6 +2,7 @@ import { SYSTEM_SETTING_KEYS } from "../constants/system-settings.js";
 import { PLATFORM_MAX_OVERBOOKING_PERCENT } from "../constants/unit.js";
 import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import { ERROR_CODES, NotFoundError, ValidationError } from "../lib/errors.js";
+import { logger as defaultLogger, serializeError } from "../lib/logger.js";
 import { buildPageMeta, getSkipTake } from "../lib/pagination.js";
 import { transactionRunner as defaultTransactionRunner } from "../lib/transaction.js";
 import {
@@ -12,6 +13,7 @@ import {
     canEditHotel,
     createInvalidHotelStatusError,
 } from "../modules/hotels/hotel-status-machine.js";
+import { geocodingService as defaultGeocodingService } from "../modules/maps/geocoding-service.js";
 import { hotelRepository as defaultHotelRepository } from "../repositories/hotel-repository.js";
 import { systemSettingRepository as defaultSystemSettingRepository } from "../repositories/system-setting-repository.js";
 import { unitRepository as defaultUnitRepository } from "../repositories/unit-repository.js";
@@ -29,6 +31,45 @@ function createUnitNotFoundError() {
         ERROR_CODES.UNIT_NOT_FOUND,
         "Unidade não encontrada.",
     );
+}
+
+const ADDRESS_LOCATION_FIELDS = Object.freeze([
+    "zipCode",
+    "street",
+    "number",
+    "neighborhood",
+    "city",
+    "state",
+]);
+
+const ADDRESS_CHANGES = Object.freeze({
+    NONE: "NONE",
+    COMPLEMENT: "COMPLEMENT",
+    LOCATION: "LOCATION",
+});
+
+function resolveAddressChange(storedAddress, nextAddress) {
+    if (nextAddress === undefined) {
+        return ADDRESS_CHANGES.NONE;
+    }
+    const hasLocationChanged = ADDRESS_LOCATION_FIELDS.some(
+        (field) => storedAddress?.[field] !== nextAddress[field],
+    );
+    if (hasLocationChanged) {
+        return ADDRESS_CHANGES.LOCATION;
+    }
+    const storedComplement = storedAddress?.complement ?? null;
+    if (storedComplement !== (nextAddress.complement ?? null)) {
+        return ADDRESS_CHANGES.COMPLEMENT;
+    }
+    return ADDRESS_CHANGES.NONE;
+}
+
+function withCoordinates(unit, coordinates) {
+    if (!coordinates) {
+        return unit;
+    }
+    return { ...unit, address: { ...unit.address, ...coordinates } };
 }
 
 function presentUnit(unit) {
@@ -60,6 +101,8 @@ export function createUnitService({
     hotelRepository,
     systemSettingRepository,
     transactionRunner,
+    geocodingService,
+    logger,
 }) {
     async function resolveMaxOverbookingPercent() {
         const setting = await systemSettingRepository.findByKey(
@@ -103,6 +146,36 @@ export function createUnitService({
         return hotel;
     }
 
+    async function geocodeUnitAddress(unitId, address) {
+        try {
+            const coordinates = await geocodingService.geocodeAddress(address);
+            const isStored =
+                await unitRepository.updateCoordinatesIfAddressMatches(
+                    unitId,
+                    address,
+                    coordinates,
+                );
+            return isStored ? coordinates : null;
+        } catch (error) {
+            logger.warn("Unit address geocoding failed", {
+                unitId,
+                error: serializeError(error),
+            });
+            return null;
+        }
+    }
+
+    async function findEditableUnitOrThrow(manager, unitId) {
+        const unit = await unitRepository.findByIdWithHotel(unitId);
+        if (!unit || !canManageHotel(manager, unit.hotel)) {
+            throw createUnitNotFoundError();
+        }
+        if (!canEditHotel(unit.hotel.status)) {
+            throw createInvalidHotelStatusError();
+        }
+        return unit;
+    }
+
     async function createUnit(manager, hotelId, input) {
         const hotel = await findManagedHotelOrThrow(manager, hotelId);
         if (!canEditHotel(hotel.status)) {
@@ -126,7 +199,8 @@ export function createUnitService({
                 client,
             );
         });
-        return presentUnit(unit);
+        const coordinates = await geocodeUnitAddress(unit.id, input.address);
+        return presentUnit(withCoordinates(unit, coordinates));
     }
 
     async function listUnits(
@@ -158,13 +232,11 @@ export function createUnitService({
     }
 
     async function updateUnit(manager, unitId, changes) {
-        const unit = await unitRepository.findByIdWithHotel(unitId);
-        if (!unit || !canManageHotel(manager, unit.hotel)) {
-            throw createUnitNotFoundError();
-        }
-        if (!canEditHotel(unit.hotel.status)) {
-            throw createInvalidHotelStatusError();
-        }
+        const unit = await findEditableUnitOrThrow(manager, unitId);
+        const addressChange = resolveAddressChange(
+            unit.address,
+            changes.address,
+        );
         await assertOverbookingWithinLimit(changes.overbookingPercentage);
 
         await transactionRunner.run(async (client) => {
@@ -174,10 +246,17 @@ export function createUnitService({
                 { ...buildScalarChanges(changes), updatedAt: new Date() },
                 client,
             );
-            if (changes.address !== undefined) {
+            if (addressChange === ADDRESS_CHANGES.LOCATION) {
                 await unitRepository.replaceAddress(
                     unitId,
                     changes.address,
+                    client,
+                );
+            }
+            if (addressChange === ADDRESS_CHANGES.COMPLEMENT) {
+                await unitRepository.updateAddressFields(
+                    unitId,
+                    { complement: changes.address.complement ?? null },
                     client,
                 );
             }
@@ -189,6 +268,25 @@ export function createUnitService({
                 );
             }
         });
+        if (addressChange === ADDRESS_CHANGES.LOCATION) {
+            await geocodeUnitAddress(unitId, changes.address);
+        }
+        return presentUnit(await unitRepository.findByIdWithHotel(unitId));
+    }
+
+    async function updateUnitLocation(manager, unitId, coordinates) {
+        const unit = await findEditableUnitOrThrow(manager, unitId);
+        await transactionRunner.run(async (client) => {
+            await assertHotelEditable(unit.hotelId, client);
+            await unitRepository.updateAddressFields(
+                unitId,
+                {
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude,
+                },
+                client,
+            );
+        });
         return presentUnit(await unitRepository.findByIdWithHotel(unitId));
     }
 
@@ -197,6 +295,7 @@ export function createUnitService({
         listUnits,
         getUnit,
         updateUnit,
+        updateUnitLocation,
     });
 }
 
@@ -205,4 +304,6 @@ export const unitService = createUnitService({
     hotelRepository: defaultHotelRepository,
     systemSettingRepository: defaultSystemSettingRepository,
     transactionRunner: defaultTransactionRunner,
+    geocodingService: defaultGeocodingService,
+    logger: defaultLogger,
 });

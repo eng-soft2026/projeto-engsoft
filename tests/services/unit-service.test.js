@@ -54,6 +54,8 @@ function createWorld({
     maxOverbooking = "10",
     storedUnit = buildStoredUnit(),
     managers = [],
+    coordinates = null,
+    isAddressCurrent = true,
 } = {}) {
     const state = {
         hotel: {
@@ -96,7 +98,27 @@ function createWorld({
         replacePhones: vi.fn(async () => {
             calls.push("replacePhones");
         }),
+        updateAddressFields: vi.fn(async () => {
+            calls.push("updateAddressFields");
+        }),
+        updateCoordinatesIfAddressMatches: vi.fn(async () => {
+            calls.push("updateCoordinatesIfAddressMatches");
+            return isAddressCurrent;
+        }),
     };
+    const geocodingService = {
+        geocodeAddress: vi.fn(async () => {
+            calls.push("geocodeAddress");
+            if (!coordinates) {
+                throw new NotFoundError(
+                    ERROR_CODES.GEOCODING_NOT_FOUND,
+                    "Endereço não encontrado.",
+                );
+            }
+            return coordinates;
+        }),
+    };
+    const logger = { warn: vi.fn() };
     const systemSettingRepository = {
         findByKey: vi.fn(async () =>
             maxOverbooking === null ? null : { value: maxOverbooking },
@@ -111,6 +133,8 @@ function createWorld({
         hotelRepository,
         systemSettingRepository,
         transactionRunner,
+        geocodingService,
+        logger,
     });
     return {
         service,
@@ -119,6 +143,8 @@ function createWorld({
         unitRepository,
         hotelRepository,
         transactionRunner,
+        geocodingService,
+        logger,
     };
 }
 
@@ -524,5 +550,167 @@ describe("unitService with additional managers (RN110)", () => {
         await expect(
             world.service.createUnit(OTHER_MANAGER, HOTEL_ID, UNIT_INPUT),
         ).rejects.toMatchObject({ code: ERROR_CODES.HOTEL_NOT_FOUND });
+    });
+});
+
+const COORDINATES = Object.freeze({
+    latitude: "-23.561414",
+    longitude: "-46.655881",
+});
+
+describe("unitService geocoding of the unit address (RN088)", () => {
+    it("stores the coordinates after creating the unit and returns them", async () => {
+        const world = createWorld({ coordinates: COORDINATES });
+
+        const unit = await world.service.createUnit(
+            MANAGER,
+            HOTEL_ID,
+            UNIT_INPUT,
+        );
+
+        expect(world.geocodingService.geocodeAddress).toHaveBeenCalledWith(
+            ADDRESS,
+        );
+        expect(
+            world.unitRepository.updateCoordinatesIfAddressMatches,
+        ).toHaveBeenCalledWith(UNIT_ID, ADDRESS, COORDINATES);
+        expect(world.calls).toEqual([
+            "create",
+            "geocodeAddress",
+            "updateCoordinatesIfAddressMatches",
+        ]);
+        expect(unit.address.latitude).toBe(COORDINATES.latitude);
+        expect(unit.address.longitude).toBe(COORDINATES.longitude);
+    });
+
+    it("keeps the unit without coordinates and logs when geocoding fails", async () => {
+        const world = createWorld();
+
+        const unit = await world.service.createUnit(
+            MANAGER,
+            HOTEL_ID,
+            UNIT_INPUT,
+        );
+
+        expect(unit.id).toBe(UNIT_ID);
+        expect(unit.address.latitude).toBeNull();
+        expect(unit.address.longitude).toBeNull();
+        expect(
+            world.unitRepository.updateCoordinatesIfAddressMatches,
+        ).not.toHaveBeenCalled();
+        expect(world.logger.warn).toHaveBeenCalledWith(
+            "Unit address geocoding failed",
+            expect.objectContaining({ unitId: UNIT_ID }),
+        );
+    });
+
+    it("does not return coordinates the address no longer matches", async () => {
+        const world = createWorld({
+            coordinates: COORDINATES,
+            isAddressCurrent: false,
+        });
+
+        const unit = await world.service.createUnit(
+            MANAGER,
+            HOTEL_ID,
+            UNIT_INPUT,
+        );
+
+        expect(unit.address.latitude).toBeNull();
+    });
+
+    it("geocodes again after the address location changes", async () => {
+        const world = createWorld({ coordinates: COORDINATES });
+        const address = { ...ADDRESS, city: "Santos" };
+
+        await world.service.updateUnit(MANAGER, UNIT_ID, { address });
+
+        expect(world.calls).toEqual([
+            "updateFields",
+            "replaceAddress",
+            "geocodeAddress",
+            "updateCoordinatesIfAddressMatches",
+        ]);
+        expect(world.geocodingService.geocodeAddress).toHaveBeenCalledWith(
+            address,
+        );
+    });
+
+    it("keeps the coordinates when the same address is sent again", async () => {
+        const world = createWorld({ coordinates: COORDINATES });
+
+        await world.service.updateUnit(MANAGER, UNIT_ID, {
+            name: "Novo",
+            address: { ...ADDRESS },
+        });
+
+        expect(world.unitRepository.replaceAddress).not.toHaveBeenCalled();
+        expect(world.unitRepository.updateAddressFields).not.toHaveBeenCalled();
+        expect(world.geocodingService.geocodeAddress).not.toHaveBeenCalled();
+    });
+
+    it("updates only the complement without touching the coordinates", async () => {
+        const world = createWorld({ coordinates: COORDINATES });
+
+        await world.service.updateUnit(MANAGER, UNIT_ID, {
+            address: { ...ADDRESS, complement: "Bloco B" },
+        });
+
+        expect(world.unitRepository.updateAddressFields).toHaveBeenCalledWith(
+            UNIT_ID,
+            { complement: "Bloco B" },
+            TRANSACTION_CLIENT,
+        );
+        expect(world.unitRepository.replaceAddress).not.toHaveBeenCalled();
+        expect(world.geocodingService.geocodeAddress).not.toHaveBeenCalled();
+    });
+});
+
+describe("unitService.updateUnitLocation (RN089)", () => {
+    it("stores the corrected marker position in a transaction", async () => {
+        const world = createWorld();
+
+        const unit = await world.service.updateUnitLocation(
+            MANAGER,
+            UNIT_ID,
+            COORDINATES,
+        );
+
+        expect(world.transactionRunner.run).toHaveBeenCalledOnce();
+        expect(world.hotelRepository.findById).toHaveBeenCalledWith(
+            HOTEL_ID,
+            TRANSACTION_CLIENT,
+        );
+        expect(world.unitRepository.updateAddressFields).toHaveBeenCalledWith(
+            UNIT_ID,
+            COORDINATES,
+            TRANSACTION_CLIENT,
+        );
+        expect(unit).not.toHaveProperty("hotel");
+        expect(world.geocodingService.geocodeAddress).not.toHaveBeenCalled();
+    });
+
+    it("answers 404 for a unit of another manager, an admin or a customer", async () => {
+        const world = createWorld();
+
+        for (const user of [OTHER_MANAGER, ADMIN, CUSTOMER]) {
+            await expect(
+                world.service.updateUnitLocation(user, UNIT_ID, COORDINATES),
+            ).rejects.toMatchObject({ code: ERROR_CODES.UNIT_NOT_FOUND });
+        }
+        expect(world.unitRepository.updateAddressFields).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        HOTEL_STATUSES.UNDER_REVIEW,
+        HOTEL_STATUSES.PUBLISHED,
+        HOTEL_STATUSES.BLOCKED,
+    ])("refuses the correction while the hotel is %s", async (status) => {
+        const world = createWorld({ hotelStatus: status });
+
+        await expect(
+            world.service.updateUnitLocation(MANAGER, UNIT_ID, COORDINATES),
+        ).rejects.toMatchObject({ code: ERROR_CODES.INVALID_HOTEL_STATUS });
+        expect(world.unitRepository.updateAddressFields).not.toHaveBeenCalled();
     });
 });

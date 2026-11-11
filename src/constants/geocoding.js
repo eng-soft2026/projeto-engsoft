@@ -16,3 +16,10 @@ export const NOMINATIM_MAX_THROTTLE_ATTEMPTS = 3;
 export const NOMINATIM_TIMEOUT_MS = 5000;
 
 export const GEOCODING_COORDINATE_DECIMALS = 6;
+
+export const BRAZIL_COORDINATE_BOUNDS = Object.freeze({
+    minLatitude: -33.76,
+    maxLatitude: 5.28,
+    minLongitude: -74,
+    maxLongitude: -28.84,
+});

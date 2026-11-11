@@ -15,7 +15,7 @@ Agent notes, terse. History of what was done lives in git, issues and PRs; rules
 - Public reads (hotel, unit, room, amenities, acceptances) need their own `select`: no `administrativeNotes`, no CNPJ (`PUBLIC_HOTEL_FIELDS` has it).
 - `hotelEvents.publish` and `passwordResetService` publisher are no-ops until RabbitMQ/e-mail (BE-80, BE-83).
 - `HotelService.submitForReview`: require an active unit with coordinates (after geocoding) and at least one hotel photo.
-- Geocoding (RN088) fills `address.latitude/longitude` via `geocodingService.geocodeAddress` (BE-21); until then search and maps skip units without them. Deploy must set `NOMINATIM_USER_AGENT` (contact per Nominatim policy), else geocoding answers 503.
+- Geocoding runs synchronously in unit create/update (up to ~7 s); move it to a job with RabbitMQ (BE-80) and retry units left without coordinates. Search and maps skip units without them. Deploy must set `NOMINATIM_USER_AGENT` (contact per Nominatim policy), else geocoding answers 503.
 - Units: deactivated unit is still editable in the API (the manager screen shows it read-only; decide the API rule); block overbooking change and deactivation with active reservations.
 - Audit log: query API and screen (doc 14, route not in doc 10), `result = FAILURE` for denied attempts, DB-level immutability (GRANT, triggers).
 - Prisma 8 drops `prisma.$transaction`; only `src/lib/transaction.js` and the seed use it.
@@ -56,3 +56,4 @@ One line per decision not recorded in the spec or `CLAUDE.md`: date, decision, w
 - 2026-11-11: Agent docs (`CLAUDE.md`, this file, the issue-cycle skill) are written only for the agent: terse, essentials only. Tests run only in CI on the PR.
 - 2026-11-11: BE-14 has no `/api/room-types/:id/price-periods` despite the issue: doc 25 says a period always targets a room.
 - 2026-11-11: Acceptances/policies screen (FE-13): UI only toggles `is_system` policies (no text edit), though `PATCH /api/policies/:id` still allows it; server `VALIDATION_ERROR` has no field path, so the screens show it as a form error.
+- 2026-11-11: BE-21: unit address is replaced and re-geocoded only when a location field changes (complement alone keeps coordinates), so the edit form does not wipe a manual marker correction. Marker range = Brazil bounding box with oceanic islands (lat -33.76..5.28, lng -74..-28.84, https://pt.wikipedia.org/wiki/Pontos_extremos_do_Brasil).
