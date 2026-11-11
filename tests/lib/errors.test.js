@@ -46,6 +46,11 @@ const SPEC_CODES = [
     "SERVICE_UNAVAILABLE",
     "RATE_LIMITED",
     "INVALID_RESET_TOKEN",
+    "INVALID_MEDIA_TYPE",
+    "MEDIA_TOO_LARGE",
+    "VIDEO_TOO_LONG",
+    "MEDIA_NOT_FOUND",
+    "MEDIA_IN_USE",
 ];
 
 describe("ERROR_CODES", () => {

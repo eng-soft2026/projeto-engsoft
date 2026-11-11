@@ -73,6 +73,18 @@ Vídeos são limitados a 50 MB (`MAX_VIDEO_UPLOAD_MB`) e 10 segundos (`MAX_REVIE
 - apagar asset do Cloudinary apenas após validação de autorização;
 - limpar uploads órfãos quando uma operação de cadastro falhar.
 
+## Upload assinado
+
+Implementado em `src/modules/media/` (`media-service.js`, `media-rules.js`, `cloudinary-gateway.js`) e nas rotas `POST /api/media/sign-upload` e `DELETE /api/media/:id` (doc 10).
+
+- O cliente pede a assinatura e envia o arquivo direto ao Cloudinary; nenhum binário passa pela API nem pelo MySQL (RNF029).
+- A aplicação gera o `publicId` (`{pasta}/{targetId}/{uuid}`) e ignora o nome original do arquivo, que serve só para conferir a extensão.
+- A assinatura cobre `public_id`, `timestamp` e `allowed_formats`; o Cloudinary recusa outro formato e qualquer troca desses campos. Ela vale 1 hora a partir do `timestamp` ([Cloudinary, Authentication signatures](https://cloudinary.com/documentation/authentication_signatures)), e a resposta traz esse prazo em `expiresAt`.
+- O upload direto assinado não aceita um limite de tamanho (a referência do upload não tem esse parâmetro: [Upload API](https://cloudinary.com/documentation/image_upload_api_reference_upload)). Por isso o tamanho e a duração são validados pelo valor declarado no pedido de assinatura, e o valor real (`bytes`, `duration`) é conferido de novo quando a mídia é gravada na tabela de imagem ou em `REVIEW_MEDIA`.
+- 1 MB = 1.048.576 bytes. As variáveis `MAX_IMAGE_UPLOAD_MB`, `MAX_VIDEO_UPLOAD_MB` e `MAX_REVIEW_VIDEO_SECONDS` só reduzem os tetos do domínio (50 MB, 50 MB e 10 s); valor inválido usa o padrão.
+- Galerias de hotel, unidade e tipo aceitam só imagens JPG/JPEG; vídeo só em avaliação (a partir da BE-61). A assinatura exige o hotel em `DRAFT`, como a edição da galeria.
+- O `DELETE` apaga do Cloudinary apenas asset ainda não gravado em tabela de imagem, depois de autorizar pelo hotel do alvo. Imagem já gravada sai pela rota da galeria.
+
 ## Pastas sugeridas
 
 ```text
