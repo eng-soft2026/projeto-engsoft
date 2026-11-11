@@ -73,7 +73,7 @@ const stateSchema = z
         error: "UF inválida.",
     });
 
-const addressSchema = z.object(
+export const addressSchema = z.object(
     {
         zipCode: zipCodeSchema,
         street: createRequiredText("o logradouro", 200),

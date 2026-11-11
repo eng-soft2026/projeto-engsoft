@@ -69,6 +69,8 @@ export const ERROR_MESSAGES = Object.freeze({
         "Já existe um período de preço nessas datas para este quarto.",
     [ERROR_CODES.PRICE_PERIOD_PAST]:
         "Períodos já iniciados não podem ser alterados nem excluídos.",
+    [ERROR_CODES.GEOCODING_NOT_FOUND]:
+        "Não encontramos esse endereço no mapa. Confira os dados.",
     [CLIENT_ERROR_CODES.NETWORK_ERROR]:
         "Não foi possível conectar ao servidor. Verifique sua conexão.",
 });

@@ -6,6 +6,7 @@ import {
     ForbiddenError,
     NotFoundError,
     RateLimitError,
+    ServiceUnavailableError,
     UnauthorizedError,
     ValidationError,
 } from "../../src/lib/errors.js";
@@ -58,6 +59,7 @@ const SPEC_CODES = [
     "PRICE_PERIOD_NOT_FOUND",
     "PRICE_PERIOD_OVERLAP",
     "PRICE_PERIOD_PAST",
+    "GEOCODING_NOT_FOUND",
 ];
 
 describe("ERROR_CODES", () => {
@@ -172,5 +174,16 @@ describe("RateLimitError", () => {
         expect(error.code).toBe(ERROR_CODES.RATE_LIMITED);
         expect(error.message).toBe("Muitas tentativas.");
         expect(error.retryAfterSeconds).toBe(120);
+    });
+});
+
+describe("ServiceUnavailableError", () => {
+    it("uses the SERVICE_UNAVAILABLE code by default", () => {
+        const error = new ServiceUnavailableError("Indisponível.");
+
+        expect(error).toBeInstanceOf(DomainError);
+        expect(error.name).toBe("ServiceUnavailableError");
+        expect(error.code).toBe(ERROR_CODES.SERVICE_UNAVAILABLE);
+        expect(error.message).toBe("Indisponível.");
     });
 });

@@ -17,6 +17,7 @@ import * as hotelPolicies from "../../../src/app/api/hotels/[id]/policies/route.
 import * as hotelRoomTypes from "../../../src/app/api/hotels/[id]/room-types/route.js";
 import * as hotelSubmitReview from "../../../src/app/api/hotels/[id]/submit-review/route.js";
 import * as hotelUnits from "../../../src/app/api/hotels/[id]/units/route.js";
+import * as geocodingResolveAddress from "../../../src/app/api/geocoding/resolve-address/route.js";
 import * as media from "../../../src/app/api/media/[id]/route.js";
 import * as mediaSignUpload from "../../../src/app/api/media/sign-upload/route.js";
 import * as policies from "../../../src/app/api/policies/[id]/route.js";
@@ -69,6 +70,9 @@ vi.mock("../../../src/services/hotel-manager-service.js", () => ({
 vi.mock("../../../src/services/hotel-service.js", () => ({
     hotelService: service,
 }));
+vi.mock("../../../src/modules/maps/geocoding-service.js", () => ({
+    geocodingService: service,
+}));
 vi.mock("../../../src/modules/media/media-service.js", () => ({
     mediaService: service,
 }));
@@ -116,6 +120,7 @@ const ROUTE_HANDLERS = new Map([
     ["/api/hotels/:id/room-types", hotelRoomTypes],
     ["/api/hotels/:id/submit-review", hotelSubmitReview],
     ["/api/hotels/:id/units", hotelUnits],
+    ["/api/geocoding/resolve-address", geocodingResolveAddress],
     ["/api/media/:id", media],
     ["/api/media/sign-upload", mediaSignUpload],
     ["/api/policies/:id", policies],
@@ -206,7 +211,7 @@ describe("HTTP authorization matrix", () => {
     });
 
     it("maps every protected matrix entry to an HTTP handler", () => {
-        expect(PROTECTED_ROUTES).toHaveLength(62);
+        expect(PROTECTED_ROUTES).toHaveLength(63);
         for (const entry of PROTECTED_ROUTES) {
             expect(getHandler(entry), routeKey(entry)).toEqual(
                 expect.any(Function),

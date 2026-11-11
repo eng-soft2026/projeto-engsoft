@@ -6,6 +6,7 @@ import {
     ForbiddenError,
     NotFoundError,
     RateLimitError,
+    ServiceUnavailableError,
     UnauthorizedError,
     ValidationError,
 } from "../../src/lib/errors.js";
@@ -25,6 +26,7 @@ describe("getHttpStatus", () => {
         [new NotFoundError(ERROR_CODES.USER_NOT_FOUND, "Não encontrado."), 404],
         [new ConflictError(ERROR_CODES.USER_ALREADY_EXISTS, "Já existe."), 409],
         [new RateLimitError("Muitas tentativas.", 60), 429],
+        [new ServiceUnavailableError("Indisponível."), 503],
         [new DomainError(ERROR_CODES.HOLD_EXPIRED, "Expirou."), 400],
     ])("maps %s to %i", (error, status) => {
         expect(getHttpStatus(error)).toBe(status);

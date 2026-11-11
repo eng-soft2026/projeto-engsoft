@@ -46,6 +46,7 @@ export const ERROR_CODES = Object.freeze({
     PRICE_PERIOD_NOT_FOUND: "PRICE_PERIOD_NOT_FOUND",
     PRICE_PERIOD_OVERLAP: "PRICE_PERIOD_OVERLAP",
     PRICE_PERIOD_PAST: "PRICE_PERIOD_PAST",
+    GEOCODING_NOT_FOUND: "GEOCODING_NOT_FOUND",
 });
 
 export class DomainError extends Error {
@@ -82,5 +83,11 @@ export class RateLimitError extends DomainError {
     constructor(message, retryAfterSeconds) {
         super(ERROR_CODES.RATE_LIMITED, message);
         this.retryAfterSeconds = retryAfterSeconds;
+    }
+}
+
+export class ServiceUnavailableError extends DomainError {
+    constructor(message, code = ERROR_CODES.SERVICE_UNAVAILABLE) {
+        super(code, message);
     }
 }

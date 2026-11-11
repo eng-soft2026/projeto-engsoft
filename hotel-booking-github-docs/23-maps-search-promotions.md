@@ -24,6 +24,8 @@ Não geocodificar durante cada renderização ou pesquisa.
 
 O backend deverá respeitar controle de taxa do Nominatim e identificar adequadamente a aplicação.
 
+Implementação (`src/modules/maps/`): busca estruturada com `countrycodes=br`, `User-Agent` de `NOMINATIM_USER_AGENT`, timeout de 5 s e no máximo 1 chamada por segundo para toda a aplicação (slot no Redis). Cache no Redis pela chave SHA-256 do endereço normalizado (sem acento, caixa e espaços extras; CEP só dígitos; sem complemento): 30 dias para endereço encontrado, 1 dia para não encontrado. Falha do cache não impede a geocodificação.
+
 Autocomplete de endereço não deverá consultar o Nominatim público a cada tecla. Para o trabalho, usar campos estruturados de endereço e executar geocodificação somente ao confirmar o cadastro.
 
 ## Distância

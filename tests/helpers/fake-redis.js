@@ -2,6 +2,16 @@ const MS_PER_SECOND = 1000;
 const NO_EXPIRATION = -1;
 const MISSING_KEY = -2;
 
+function toDurationMs(expiration) {
+    if (expiration?.type === "PX") {
+        return expiration.value;
+    }
+    if (expiration?.type === "EX") {
+        return expiration.value * MS_PER_SECOND;
+    }
+    return null;
+}
+
 export function createFakeRedis({ now = () => new Date() } = {}) {
     const entries = new Map();
 
@@ -20,6 +30,18 @@ export function createFakeRedis({ now = () => new Date() } = {}) {
     return {
         async get(key) {
             return readEntry(key)?.value ?? null;
+        },
+        async set(key, value, { expiration, condition } = {}) {
+            if (condition === "NX" && readEntry(key)) {
+                return null;
+            }
+            const durationMs = toDurationMs(expiration);
+            entries.set(key, {
+                value: String(value),
+                expiresAt:
+                    durationMs === null ? null : now().getTime() + durationMs,
+            });
+            return "OK";
         },
         async incr(key) {
             const entry = readEntry(key) ?? { value: "0", expiresAt: null };
