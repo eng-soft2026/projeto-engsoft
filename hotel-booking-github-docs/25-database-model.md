@@ -1428,3 +1428,7 @@ Ordem recomendada:
 9. implementar repositories;
 10. implementar services;
 11. testar integridade e concorrência.
+
+### Seed de demonstração
+
+Além do seed base (`npm run db:seed`), o desenvolvimento local tem um seed de demonstração (`npm run db:seed:demo`, `prisma/seeds/seed-demo.js`) com 1 gestor, 1 cliente e 2 hotéis `PUBLISHED` em cidades diferentes, cada um com unidade (endereço completo e `latitude`/`longitude` fixas), tipos de quarto, quartos, preços e comodidades globais. Ele recusa `NODE_ENV=production`, lê as senhas de `DEMO_MANAGER_PASSWORD` e `DEMO_CUSTOMER_PASSWORD` (nunca as imprime), usa ids fixos e só cria o que falta, sem sobrescrever linhas existentes. Os hotéis são gravados direto como `PUBLISHED`, sem `HOTEL_REVIEW_NOTE` nem `AUDIT_LOG`, porque o seed não é uma ação de administrador.
