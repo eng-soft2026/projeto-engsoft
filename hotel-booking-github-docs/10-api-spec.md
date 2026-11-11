@@ -89,6 +89,8 @@ MEDIA_TOO_LARGE
 VIDEO_TOO_LONG
 MEDIA_NOT_FOUND
 MEDIA_IN_USE
+HOTEL_IMAGE_NOT_FOUND
+HOTEL_IMAGE_LIMIT_REACHED
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -102,6 +104,8 @@ MEDIA_IN_USE
 - `INVALID_MEDIA_TYPE`, `MEDIA_TOO_LARGE` e `VIDEO_TOO_LONG`: arquivo com MIME, extensão, tamanho ou duração fora do doc 22. Respondem `400`.
 - `MEDIA_NOT_FOUND`: o Cloudinary não tem o asset pedido. Responde `404`.
 - `MEDIA_IN_USE`: o asset já está gravado numa tabela de imagem e só sai pela rota da galeria. Responde `409`.
+- `HOTEL_IMAGE_NOT_FOUND`: a foto não existe na galeria do hotel. Responde `404`.
+- `HOTEL_IMAGE_LIMIT_REACHED`: o hotel já tem 10 fotos (RN085). Responde `409`.
 
 ## Status HTTP
 
@@ -157,6 +161,10 @@ GET /api/hotels/:id/acceptances
 PUT /api/hotels/:id/acceptances
 GET /api/hotels/:id/policies
 POST /api/hotels/:id/policies
+GET /api/hotels/:id/images
+POST /api/hotels/:id/images
+PATCH /api/hotels/:id/images/:imageId
+DELETE /api/hotels/:id/images/:imageId
 ```
 
 - `POST /api/hotels`: apenas `MANAGER`. Corpo: `name`, `description`, `category`, `cnpj` (com ou sem máscara, numérico ou alfanumérico, RN119) e `email`. O proprietário é o usuário da sessão e o status inicial é sempre `DRAFT`; `status`, `ownerUserId` e `isActive` enviados no corpo são ignorados. Responde `201` com o hotel.
@@ -168,6 +176,7 @@ POST /api/hotels/:id/policies
 - `DELETE /api/hotels/:id/managers/:userId`: apenas o `MANAGER` proprietário. Remove o vínculo e responde `200` com `{ "removed": true }`; quem não é gestor adicional do hotel responde `404 HOTEL_MANAGER_NOT_FOUND`. O proprietário não pode ser removido porque não está na lista.
 - `PUT /api/hotels/:id/acceptances`: substitui todas as regras de aceitação do hotel (RF137). Corpo: `acceptances`, lista (até 30) de `{ type, customLabel, isAllowed, details }`, com `type` em `PETS | SMOKING | CHILDREN | VISITORS | EVENTS | OTHER`. `OTHER` exige `customLabel` e os demais tipos o proíbem; um tipo padronizado aparece uma vez e os rótulos de `OTHER` não se repetem, sem diferenciar maiúsculas (RN113); caso contrário `400 VALIDATION_ERROR`. Lista vazia remove todas. Responde `200` com as regras (`id`, `type`, `typeName`, `customLabel`, `isAllowed`, `details`). `GET` devolve a mesma lista. Só com o hotel em `DRAFT` (RN120, RN135); em outro status responde `409 INVALID_HOTEL_STATUS`.
 - `GET /api/hotels/:id/policies` (`MANAGER` proprietário, adicional ou `ADMIN`) lista as políticas, ativas e inativas. `POST` (proprietário ou adicional, hotel em `DRAFT`) recebe `type` (`CANCELLATION | QUIET_HOURS | PARKING | OTHER`), `title` e `description` e responde `201`. `isSystem` enviado no corpo é ignorado (RN136). O texto de `CANCELLATION` apenas complementa a política fixa da plataforma (RN114).
+- `/api/hotels/:id/images` (RF110, RN085, doc 22): `GET` para o `MANAGER` proprietário, adicional ou `ADMIN`, ordenado por `position`; `POST`, `PATCH` e `DELETE` só para o proprietário ou adicional e com o hotel em `DRAFT` (`409 INVALID_HOTEL_STATUS`). Cada foto devolve `id`, `hotelId`, `url`, `isCover`, `position`, `format`, `bytes`, `width`, `height`, `createdAt` e `updatedAt`. `POST` recebe `assetId` (do `sign-upload`) e `isCover` opcional; o servidor lê `bytes`, `format`, `width`, `height` e a URL segura no Cloudinary, sem aceitar metadados do cliente (`404 MEDIA_NOT_FOUND` se o arquivo não foi enviado; formato diferente de JPG/JPEG ou tamanho acima do limite apagam o asset e respondem `400 INVALID_MEDIA_TYPE` ou `MEDIA_TOO_LARGE`), recusa a 11ª foto (`409 HOTEL_IMAGE_LIMIT_REACHED`) e um asset já registrado (`409 MEDIA_IN_USE`), põe a foto no fim e responde `201`. A primeira foto vira capa. `PATCH` aceita `position` (0 até o número de fotos menos 1, as demais se deslocam) e `isCover: true` (troca a capa); `isCover: false` responde `400`, porque sempre há uma capa. `DELETE` apaga a linha, compacta as posições, promove a primeira foto restante quando a removida era a capa e, depois do commit, apaga o asset no Cloudinary (falha ali só vai para o log); responde `{ id, removed: true }`. Foto de outro hotel responde `404 HOTEL_IMAGE_NOT_FOUND`.
 - `GET|PATCH /api/policies/:id`: `PATCH` aceita ao menos um campo entre `type`, `title`, `description` e `isActive` (a política é desativada, nunca apagada). Política de hotel alheio responde `404 POLICY_NOT_FOUND`.
 
 ### Amenities

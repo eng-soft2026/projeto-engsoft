@@ -70,4 +70,80 @@ describe("cloudinaryGateway", () => {
             api_secret: "segredo-de-teste",
         });
     });
+
+    it("reads the real metadata of an uploaded asset", async () => {
+        const resource = vi.fn().mockResolvedValue({
+            public_id: "hotels/h1/a1",
+            format: "jpg",
+            bytes: 2048,
+            width: 1600,
+            height: 900,
+            secure_url:
+                "https://res.cloudinary.com/demo-cloud/image/upload/hotels/h1/a1.jpg",
+            resource_type: "image",
+        });
+        const gateway = createCloudinaryGateway({
+            getConfig: () => CONFIG,
+            sdk: { api: { resource } },
+        });
+
+        const result = await gateway.getResource({
+            publicId: "hotels/h1/a1",
+            resourceType: "image",
+        });
+
+        expect(result).toEqual({
+            publicId: "hotels/h1/a1",
+            format: "jpg",
+            bytes: 2048,
+            width: 1600,
+            height: 900,
+            secureUrl:
+                "https://res.cloudinary.com/demo-cloud/image/upload/hotels/h1/a1.jpg",
+        });
+        expect(resource).toHaveBeenCalledWith("hotels/h1/a1", {
+            resource_type: "image",
+            cloud_name: "demo-cloud",
+            api_key: "chave-publica",
+            api_secret: "segredo-de-teste",
+        });
+    });
+
+    it("returns null for an asset that does not exist", async () => {
+        const resource = vi.fn().mockRejectedValue({
+            error: { message: "Resource not found", http_code: 404 },
+        });
+        const gateway = createCloudinaryGateway({
+            getConfig: () => CONFIG,
+            sdk: { api: { resource } },
+        });
+
+        await expect(
+            gateway.getResource({
+                publicId: "hotels/h1/a1",
+                resourceType: "image",
+            }),
+        ).resolves.toBeNull();
+    });
+
+    it("hides the SDK rejection, which may carry the credentials", async () => {
+        const resource = vi.fn().mockRejectedValue({
+            request_options: { auth: "chave-publica:segredo-de-teste" },
+            error: { message: "Rate limited", http_code: 420 },
+        });
+        const gateway = createCloudinaryGateway({
+            getConfig: () => CONFIG,
+            sdk: { api: { resource } },
+        });
+
+        const error = await gateway
+            .getResource({ publicId: "hotels/h1/a1", resourceType: "image" })
+            .catch((reason) => reason);
+
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toBe(
+            "Cloudinary resource lookup failed with status 420",
+        );
+        expect(error.cause).toBeUndefined();
+    });
 });

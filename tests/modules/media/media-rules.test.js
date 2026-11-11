@@ -5,6 +5,7 @@ import {
     buildMediaPublicId,
     resolveFileExtension,
     validateMediaFile,
+    validateStoredImage,
 } from "../../../src/modules/media/media-rules.js";
 
 const LIMITS = getMediaLimits({});
@@ -145,5 +146,34 @@ describe("buildMediaPublicId", () => {
         expect(buildMediaPublicId("ROOM_TYPE", "t1", "a1")).toBe(
             "room-types/t1/a1",
         );
+    });
+});
+
+describe("validateStoredImage", () => {
+    const stored = { format: "JPG", bytes: 1024, width: 10, height: 10 };
+
+    it("accepts a JPG within the limit and normalizes the format", () => {
+        expect(validateStoredImage(stored, LIMITS)).toBe("jpg");
+        expect(validateStoredImage({ ...stored, format: "jpeg" }, LIMITS)).toBe(
+            "jpeg",
+        );
+    });
+
+    it("refuses another real format", () => {
+        expect(() =>
+            validateStoredImage({ ...stored, format: "png" }, LIMITS),
+        ).toThrow(expect.objectContaining({ code: "INVALID_MEDIA_TYPE" }));
+        expect(() =>
+            validateStoredImage({ ...stored, format: undefined }, LIMITS),
+        ).toThrow(expect.objectContaining({ code: "INVALID_MEDIA_TYPE" }));
+    });
+
+    it("refuses a real size above the image limit", () => {
+        expect(() =>
+            validateStoredImage(
+                { ...stored, bytes: LIMITS.maxImageBytes + 1 },
+                LIMITS,
+            ),
+        ).toThrow(expect.objectContaining({ code: "MEDIA_TOO_LARGE" }));
     });
 });

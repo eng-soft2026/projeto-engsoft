@@ -4,6 +4,7 @@ import { createTransactionRunner } from "../../src/lib/transaction.js";
 import { createAmenityRepository } from "../../src/repositories/amenity-repository.js";
 import { createAuditLogRepository } from "../../src/repositories/audit-log-repository.js";
 import { createHotelAcceptanceRepository } from "../../src/repositories/hotel-acceptance-repository.js";
+import { createHotelImageRepository } from "../../src/repositories/hotel-image-repository.js";
 import { createHotelManagerRepository } from "../../src/repositories/hotel-manager-repository.js";
 import { createHotelPolicyRepository } from "../../src/repositories/hotel-policy-repository.js";
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
@@ -56,6 +57,19 @@ const transactions = createTransactionRunner(() => prisma);
 const passwordResetTokens = createPasswordResetTokenRepository(() => prisma);
 const users = createUserRepository(() => prisma);
 const mediaReferences = createMediaReferenceRepository(() => prisma);
+const hotelImages = createHotelImageRepository(() => prisma);
+
+const NEW_HOTEL_IMAGE = {
+    hotelId: ID,
+    cloudinaryPublicId: `hotels/${ID}/${ID}`,
+    url: `https://res.cloudinary.com/demo/image/upload/hotels/${ID}/${ID}.jpg`,
+    isCover: true,
+    position: 0,
+    format: "jpg",
+    bytes: 204800,
+    width: 1600,
+    height: 900,
+};
 
 const NEW_HOTEL = {
     ownerUserId: ID,
@@ -402,6 +416,16 @@ const QUERIES = [
                 `room-types/${ID}/${ID}`,
             ),
     ],
+    ["hotel.lockForUpdate", () => hotels.lockForUpdate(ID, prisma)],
+    ["hotelImage.listByHotel", () => hotelImages.listByHotel(ID)],
+    ["hotelImage.findById", () => hotelImages.findById(ID)],
+    ["hotelImage.create", () => hotelImages.create(NEW_HOTEL_IMAGE)],
+    [
+        "hotelImage.updateFields",
+        () => hotelImages.updateFields(ID, { position: 2, isCover: true }),
+    ],
+    ["hotelImage.clearCover", () => hotelImages.clearCover(ID)],
+    ["hotelImage.delete", () => hotelImages.delete(ID)],
     [
         "$transaction with a callback",
         () =>
