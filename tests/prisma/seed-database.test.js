@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SYSTEM_ACCEPTANCE_TYPES } from "../../src/constants/acceptance-types.js";
 import { DEFAULT_SYSTEM_SETTINGS } from "../../src/constants/system-settings.js";
+import { GLOBAL_AMENITY_NAMES } from "../../src/constants/global-amenities.js";
 import { seedDatabase } from "../../prisma/seeds/seed-database.js";
 
 function createFakePrisma() {
@@ -10,6 +11,10 @@ function createFakePrisma() {
         },
         systemSetting: {
             upsert: vi.fn((args) => ({ model: "systemSetting", args })),
+        },
+        amenity: {
+            findMany: vi.fn(async () => []),
+            create: vi.fn((args) => ({ model: "amenity", args })),
         },
         $transaction: vi.fn(async (operations) => operations),
     };
@@ -28,7 +33,9 @@ describe("seedDatabase", () => {
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);
         const [operations] = prisma.$transaction.mock.calls[0];
         expect(operations).toHaveLength(
-            SYSTEM_ACCEPTANCE_TYPES.length + DEFAULT_SYSTEM_SETTINGS.length,
+            SYSTEM_ACCEPTANCE_TYPES.length +
+                DEFAULT_SYSTEM_SETTINGS.length +
+                GLOBAL_AMENITY_NAMES.length,
         );
     });
 
@@ -43,6 +50,18 @@ describe("seedDatabase", () => {
                 update: { name, description, isSystem: true },
             });
         }
+    });
+
+    it("creates the missing global amenities in the same transaction", async () => {
+        await seedDatabase(prisma);
+
+        expect(prisma.amenity.create).toHaveBeenCalledTimes(
+            GLOBAL_AMENITY_NAMES.length,
+        );
+        const [operations] = prisma.$transaction.mock.calls[0];
+        expect(
+            operations.filter(({ model }) => model === "amenity"),
+        ).toHaveLength(GLOBAL_AMENITY_NAMES.length);
     });
 
     it("creates missing settings without overwriting existing values", async () => {

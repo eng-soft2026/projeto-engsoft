@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ACCEPTANCE_TYPE_CODES } from "../../src/constants/acceptance-types.js";
 import { AMENITY_TARGETS } from "../../src/constants/amenity.js";
+import { GLOBAL_AMENITY_NAMES } from "../../src/constants/global-amenities.js";
 import { HOTEL_POLICY_TYPES } from "../../src/constants/hotel-policy-types.js";
+import { MAX_PAGE_SIZE } from "../../src/constants/pagination.js";
 import { getPrisma } from "../../src/lib/prisma.js";
 import { parseWithSchema } from "../../src/lib/validation.js";
 import { replaceAcceptancesSchema } from "../../src/schemas/acceptance-schemas.js";
@@ -16,6 +18,7 @@ import { amenityService } from "../../src/services/amenity-service.js";
 import { hotelManagerService } from "../../src/services/hotel-manager-service.js";
 import { hotelService } from "../../src/services/hotel-service.js";
 import { policyService } from "../../src/services/policy-service.js";
+import { seedDatabase } from "../../prisma/seeds/seed-database.js";
 import { resetDatabase, seedBaseData } from "./helpers/database.js";
 import {
     createHotelWithUnit,
@@ -35,6 +38,12 @@ async function createAmenity(manager, name) {
 function createGlobalAmenity(name, overrides = {}) {
     return getPrisma().amenity.create({
         data: { name, isGlobal: true, ...overrides },
+    });
+}
+
+function findSeededGlobalAmenity(name) {
+    return getPrisma().amenity.findFirstOrThrow({
+        where: { name, isGlobal: true, createdByUserId: null },
     });
 }
 
@@ -84,10 +93,38 @@ describe("amenities against MySQL", () => {
         owner = await createManager();
     });
 
-    it("rejects an amenity name repeated in another case", async () => {
-        await createAmenity(owner, "Piscina");
+    it("seeds the global catalog once and lists it to a manager", async () => {
+        await seedDatabase(getPrisma());
 
-        await expect(createAmenity(owner, "PISCINA")).rejects.toMatchObject({
+        const globals = await getPrisma().amenity.findMany({
+            where: { isGlobal: true },
+            select: { name: true, createdByUserId: true, isActive: true },
+        });
+        expect(globals.map(({ name }) => name).sort()).toEqual(
+            [...GLOBAL_AMENITY_NAMES].sort(),
+        );
+        for (const amenity of globals) {
+            expect(amenity).toMatchObject({
+                createdByUserId: null,
+                isActive: true,
+            });
+        }
+
+        const listed = await amenityService.listAmenities(owner, {
+            page: 1,
+            pageSize: MAX_PAGE_SIZE,
+        });
+        expect(listed.total).toBe(GLOBAL_AMENITY_NAMES.length);
+        expect(listed.items.map(({ name }) => name)).toContain("Café da manhã");
+        await expect(createAmenity(owner, "wi-fi")).rejects.toMatchObject({
+            code: "AMENITY_ALREADY_EXISTS",
+        });
+    });
+
+    it("rejects an amenity name repeated in another case", async () => {
+        await createAmenity(owner, "Ofurô");
+
+        await expect(createAmenity(owner, "OFURÔ")).rejects.toMatchObject({
             code: "AMENITY_ALREADY_EXISTS",
         });
         await expect(
@@ -96,7 +133,6 @@ describe("amenities against MySQL", () => {
     });
 
     it("rejects the name of a global amenity and allows another creator", async () => {
-        await createGlobalAmenity("Wi-Fi");
         const other = await createManager();
         await createAmenity(owner, "Sauna");
 
@@ -111,7 +147,7 @@ describe("amenities against MySQL", () => {
 
     it("attaches amenities to the four targets and replaces the set", async () => {
         const { targets } = await createSupplyTree(owner);
-        const wifi = await createGlobalAmenity("Wi-Fi");
+        const wifi = await findSeededGlobalAmenity("Wi-Fi");
         const sauna = await createAmenity(owner, "Sauna");
 
         for (const [target, id] of targets) {
@@ -146,7 +182,7 @@ describe("amenities against MySQL", () => {
 
     it("blocks a duplicated pair through the composite primary key", async () => {
         const { hotel } = await createSupplyTree(owner);
-        const wifi = await createGlobalAmenity("Wi-Fi");
+        const wifi = await findSeededGlobalAmenity("Wi-Fi");
         await amenityAssociationService.replaceAmenities(
             owner,
             AMENITY_TARGETS.HOTEL,
@@ -164,8 +200,8 @@ describe("amenities against MySQL", () => {
     it("refuses an amenity of another manager and an inactive global one", async () => {
         const { hotel } = await createSupplyTree(owner);
         const stranger = await createManager();
-        const foreign = await createAmenity(stranger, "Spa");
-        const inactive = await createGlobalAmenity("Academia", {
+        const foreign = await createAmenity(stranger, "Sala de jogos");
+        const inactive = await createGlobalAmenity("Heliponto", {
             isActive: false,
         });
 
@@ -188,7 +224,7 @@ describe("amenities against MySQL", () => {
         await hotelManagerService.addManager(owner, hotel.id, {
             email: coManager.email,
         });
-        const spa = await createAmenity(coManager, "Spa");
+        const spa = await createAmenity(coManager, "Sala de jogos");
 
         const attached = await amenityAssociationService.replaceAmenities(
             owner,
@@ -315,7 +351,7 @@ describe("acceptance rules and policies against MySQL", () => {
             where: { hotelId: hotel.id },
         });
         const room = await createRoom(owner, unit.id, roomType.id);
-        const wifi = await createGlobalAmenity("Wi-Fi");
+        const wifi = await findSeededGlobalAmenity("Wi-Fi");
         const policy = await createPolicy(owner, hotel.id);
         await hotelService.submitForReview(owner, hotel.id);
 
