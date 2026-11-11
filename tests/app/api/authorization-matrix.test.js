@@ -26,6 +26,8 @@ import * as roomTypeImages from "../../../src/app/api/room-types/[id]/images/rou
 import * as roomTypeImage from "../../../src/app/api/room-types/[id]/images/[imageId]/route.js";
 import * as rooms from "../../../src/app/api/rooms/[id]/route.js";
 import * as roomAmenities from "../../../src/app/api/rooms/[id]/amenities/route.js";
+import * as roomPricePeriods from "../../../src/app/api/rooms/[id]/price-periods/route.js";
+import * as pricePeriods from "../../../src/app/api/price-periods/[id]/route.js";
 import * as units from "../../../src/app/api/units/[id]/route.js";
 import * as unitAmenities from "../../../src/app/api/units/[id]/amenities/route.js";
 import * as unitImages from "../../../src/app/api/units/[id]/images/route.js";
@@ -73,6 +75,9 @@ vi.mock("../../../src/modules/media/media-service.js", () => ({
 vi.mock("../../../src/services/policy-service.js", () => ({
     policyService: service,
 }));
+vi.mock("../../../src/services/room-price-period-service.js", () => ({
+    roomPricePeriodService: service,
+}));
 vi.mock("../../../src/services/room-service.js", () => ({
     roomService: service,
 }));
@@ -114,12 +119,14 @@ const ROUTE_HANDLERS = new Map([
     ["/api/media/:id", media],
     ["/api/media/sign-upload", mediaSignUpload],
     ["/api/policies/:id", policies],
+    ["/api/price-periods/:id", pricePeriods],
     ["/api/room-types/:id", roomTypes],
     ["/api/room-types/:id/amenities", roomTypeAmenities],
     ["/api/room-types/:id/images", roomTypeImages],
     ["/api/room-types/:id/images/:imageId", roomTypeImage],
     ["/api/rooms/:id", rooms],
     ["/api/rooms/:id/amenities", roomAmenities],
+    ["/api/rooms/:id/price-periods", roomPricePeriods],
     ["/api/units/:id", units],
     ["/api/units/:id/amenities", unitAmenities],
     ["/api/units/:id/images", unitImages],
@@ -199,7 +206,7 @@ describe("HTTP authorization matrix", () => {
     });
 
     it("maps every protected matrix entry to an HTTP handler", () => {
-        expect(PROTECTED_ROUTES).toHaveLength(58);
+        expect(PROTECTED_ROUTES).toHaveLength(62);
         for (const entry of PROTECTED_ROUTES) {
             expect(getHandler(entry), routeKey(entry)).toEqual(
                 expect.any(Function),

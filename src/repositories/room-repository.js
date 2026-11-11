@@ -118,6 +118,12 @@ export function createRoomRepository(getClient = getPrisma) {
             if (prices > 0) {
                 return true;
             }
+            const periods = await client.roomPricePeriod.count({
+                where: { roomId },
+            });
+            if (periods > 0) {
+                return true;
+            }
             const types = await client.roomTypeHistory.count({
                 where: { roomId },
             });

@@ -11,6 +11,7 @@ import { createHotelRepository } from "../../src/repositories/hotel-repository.j
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
 import { createMediaReferenceRepository } from "../../src/repositories/media-reference-repository.js";
 import { createPasswordResetTokenRepository } from "../../src/repositories/password-reset-token-repository.js";
+import { createRoomPricePeriodRepository } from "../../src/repositories/room-price-period-repository.js";
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
 import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
@@ -52,6 +53,7 @@ const units = createUnitRepository(() => prisma);
 const systemSettings = createSystemSettingRepository(() => prisma);
 const roomTypes = createRoomTypeRepository(() => prisma);
 const rooms = createRoomRepository(() => prisma);
+const roomPricePeriods = createRoomPricePeriodRepository(() => prisma);
 const amenities = createAmenityRepository(() => prisma);
 const acceptances = createHotelAcceptanceRepository(() => prisma);
 const policies = createHotelPolicyRepository(() => prisma);
@@ -292,6 +294,41 @@ const QUERIES = [
     ],
     ["roomPriceHistory.count", () => rooms.hasHistory(ID)],
     ["roomTypeHistory.deleteMany", () => rooms.deleteById(ID)],
+    [
+        "roomPricePeriod.create",
+        () =>
+            roomPricePeriods.create({
+                roomId: ID,
+                startDate: new Date("2026-12-20T00:00:00.000Z"),
+                endDate: new Date("2026-12-31T00:00:00.000Z"),
+                price: "450.00",
+            }),
+    ],
+    [
+        "roomPricePeriod.findUnique (with access)",
+        () => roomPricePeriods.findByIdWithAccess(ID),
+    ],
+    ["roomPricePeriod.findMany", () => roomPricePeriods.listByRoom(ID)],
+    [
+        "roomPricePeriod.findFirst (overlapping)",
+        () =>
+            roomPricePeriods.findOverlapping(ID, {
+                startDate: new Date("2026-12-20T00:00:00.000Z"),
+                endDate: new Date("2026-12-31T00:00:00.000Z"),
+                excludeId: ID,
+            }),
+    ],
+    [
+        "roomPricePeriod.update",
+        () =>
+            roomPricePeriods.updateFields(ID, {
+                startDate: new Date("2026-12-21T00:00:00.000Z"),
+                endDate: new Date("2026-12-30T00:00:00.000Z"),
+                price: "480.00",
+                updatedAt: new Date(),
+            }),
+    ],
+    ["roomPricePeriod.delete", () => roomPricePeriods.deleteById(ID)],
     [
         "amenity.create",
         () => amenities.create({ createdByUserId: ID, name: "Piscina" }),

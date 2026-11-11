@@ -64,6 +64,11 @@ export const ERROR_MESSAGES = Object.freeze({
         "O hotel já tem o número máximo de fotos.",
     [ERROR_CODES.UNIT_IMAGE_NOT_FOUND]: "Foto não encontrada.",
     [ERROR_CODES.ROOM_TYPE_IMAGE_NOT_FOUND]: "Foto não encontrada.",
+    [ERROR_CODES.PRICE_PERIOD_NOT_FOUND]: "Período de preço não encontrado.",
+    [ERROR_CODES.PRICE_PERIOD_OVERLAP]:
+        "Já existe um período de preço nessas datas para este quarto.",
+    [ERROR_CODES.PRICE_PERIOD_PAST]:
+        "Períodos já iniciados não podem ser alterados nem excluídos.",
     [CLIENT_ERROR_CODES.NETWORK_ERROR]:
         "Não foi possível conectar ao servidor. Verifique sua conexão.",
 });

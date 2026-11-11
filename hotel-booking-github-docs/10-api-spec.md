@@ -92,6 +92,9 @@ MEDIA_IN_USE
 HOTEL_IMAGE_NOT_FOUND
 HOTEL_IMAGE_LIMIT_REACHED
 UNIT_IMAGE_NOT_FOUND
+PRICE_PERIOD_NOT_FOUND
+PRICE_PERIOD_OVERLAP
+PRICE_PERIOD_PAST
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -240,6 +243,10 @@ POST /api/units/:unitId/rooms
 GET /api/rooms/:id
 PATCH /api/rooms/:id
 DELETE /api/rooms/:id
+GET /api/rooms/:id/price-periods
+POST /api/rooms/:id/price-periods
+PATCH /api/price-periods/:id
+DELETE /api/price-periods/:id
 POST /api/rooms/:id/blocks
 ```
 
@@ -254,6 +261,7 @@ POST /api/rooms/:id/blocks
 - `PATCH /api/rooms/:id`: ao menos um campo entre `roomTypeId`, `number`, `floor`, `isAccessible`, `administrativeNotes`, `status`, `price` e `isActive`. `price: null` remove o preço do quarto (RN131). `isActive: false` desativa (`status` passa a `INACTIVE`) e não pode vir junto com `status`. Quarto desativado responde `409 ROOM_INACTIVE`.
 - `DELETE /api/rooms/:id` e `DELETE /api/room-types/:id`: respondem `200` com `{ id, outcome }`, em que `outcome` é `DELETED` (sem histórico) ou `DEACTIVATED` (com histórico, RN011, RN133).
 - `/api/room-types/:id/images` (RF016, doc 22): mesmo contrato da galeria da unidade (`/api/units/:id/images`), com a foto devolvendo `roomTypeId` no lugar de `unitId`, sem capa (nenhum `isCover` na resposta; `POST` recebe só `assetId` e `PATCH` só `position`, obrigatório) e sem limite de quantidade. Escrita só com o hotel em `DRAFT` e o tipo ativo (`409 ROOM_TYPE_INACTIVE`); a leitura também mostra a galeria de um tipo desativado. Tipo inexistente ou de hotel alheio responde `404 ROOM_TYPE_NOT_FOUND`; foto fora do tipo, `404 ROOM_TYPE_IMAGE_NOT_FOUND`. Os quartos físicos exibem as fotos do tipo.
+- Preço por período (RF057, RN025, doc 25 §10): `POST /api/rooms/:id/price-periods` recebe `startDate` e `endDate` (`AAAA-MM-DD`, inclusivas, `startDate <= endDate`) e `price` (positivo, até 2 casas). O `GET` devolve os períodos do quarto por `startDate` crescente, sem paginação, cada um com `{ id, roomId, startDate, endDate, price, createdAt, updatedAt }`. O `PATCH` aceita qualquer subconjunto desses campos (ao menos um). O `DELETE` remove o período e responde `{ id }`. Escrita com o hotel em `DRAFT` ou `PUBLISHED` (RN129) e o quarto ativo (`409 ROOM_INACTIVE`). `startDate` anterior a hoje responde `400`. Período já iniciado (`startDate` anterior a hoje) não é alterado nem excluído: `409 PRICE_PERIOD_PAST`. Datas sobrepostas a outro período do quarto respondem `409 PRICE_PERIOD_OVERLAP`; períodos encostados (um termina no dia 10, o outro começa no 11) são aceitos. Período inexistente ou de hotel alheio responde `404 PRICE_PERIOD_NOT_FOUND`. Não há período por tipo de quarto.
 - O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade. Número repetido na unidade responde `409 ROOM_NUMBER_ALREADY_EXISTS`.
 
 ### Search
