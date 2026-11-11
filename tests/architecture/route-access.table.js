@@ -388,6 +388,37 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             resourceAccess: "Only an authorized manager may replace amenities.",
         },
         {
+            path: "/api/units/:id/images",
+            method: "GET",
+            access: "roles",
+            roles: ["MANAGER", "ADMIN"],
+            resourceAccess: "MANAGER: managed unit hotel; ADMIN: global read.",
+        },
+        {
+            path: "/api/units/:id/images",
+            method: "POST",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager, in DRAFT, may add a unit photo.",
+        },
+        {
+            path: "/api/units/:id/images/:imageId",
+            method: "PATCH",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager, in DRAFT, may reorder a unit photo or set the cover.",
+        },
+        {
+            path: "/api/units/:id/images/:imageId",
+            method: "DELETE",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager, in DRAFT, may remove a unit photo.",
+        },
+        {
             path: "/api/units/:id/rooms",
             method: "GET",
             access: "roles",

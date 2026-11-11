@@ -91,6 +91,7 @@ MEDIA_NOT_FOUND
 MEDIA_IN_USE
 HOTEL_IMAGE_NOT_FOUND
 HOTEL_IMAGE_LIMIT_REACHED
+UNIT_IMAGE_NOT_FOUND
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -106,6 +107,7 @@ HOTEL_IMAGE_LIMIT_REACHED
 - `MEDIA_IN_USE`: o asset já está gravado numa tabela de imagem e só sai pela rota da galeria. Responde `409`.
 - `HOTEL_IMAGE_NOT_FOUND`: a foto não existe na galeria do hotel. Responde `404`.
 - `HOTEL_IMAGE_LIMIT_REACHED`: o hotel já tem 10 fotos (RN085). Responde `409`.
+- `UNIT_IMAGE_NOT_FOUND`: a foto não existe na galeria da unidade. Responde `404`.
 
 ## Status HTTP
 
@@ -206,6 +208,10 @@ GET /api/units/:id
 POST /api/hotels/:hotelId/units
 PATCH /api/units/:id
 POST /api/units/:id/blocks
+GET /api/units/:id/images
+POST /api/units/:id/images
+PATCH /api/units/:id/images/:imageId
+DELETE /api/units/:id/images/:imageId
 ```
 
 - No código, o segmento dinâmico de `/api/hotels/...` chama-se `[id]`, porque o Next não aceita dois nomes diferentes no mesmo nível. Ele continua sendo o id do hotel.
@@ -215,6 +221,7 @@ POST /api/units/:id/blocks
 - `PATCH /api/units/:id`: o `MANAGER` proprietário ou gestor adicional e somente com o hotel em `DRAFT`. Aceita os campos do cadastro, ao menos um. `address` é enviado completo e `phones` substitui a lista (RN125, RN126). `isActive: false` desativa a unidade de forma definitiva; `isActive: true` responde `400`. Não há `DELETE` (RN127).
 - Um overbooking acima de 10, ou acima de `MAX_OVERBOOKING_PERCENT` quando ele é menor, responde `400 VALIDATION_ERROR`.
 - Os horários voltam como `HH:mm`.
+- `/api/units/:id/images` (RF111, RN086, doc 22): mesmo contrato da galeria do hotel (`/api/hotels/:id/images`), com a foto devolvendo `unitId` no lugar de `hotelId`, sem limite de quantidade (nenhum `HOTEL_IMAGE_LIMIT_REACHED`; `position` vai de 0 até o número de fotos menos 1) e exatamente uma capa. Unidade inexistente ou de hotel alheio responde `404 UNIT_NOT_FOUND`; foto fora da unidade, `404 UNIT_IMAGE_NOT_FOUND`. Escrita só com o hotel em `DRAFT` (RN124).
 
 ### Room types e rooms
 

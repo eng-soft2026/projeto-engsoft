@@ -85,12 +85,12 @@ Implementado em `src/modules/media/` (`media-service.js`, `media-rules.js`, `clo
 - Galerias de hotel, unidade e tipo aceitam só imagens JPG/JPEG; vídeo só em avaliação (a partir da BE-61). A assinatura exige o hotel em `DRAFT`, como a edição da galeria.
 - O `DELETE` apaga do Cloudinary apenas asset ainda não gravado em tabela de imagem, depois de autorizar pelo hotel do alvo. Imagem já gravada sai pela rota da galeria.
 
-## Galeria do hotel
+## Galerias do hotel e da unidade
 
-Implementada em `src/services/hotel-image-service.js` e nas rotas `/api/hotels/:id/images` (doc 10).
+As regras ficam num núcleo comum (`src/modules/media/image-gallery.js`), usado por `src/services/hotel-image-service.js` (rotas `/api/hotels/:id/images`) e `src/services/unit-image-service.js` (rotas `/api/units/:id/images`, doc 10). A unidade segue as mesmas regras, sem o limite de 10 fotos (RN086), e também trava a linha do hotel dela.
 
 - O cliente registra a foto só com o `assetId`. O servidor remonta o `publicId` e lê os metadados reais pela Admin API do Cloudinary (`resource`), que é a conferência do tamanho e do formato prevista acima; uma imagem fora do limite ou que não seja JPG/JPEG é apagada do Cloudinary e recusada. Cada registro gasta uma chamada da cota da Admin API.
-- O limite de 10 fotos, a capa única e as posições contíguas (0..n-1) são conferidos numa transação que trava a linha do hotel (`SELECT ... FOR UPDATE`), então pedidos simultâneos não passam de 10 fotos nem criam duas capas.
+- O limite de 10 fotos (só no hotel), a capa única e as posições contíguas (0..n-1) são conferidos numa transação que trava a linha do hotel (`SELECT ... FOR UPDATE`), então pedidos simultâneos não passam de 10 fotos nem criam duas capas.
 - A primeira foto vira capa; remover a capa promove a primeira foto restante. Uma galeria vazia não tem capa.
 - Remover uma foto apaga a linha e, depois do commit, o asset no Cloudinary; se o Cloudinary falhar, o asset vira órfão e fica para a limpeza de órfãos.
 

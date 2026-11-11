@@ -26,6 +26,8 @@ import * as rooms from "../../../src/app/api/rooms/[id]/route.js";
 import * as roomAmenities from "../../../src/app/api/rooms/[id]/amenities/route.js";
 import * as units from "../../../src/app/api/units/[id]/route.js";
 import * as unitAmenities from "../../../src/app/api/units/[id]/amenities/route.js";
+import * as unitImages from "../../../src/app/api/units/[id]/images/route.js";
+import * as unitImage from "../../../src/app/api/units/[id]/images/[imageId]/route.js";
 import * as unitRooms from "../../../src/app/api/units/[id]/rooms/route.js";
 import * as usersMe from "../../../src/app/api/users/me/route.js";
 import { ROUTE_ACCESS_TABLE } from "../../architecture/route-access.table.js";
@@ -75,6 +77,9 @@ vi.mock("../../../src/services/room-service.js", () => ({
 vi.mock("../../../src/services/room-type-service.js", () => ({
     roomTypeService: service,
 }));
+vi.mock("../../../src/services/unit-image-service.js", () => ({
+    unitImageService: service,
+}));
 vi.mock("../../../src/services/unit-service.js", () => ({
     unitService: service,
 }));
@@ -110,6 +115,8 @@ const ROUTE_HANDLERS = new Map([
     ["/api/rooms/:id/amenities", roomAmenities],
     ["/api/units/:id", units],
     ["/api/units/:id/amenities", unitAmenities],
+    ["/api/units/:id/images", unitImages],
+    ["/api/units/:id/images/:imageId", unitImage],
     ["/api/units/:id/rooms", unitRooms],
     ["/api/users/me", usersMe],
 ]);
@@ -185,7 +192,7 @@ describe("HTTP authorization matrix", () => {
     });
 
     it("maps every protected matrix entry to an HTTP handler", () => {
-        expect(PROTECTED_ROUTES).toHaveLength(50);
+        expect(PROTECTED_ROUTES).toHaveLength(54);
         for (const entry of PROTECTED_ROUTES) {
             expect(getHandler(entry), routeKey(entry)).toEqual(
                 expect.any(Function),
