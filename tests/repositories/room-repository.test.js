@@ -27,6 +27,9 @@ function createFakePrisma() {
             create: vi.fn(async () => ({ id: "price-1" })),
             count: vi.fn(async () => 0),
         },
+        roomPricePeriod: {
+            count: vi.fn(async () => 0),
+        },
     };
 }
 
@@ -133,6 +136,15 @@ describe("roomRepository", () => {
         prisma.roomPriceHistory.count.mockResolvedValue(1);
 
         await expect(repository.hasHistory("room-1")).resolves.toBe(true);
+    });
+
+    it("hasHistory is true when the room has a price period", async () => {
+        prisma.roomPricePeriod.count.mockResolvedValue(1);
+
+        await expect(repository.hasHistory("room-1")).resolves.toBe(true);
+        expect(prisma.roomPricePeriod.count).toHaveBeenCalledWith({
+            where: { roomId: "room-1" },
+        });
     });
 
     it("hasHistory ignores the initial type row but not a type change", async () => {

@@ -288,6 +288,22 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             resourceAccess: "Only an authorized manager may update the policy.",
         },
         {
+            path: "/api/price-periods/:id",
+            method: "PATCH",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager may update a price period that has not started.",
+        },
+        {
+            path: "/api/price-periods/:id",
+            method: "DELETE",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager may delete a price period that has not started.",
+        },
+        {
             path: "/api/room-types/:id",
             method: "GET",
             access: "roles",
@@ -389,6 +405,21 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             access: "roles",
             roles: ["MANAGER"],
             resourceAccess: "Only an authorized manager may replace amenities.",
+        },
+        {
+            path: "/api/rooms/:id/price-periods",
+            method: "GET",
+            access: "roles",
+            roles: ["MANAGER", "ADMIN"],
+            resourceAccess: "MANAGER: room's hotel; ADMIN: global read.",
+        },
+        {
+            path: "/api/rooms/:id/price-periods",
+            method: "POST",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Only an authorized manager may add a price period to an active room.",
         },
         {
             path: "/api/units/:id",

@@ -11,7 +11,7 @@ Agent notes, terse. History of what was done lives in git, issues and PRs; rules
 
 - Media: BE-61 rechecks real `bytes`/`duration` of review media (as `validateStoredImage` does) and adds the `REVIEW` scope and videos. Orphans (signed never registered, failed destroy) → BE-88. No photo cap on unit/room type galleries; add abuse cap if Cloudinary quota suffers. Public room page shows room type photos via BE-15 (#76).
 - Schema part 3: doc 25 §13 onwards.
-- Rooms: extend `roomRepository.hasHistory` and `roomTypeRepository.hasRoomReferences` with blocks, reservations and price periods; warn on future reservations when blocking/deactivating (RN012, RN134); block type change with future reservations; deactivating a unit or type does not touch its rooms.
+- Rooms: extend `roomRepository.hasHistory` and `roomTypeRepository.hasRoomReferences` with blocks and reservations (price periods already count in `hasHistory`); warn on future reservations when blocking/deactivating (RN012, RN134); block type change with future reservations; deactivating a unit or type does not touch its rooms.
 - Public reads (hotel, unit, room, amenities, acceptances) need their own `select`: no `administrativeNotes`, no CNPJ (`PUBLIC_HOTEL_FIELDS` has it).
 - `hotelEvents.publish` and `passwordResetService` publisher are no-ops until RabbitMQ/e-mail (BE-80, BE-83).
 - `HotelService.submitForReview`: require an active unit with coordinates (after geocoding) and at least one hotel photo.
@@ -54,3 +54,4 @@ One line per decision not recorded in the spec or `CLAUDE.md`: date, decision, w
 - 2026-11-11: Demo seed writes through Prisma (services cannot create `PUBLISHED` hotels); reruns only create what is missing.
 - 2026-11-11: Gallery core shared by hotel, unit and room type. Unit and room type have no photo cap; room type gallery has no cover and refuses writes on an inactive type (`ROOM_TYPE_INACTIVE`), unlike the unit (team decision, BE-13).
 - 2026-11-11: Agent docs (`CLAUDE.md`, this file, the issue-cycle skill) are written only for the agent: terse, essentials only. Tests run only in CI on the PR.
+- 2026-11-11: BE-14 has no `/api/room-types/:id/price-periods` despite the issue: doc 25 says a period always targets a room.
