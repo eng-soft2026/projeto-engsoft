@@ -7,6 +7,8 @@ import { requirePageRole } from "../../../../../../../modules/auth/guards.js";
 import { isHotelEditable } from "../../../../../../../modules/hotels/hotel-editability.js";
 import { DeactivateUnitButton } from "../../../../../../../modules/units/components/deactivate-unit-button.jsx";
 import { UnitForm } from "../../../../../../../modules/units/components/unit-form.jsx";
+import { UnitLocationPanel } from "../../../../../../../modules/units/components/unit-location-panel.jsx";
+import { toClientUnit } from "../../../../../../../modules/units/unit-location.js";
 import { unitParamsSchema } from "../../../../../../../schemas/unit-schemas.js";
 import { unitService } from "../../../../../../../services/unit-service.js";
 import { loadManagedHotel } from "../../load-managed-hotel.js";
@@ -32,7 +34,7 @@ async function loadHotelUnit(manager, hotelId, unitId) {
     if (unit.hotelId !== hotelId) {
         notFound();
     }
-    return unit;
+    return toClientUnit(unit);
 }
 
 export default async function EditUnitPage({ params }) {
@@ -56,6 +58,9 @@ export default async function EditUnitPage({ params }) {
                     unit={unit}
                     isEditable={isEditable}
                 />
+            </Card>
+            <Card>
+                <UnitLocationPanel unit={unit} isEditable={isEditable} />
             </Card>
             {isEditable && <DeactivateUnitButton unit={unit} />}
         </div>
