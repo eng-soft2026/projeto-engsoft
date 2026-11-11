@@ -22,6 +22,7 @@ import {
 } from "../../../src/modules/rooms/components/managed-room-list.jsx";
 import { RemoveRoomButton } from "../../../src/modules/rooms/components/remove-room-button.jsx";
 import { RoomForm } from "../../../src/modules/rooms/components/room-form.jsx";
+import { RoomPricePeriodsPanel } from "../../../src/modules/rooms/components/room-price-periods-panel.jsx";
 
 const {
     requirePageRole,
@@ -32,6 +33,7 @@ const {
     getRoom,
     listRoomTypes,
     loadAmenityPickerData,
+    listPricePeriods,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -43,6 +45,7 @@ const {
     getRoom: vi.fn(),
     listRoomTypes: vi.fn(),
     loadAmenityPickerData: vi.fn(),
+    listPricePeriods: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -66,6 +69,9 @@ vi.mock("../../../src/services/room-type-service.js", () => ({
 }));
 vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
     loadAmenityPickerData,
+}));
+vi.mock("../../../src/services/room-price-period-service.js", () => ({
+    roomPricePeriodService: { listPricePeriods },
 }));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
@@ -304,8 +310,19 @@ describe("CreateRoomPage", () => {
 });
 
 describe("EditRoomPage", () => {
+    const PRICE_PERIODS = [
+        {
+            id: "period-1",
+            roomId: ROOM_ID,
+            startDate: "2026-12-20",
+            endDate: "2026-12-31",
+            price: "480.00",
+        },
+    ];
+
     async function renderEditPage(hotelStatus, room = ROOM) {
         mockHotelStatus(hotelStatus);
+        listPricePeriods.mockResolvedValue(PRICE_PERIODS);
         getRoom.mockResolvedValue(room);
         getUnit.mockResolvedValue(UNIT);
         return EditRoomPage({ params: buildParams({ roomId: ROOM_ID }) });
@@ -339,6 +356,15 @@ describe("EditRoomPage", () => {
             isEditable: true,
             ...AMENITY_PICKER_DATA,
         });
+        expect(listPricePeriods).toHaveBeenCalledWith(MANAGER, ROOM_ID);
+        expect(findElementByType(element, RoomPricePeriodsPanel).props).toEqual(
+            {
+                roomId: ROOM_ID,
+                periods: PRICE_PERIODS,
+                today: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                isEditable: true,
+            },
+        );
     });
 
     it("allows only the daily operation in a published hotel", async () => {
@@ -359,6 +385,9 @@ describe("EditRoomPage", () => {
         expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
             false,
         );
+        expect(
+            findElementByType(element, RoomPricePeriodsPanel).props.isEditable,
+        ).toBe(true);
     });
 
     it("is read only for an inactive room or a hotel under review", async () => {
@@ -372,6 +401,10 @@ describe("EditRoomPage", () => {
             expect(formProps.isStructureEditable).toBe(false);
             expect(formProps.isOperationEditable).toBe(false);
             expect(findElementByType(element, RemoveRoomButton)).toBeNull();
+            expect(
+                findElementByType(element, RoomPricePeriodsPanel).props
+                    .isEditable,
+            ).toBe(false);
         }
     });
 

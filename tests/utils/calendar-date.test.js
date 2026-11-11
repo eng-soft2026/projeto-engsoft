@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     calendarDateToDate,
     dateToCalendarDate,
+    formatCalendarDate,
     getCalendarDateInTimeZone,
     isValidCalendarDate,
 } from "../../src/utils/calendar-date.js";
@@ -42,5 +43,9 @@ describe("calendar date", () => {
             "2027-01-04",
         );
         expect(getCalendarDateInTimeZone(instant, "UTC")).toBe("2027-01-05");
+    });
+
+    it("formats a calendar date for display", () => {
+        expect(formatCalendarDate("2026-12-05")).toBe("05/12/2026");
     });
 });
