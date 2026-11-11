@@ -9,6 +9,7 @@ import EditRoomTypePage, {
     metadata as editRoomTypeMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/room-types/[roomTypeId]/page.jsx";
 import { AMENITY_TARGETS } from "../../../src/constants/amenity.js";
+import { MEDIA_SCOPES } from "../../../src/constants/media.js";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import { USER_ROLES } from "../../../src/constants/user-roles.js";
 import { ERROR_CODES, NotFoundError } from "../../../src/lib/errors.js";
@@ -17,6 +18,7 @@ import {
     NewRoomTypeLink,
 } from "../../../src/modules/room-types/components/managed-room-type-list.jsx";
 import { AmenityPicker } from "../../../src/modules/amenities/components/amenity-picker.jsx";
+import { MediaGallery } from "../../../src/modules/media/components/media-gallery.jsx";
 import { RemoveRoomTypeButton } from "../../../src/modules/room-types/components/remove-room-type-button.jsx";
 import { RoomTypeForm } from "../../../src/modules/room-types/components/room-type-form.jsx";
 
@@ -26,6 +28,7 @@ const {
     listRoomTypes,
     getRoomType,
     loadAmenityPickerData,
+    loadGalleryData,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -34,6 +37,7 @@ const {
     listRoomTypes: vi.fn(),
     getRoomType: vi.fn(),
     loadAmenityPickerData: vi.fn(),
+    loadGalleryData: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -52,6 +56,9 @@ vi.mock("../../../src/services/room-type-service.js", () => ({
 vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
     loadAmenityPickerData,
 }));
+vi.mock("../../../src/modules/media/gallery-data.js", () => ({
+    loadGalleryData,
+}));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: USER_ROLES.MANAGER });
@@ -61,6 +68,19 @@ const AMENITY_PICKER_DATA = Object.freeze({
         { id: "amenity-1", name: "Wi-Fi", isGlobal: true, isActive: true },
     ],
     selectedIds: ["amenity-1"],
+});
+const GALLERY_DATA = Object.freeze({
+    images: [
+        {
+            id: "image-1",
+            url: "https://res.cloudinary.com/demo/image/upload/foto.jpg",
+            position: 0,
+            width: 1200,
+            height: 800,
+            isCover: true,
+        },
+    ],
+    maxBytes: 10485760,
 });
 
 const HOTEL_ID = "6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b";
@@ -110,6 +130,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     requirePageRole.mockResolvedValue(MANAGER);
     loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
+    loadGalleryData.mockResolvedValue(GALLERY_DATA);
 });
 
 describe("HotelRoomTypesPage", () => {
@@ -228,6 +249,17 @@ describe("EditRoomTypePage", () => {
             isEditable: true,
             ...AMENITY_PICKER_DATA,
         });
+        expect(loadGalleryData).toHaveBeenCalledWith(
+            MANAGER,
+            MEDIA_SCOPES.ROOM_TYPE,
+            ROOM_TYPE_ID,
+        );
+        expect(findElementByType(element, MediaGallery).props).toEqual({
+            scope: MEDIA_SCOPES.ROOM_TYPE,
+            targetId: ROOM_TYPE_ID,
+            isEditable: true,
+            ...GALLERY_DATA,
+        });
     });
 
     it("allows only the default price in a published hotel", async () => {
@@ -242,6 +274,9 @@ describe("EditRoomTypePage", () => {
         });
         expect(findElementByType(element, RemoveRoomTypeButton)).toBeNull();
         expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
+        expect(findElementByType(element, MediaGallery).props.isEditable).toBe(
             false,
         );
     });
@@ -275,6 +310,9 @@ describe("EditRoomTypePage", () => {
         });
         expect(findElementByType(element, RemoveRoomTypeButton)).toBeNull();
         expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
+        expect(findElementByType(element, MediaGallery).props.isEditable).toBe(
             false,
         );
     });

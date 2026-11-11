@@ -2,10 +2,13 @@ import { notFound } from "next/navigation";
 import { Badge } from "../../../../../../../components/ui/badge.jsx";
 import { Card } from "../../../../../../../components/ui/card.jsx";
 import { AMENITY_TARGETS } from "../../../../../../../constants/amenity.js";
+import { MEDIA_SCOPES } from "../../../../../../../constants/media.js";
 import { USER_ROLES } from "../../../../../../../constants/user-roles.js";
 import { NotFoundError } from "../../../../../../../lib/errors.js";
 import { loadAmenityPickerData } from "../../../../../../../modules/amenities/amenity-picker-data.js";
 import { AmenityPicker } from "../../../../../../../modules/amenities/components/amenity-picker.jsx";
+import { MediaGallery } from "../../../../../../../modules/media/components/media-gallery.jsx";
+import { loadGalleryData } from "../../../../../../../modules/media/gallery-data.js";
 import { requirePageRole } from "../../../../../../../modules/auth/guards.js";
 import { isHotelEditable } from "../../../../../../../modules/hotels/hotel-editability.js";
 import { DeactivateUnitButton } from "../../../../../../../modules/units/components/deactivate-unit-button.jsx";
@@ -51,6 +54,7 @@ export default async function EditUnitPage({ params }) {
         AMENITY_TARGETS.UNIT,
         unit.id,
     );
+    const gallery = await loadGalleryData(manager, MEDIA_SCOPES.UNIT, unit.id);
 
     return (
         <div className="flex max-w-2xl flex-col gap-4">
@@ -76,6 +80,14 @@ export default async function EditUnitPage({ params }) {
                     targetId={unit.id}
                     isEditable={isEditable}
                     {...amenityPicker}
+                />
+            </Card>
+            <Card>
+                <MediaGallery
+                    scope={MEDIA_SCOPES.UNIT}
+                    targetId={unit.id}
+                    isEditable={isEditable}
+                    {...gallery}
                 />
             </Card>
             {isEditable && <DeactivateUnitButton unit={unit} />}

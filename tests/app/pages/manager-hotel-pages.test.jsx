@@ -26,6 +26,7 @@ import EditUnitPage, {
     metadata as editUnitMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/units/[unitId]/page.jsx";
 import { AMENITY_TARGETS } from "../../../src/constants/amenity.js";
+import { MEDIA_SCOPES } from "../../../src/constants/media.js";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import {
     ERROR_CODES,
@@ -33,6 +34,7 @@ import {
     NotFoundError,
 } from "../../../src/lib/errors.js";
 import { AmenityPicker } from "../../../src/modules/amenities/components/amenity-picker.jsx";
+import { MediaGallery } from "../../../src/modules/media/components/media-gallery.jsx";
 import { CreateHotelForm } from "../../../src/modules/hotels/components/create-hotel-form.jsx";
 import { EditHotelForm } from "../../../src/modules/hotels/components/edit-hotel-form.jsx";
 import { HotelAcceptancesForm } from "../../../src/modules/hotels/components/hotel-acceptances-form.jsx";
@@ -62,6 +64,7 @@ const {
     listUnits,
     getUnit,
     loadAmenityPickerData,
+    loadGalleryData,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -73,6 +76,7 @@ const {
     listUnits: vi.fn(),
     getUnit: vi.fn(),
     loadAmenityPickerData: vi.fn(),
+    loadGalleryData: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -97,6 +101,9 @@ vi.mock("../../../src/services/unit-service.js", () => ({
 vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
     loadAmenityPickerData,
 }));
+vi.mock("../../../src/modules/media/gallery-data.js", () => ({
+    loadGalleryData,
+}));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: USER_ROLES.MANAGER });
@@ -106,6 +113,19 @@ const AMENITY_PICKER_DATA = Object.freeze({
         { id: "amenity-1", name: "Wi-Fi", isGlobal: true, isActive: true },
     ],
     selectedIds: ["amenity-1"],
+});
+const GALLERY_DATA = Object.freeze({
+    images: [
+        {
+            id: "image-1",
+            url: "https://res.cloudinary.com/demo/image/upload/foto.jpg",
+            position: 0,
+            width: 1200,
+            height: 800,
+            isCover: true,
+        },
+    ],
+    maxBytes: 10485760,
 });
 
 function findElementByType(element, type) {
@@ -276,6 +296,7 @@ describe("ManagedHotelPage", () => {
         vi.clearAllMocks();
         requirePageRole.mockResolvedValue(MANAGER);
         loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
+        loadGalleryData.mockResolvedValue(GALLERY_DATA);
     });
 
     it("renders the edit form with the hotel data only", async () => {
@@ -306,9 +327,20 @@ describe("ManagedHotelPage", () => {
             isEditable: true,
             ...AMENITY_PICKER_DATA,
         });
+        expect(loadGalleryData).toHaveBeenCalledWith(
+            MANAGER,
+            MEDIA_SCOPES.HOTEL,
+            HOTEL_ID,
+        );
+        expect(findElementByType(element, MediaGallery).props).toEqual({
+            scope: MEDIA_SCOPES.HOTEL,
+            targetId: HOTEL_ID,
+            isEditable: true,
+            ...GALLERY_DATA,
+        });
     });
 
-    it("renders the amenity picker read-only outside draft", async () => {
+    it("renders the amenity picker and the gallery read-only outside draft", async () => {
         getHotel.mockResolvedValue({
             ...HOTEL,
             status: HOTEL_STATUSES.PUBLISHED,
@@ -317,6 +349,9 @@ describe("ManagedHotelPage", () => {
         const element = await ManagedHotelPage({ params: buildParams() });
 
         expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
+        expect(findElementByType(element, MediaGallery).props.isEditable).toBe(
             false,
         );
     });
@@ -564,6 +599,7 @@ describe("EditUnitPage", () => {
         requirePageRole.mockResolvedValue(MANAGER);
         getHotel.mockResolvedValue(HOTEL);
         loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
+        loadGalleryData.mockResolvedValue(GALLERY_DATA);
     });
 
     it("renders the edit form and the deactivate action", async () => {
@@ -598,6 +634,17 @@ describe("EditUnitPage", () => {
             isEditable: true,
             ...AMENITY_PICKER_DATA,
         });
+        expect(loadGalleryData).toHaveBeenCalledWith(
+            MANAGER,
+            MEDIA_SCOPES.UNIT,
+            UNIT_ID,
+        );
+        expect(findElementByType(element, MediaGallery).props).toEqual({
+            scope: MEDIA_SCOPES.UNIT,
+            targetId: UNIT_ID,
+            isEditable: true,
+            ...GALLERY_DATA,
+        });
     });
 
     it.each([
@@ -617,6 +664,9 @@ describe("EditUnitPage", () => {
         ).toBe(false);
         expect(findElementByType(element, DeactivateUnitButton)).toBeNull();
         expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
+        expect(findElementByType(element, MediaGallery).props.isEditable).toBe(
             false,
         );
     });
