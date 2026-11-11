@@ -225,7 +225,7 @@ describe("AmenityPicker", () => {
             new ApiError({
                 status: 409,
                 code: ERROR_CODES.AMENITY_ALREADY_EXISTS,
-                message: "server message",
+                message: "Já existe uma comodidade com este nome.",
             }),
         );
         const { user } = renderPicker();
