@@ -9,7 +9,7 @@ export default async function ManagedHotelLayout({ children, params }) {
     return (
         <>
             <ManagedHotelHeader hotel={hotel} />
-            <HotelTabs hotelId={hotel.id} />
+            <HotelTabs hotelId={hotel.id} isOwner={hotel.isOwner} />
             {children}
         </>
     );

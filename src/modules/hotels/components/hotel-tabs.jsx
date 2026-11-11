@@ -6,7 +6,7 @@ import { joinClassNames } from "../../../utils/class-names.js";
 import {
     buildManagedHotelHref,
     isSectionActive,
-    MANAGED_HOTEL_SECTIONS,
+    listManagedHotelSections,
 } from "../managed-hotel-routes.js";
 
 const TAB_CLASS =
@@ -17,7 +17,7 @@ const ACTIVE_TAB_CLASS = "border-primary text-primary";
 const INACTIVE_TAB_CLASS =
     "text-muted-foreground hover:text-foreground border-transparent";
 
-export function HotelTabs({ hotelId }) {
+export function HotelTabs({ hotelId, isOwner = false }) {
     const pathname = usePathname();
 
     return (
@@ -26,7 +26,7 @@ export function HotelTabs({ hotelId }) {
             className="border-border overflow-x-auto border-b"
         >
             <ul className="flex">
-                {MANAGED_HOTEL_SECTIONS.map(({ label, segment }) => {
+                {listManagedHotelSections(isOwner).map(({ label, segment }) => {
                     const isActive = isSectionActive(
                         pathname,
                         hotelId,
