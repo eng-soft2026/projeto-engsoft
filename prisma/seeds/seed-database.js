@@ -1,5 +1,6 @@
 import { SYSTEM_ACCEPTANCE_TYPES } from "../../src/constants/acceptance-types.js";
 import { DEFAULT_SYSTEM_SETTINGS } from "../../src/constants/system-settings.js";
+import { buildGlobalAmenityOperations } from "./seed-amenities.js";
 
 function upsertSystemAcceptanceType(prisma, acceptanceType) {
     const data = {
@@ -23,6 +24,7 @@ function createSettingIfMissing(prisma, setting) {
 }
 
 export async function seedDatabase(prisma) {
+    const globalAmenityOperations = await buildGlobalAmenityOperations(prisma);
     await prisma.$transaction([
         ...SYSTEM_ACCEPTANCE_TYPES.map((acceptanceType) =>
             upsertSystemAcceptanceType(prisma, acceptanceType),
@@ -30,5 +32,6 @@ export async function seedDatabase(prisma) {
         ...DEFAULT_SYSTEM_SETTINGS.map((setting) =>
             createSettingIfMissing(prisma, setting),
         ),
+        ...globalAmenityOperations,
     ]);
 }

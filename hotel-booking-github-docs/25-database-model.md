@@ -472,6 +472,8 @@ Cada tabela associativa tem chave primária composta `(<item>_id, amenity_id)` e
 
 `AMENITY.name` é `VARCHAR(100)` e há índice único em `(created_by_user_id, name)`. Como o MySQL aceita vários `NULL` em índice único, o nome das comodidades globais não é protegido pelo banco: o service recusa um nome já usado por uma global ou pelo próprio gestor.
 
+As comodidades globais vêm do seed (`GLOBAL_AMENITY_NAMES` em `src/constants/global-amenities.js`) com `is_global = true` e `created_by_user_id = NULL`. O seed cria só os nomes ausentes, sem diferenciar maiúsculas, e nunca altera uma linha existente.
+
 ## 12. Imagens
 
 Cloudinary será usado para armazenamento. Todas as tabelas de imagem e `REVIEW_MEDIA` incluem também `format`, `bytes`, `width` e `height` (e `duration_seconds` nos vídeos de `REVIEW_MEDIA`). `url` guarda a URL segura.

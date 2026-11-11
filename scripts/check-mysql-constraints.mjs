@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { SYSTEM_ACCEPTANCE_TYPES } from "../src/constants/acceptance-types.js";
+import { GLOBAL_AMENITY_NAMES } from "../src/constants/global-amenities.js";
 import { DEFAULT_SYSTEM_SETTINGS } from "../src/constants/system-settings.js";
 import { getPrisma } from "../src/lib/prisma.js";
 
@@ -93,6 +94,15 @@ async function checkSeedHasNoDuplicates(prisma) {
         "seed system settings counted once",
         toNumber(settings.total) === DEFAULT_SYSTEM_SETTINGS.length,
         `${settings.total} rows`,
+    );
+
+    const [globalAmenities] = await prisma.$queryRawUnsafe(
+        "SELECT COUNT(*) AS total FROM amenity WHERE is_global = 1 AND created_by_user_id IS NULL",
+    );
+    report(
+        "seed global amenities counted once",
+        toNumber(globalAmenities.total) === GLOBAL_AMENITY_NAMES.length,
+        `${globalAmenities.total} rows`,
     );
 
     const [admins] = await prisma.$queryRawUnsafe(
