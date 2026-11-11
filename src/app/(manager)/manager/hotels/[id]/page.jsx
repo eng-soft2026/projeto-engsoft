@@ -1,8 +1,11 @@
 import { Card } from "../../../../../components/ui/card.jsx";
 import { AMENITY_TARGETS } from "../../../../../constants/amenity.js";
+import { MEDIA_SCOPES } from "../../../../../constants/media.js";
 import { USER_ROLES } from "../../../../../constants/user-roles.js";
 import { loadAmenityPickerData } from "../../../../../modules/amenities/amenity-picker-data.js";
 import { AmenityPicker } from "../../../../../modules/amenities/components/amenity-picker.jsx";
+import { MediaGallery } from "../../../../../modules/media/components/media-gallery.jsx";
+import { loadGalleryData } from "../../../../../modules/media/gallery-data.js";
 import { requirePageRole } from "../../../../../modules/auth/guards.js";
 import { isHotelEditable } from "../../../../../modules/hotels/hotel-editability.js";
 import { EditHotelForm } from "../../../../../modules/hotels/components/edit-hotel-form.jsx";
@@ -17,6 +20,11 @@ export default async function ManagedHotelPage({ params }) {
     const amenityPicker = await loadAmenityPickerData(
         manager,
         AMENITY_TARGETS.HOTEL,
+        hotel.id,
+    );
+    const gallery = await loadGalleryData(
+        manager,
+        MEDIA_SCOPES.HOTEL,
         hotel.id,
     );
 
@@ -41,6 +49,14 @@ export default async function ManagedHotelPage({ params }) {
                     targetId={hotel.id}
                     isEditable={isHotelEditable(hotel.status)}
                     {...amenityPicker}
+                />
+            </Card>
+            <Card>
+                <MediaGallery
+                    scope={MEDIA_SCOPES.HOTEL}
+                    targetId={hotel.id}
+                    isEditable={isHotelEditable(hotel.status)}
+                    {...gallery}
                 />
             </Card>
         </div>

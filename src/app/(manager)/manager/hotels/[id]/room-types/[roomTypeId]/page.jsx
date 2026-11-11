@@ -2,10 +2,13 @@ import { notFound } from "next/navigation";
 import { Badge } from "../../../../../../../components/ui/badge.jsx";
 import { Card } from "../../../../../../../components/ui/card.jsx";
 import { AMENITY_TARGETS } from "../../../../../../../constants/amenity.js";
+import { MEDIA_SCOPES } from "../../../../../../../constants/media.js";
 import { USER_ROLES } from "../../../../../../../constants/user-roles.js";
 import { NotFoundError } from "../../../../../../../lib/errors.js";
 import { loadAmenityPickerData } from "../../../../../../../modules/amenities/amenity-picker-data.js";
 import { AmenityPicker } from "../../../../../../../modules/amenities/components/amenity-picker.jsx";
+import { MediaGallery } from "../../../../../../../modules/media/components/media-gallery.jsx";
+import { loadGalleryData } from "../../../../../../../modules/media/gallery-data.js";
 import { requirePageRole } from "../../../../../../../modules/auth/guards.js";
 import {
     canEditHotel,
@@ -55,6 +58,11 @@ export default async function EditRoomTypePage({ params }) {
         AMENITY_TARGETS.ROOM_TYPE,
         roomType.id,
     );
+    const gallery = await loadGalleryData(
+        manager,
+        MEDIA_SCOPES.ROOM_TYPE,
+        roomType.id,
+    );
 
     return (
         <div className="flex max-w-2xl flex-col gap-4">
@@ -78,6 +86,14 @@ export default async function EditRoomTypePage({ params }) {
                     targetId={roomType.id}
                     isEditable={isStructureEditable}
                     {...amenityPicker}
+                />
+            </Card>
+            <Card>
+                <MediaGallery
+                    scope={MEDIA_SCOPES.ROOM_TYPE}
+                    targetId={roomType.id}
+                    isEditable={isStructureEditable}
+                    {...gallery}
                 />
             </Card>
             {isStructureEditable && (
