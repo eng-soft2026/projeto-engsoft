@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "../../../../../../../components/ui/badge.jsx";
 import { Card } from "../../../../../../../components/ui/card.jsx";
 import { AMENITY_TARGETS } from "../../../../../../../constants/amenity.js";
+import { BUSINESS_TIME_ZONE } from "../../../../../../../constants/time-zone.js";
 import { USER_ROLES } from "../../../../../../../constants/user-roles.js";
 import { NotFoundError } from "../../../../../../../lib/errors.js";
 import { loadAmenityPickerData } from "../../../../../../../modules/amenities/amenity-picker-data.js";
@@ -13,14 +14,17 @@ import {
 } from "../../../../../../../modules/hotels/hotel-status-machine.js";
 import { DeactivateRoomButton } from "../../../../../../../modules/rooms/components/deactivate-room-button.jsx";
 import { RemoveRoomButton } from "../../../../../../../modules/rooms/components/remove-room-button.jsx";
+import { RoomPricePeriodsPanel } from "../../../../../../../modules/rooms/components/room-price-periods-panel.jsx";
 import { RoomForm } from "../../../../../../../modules/rooms/components/room-form.jsx";
 import {
     getRoomStatusLabel,
     getRoomStatusTone,
 } from "../../../../../../../modules/rooms/room-labels.js";
 import { roomParamsSchema } from "../../../../../../../schemas/room-schemas.js";
+import { roomPricePeriodService } from "../../../../../../../services/room-price-period-service.js";
 import { roomService } from "../../../../../../../services/room-service.js";
 import { unitService } from "../../../../../../../services/unit-service.js";
+import { getCalendarDateInTimeZone } from "../../../../../../../utils/calendar-date.js";
 import { loadManagedHotel } from "../../load-managed-hotel.js";
 import { loadRoomTypeOptions } from "../load-room-type-options.js";
 
@@ -73,6 +77,11 @@ export default async function EditRoomPage({ params }) {
         AMENITY_TARGETS.ROOM,
         room.id,
     );
+    const pricePeriods = await roomPricePeriodService.listPricePeriods(
+        manager,
+        room.id,
+    );
+    const today = getCalendarDateInTimeZone(new Date(), BUSINESS_TIME_ZONE);
 
     return (
         <div className="flex max-w-2xl flex-col gap-4">
@@ -104,6 +113,14 @@ export default async function EditRoomPage({ params }) {
                     targetId={room.id}
                     isEditable={isStructureEditable}
                     {...amenityPicker}
+                />
+            </Card>
+            <Card>
+                <RoomPricePeriodsPanel
+                    roomId={room.id}
+                    periods={pricePeriods}
+                    today={today}
+                    isEditable={isOperationEditable}
                 />
             </Card>
             {isOperationEditable && (

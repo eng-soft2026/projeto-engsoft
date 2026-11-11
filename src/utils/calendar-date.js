@@ -26,3 +26,8 @@ export function getCalendarDateInTimeZone(date, timeZone) {
     const valueOf = (type) => parts.find((part) => part.type === type).value;
     return `${valueOf("year")}-${valueOf("month")}-${valueOf("day")}`;
 }
+
+export function formatCalendarDate(value) {
+    const [year, month, day] = value.split("-");
+    return `${day}/${month}/${year}`;
+}
