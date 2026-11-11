@@ -22,6 +22,8 @@ import * as mediaSignUpload from "../../../src/app/api/media/sign-upload/route.j
 import * as policies from "../../../src/app/api/policies/[id]/route.js";
 import * as roomTypes from "../../../src/app/api/room-types/[id]/route.js";
 import * as roomTypeAmenities from "../../../src/app/api/room-types/[id]/amenities/route.js";
+import * as roomTypeImages from "../../../src/app/api/room-types/[id]/images/route.js";
+import * as roomTypeImage from "../../../src/app/api/room-types/[id]/images/[imageId]/route.js";
 import * as rooms from "../../../src/app/api/rooms/[id]/route.js";
 import * as roomAmenities from "../../../src/app/api/rooms/[id]/amenities/route.js";
 import * as units from "../../../src/app/api/units/[id]/route.js";
@@ -74,6 +76,9 @@ vi.mock("../../../src/services/policy-service.js", () => ({
 vi.mock("../../../src/services/room-service.js", () => ({
     roomService: service,
 }));
+vi.mock("../../../src/services/room-type-image-service.js", () => ({
+    roomTypeImageService: service,
+}));
 vi.mock("../../../src/services/room-type-service.js", () => ({
     roomTypeService: service,
 }));
@@ -111,6 +116,8 @@ const ROUTE_HANDLERS = new Map([
     ["/api/policies/:id", policies],
     ["/api/room-types/:id", roomTypes],
     ["/api/room-types/:id/amenities", roomTypeAmenities],
+    ["/api/room-types/:id/images", roomTypeImages],
+    ["/api/room-types/:id/images/:imageId", roomTypeImage],
     ["/api/rooms/:id", rooms],
     ["/api/rooms/:id/amenities", roomAmenities],
     ["/api/units/:id", units],
@@ -192,7 +199,7 @@ describe("HTTP authorization matrix", () => {
     });
 
     it("maps every protected matrix entry to an HTTP handler", () => {
-        expect(PROTECTED_ROUTES).toHaveLength(54);
+        expect(PROTECTED_ROUTES).toHaveLength(58);
         for (const entry of PROTECTED_ROUTES) {
             expect(getHandler(entry), routeKey(entry)).toEqual(
                 expect.any(Function),

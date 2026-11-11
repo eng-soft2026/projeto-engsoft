@@ -231,6 +231,10 @@ POST /api/hotels/:hotelId/room-types
 GET /api/room-types/:id
 PATCH /api/room-types/:id
 DELETE /api/room-types/:id
+GET /api/room-types/:id/images
+POST /api/room-types/:id/images
+PATCH /api/room-types/:id/images/:imageId
+DELETE /api/room-types/:id/images/:imageId
 GET /api/units/:unitId/rooms
 POST /api/units/:unitId/rooms
 GET /api/rooms/:id
@@ -249,6 +253,7 @@ POST /api/rooms/:id/blocks
 - O quarto devolve `price` (preço do quarto ou `null`), `effectivePrice` (`price` ou, sem ele, o preço padrão do tipo) e o resumo do tipo (`id`, `name`, `defaultPrice`).
 - `PATCH /api/rooms/:id`: ao menos um campo entre `roomTypeId`, `number`, `floor`, `isAccessible`, `administrativeNotes`, `status`, `price` e `isActive`. `price: null` remove o preço do quarto (RN131). `isActive: false` desativa (`status` passa a `INACTIVE`) e não pode vir junto com `status`. Quarto desativado responde `409 ROOM_INACTIVE`.
 - `DELETE /api/rooms/:id` e `DELETE /api/room-types/:id`: respondem `200` com `{ id, outcome }`, em que `outcome` é `DELETED` (sem histórico) ou `DEACTIVATED` (com histórico, RN011, RN133).
+- `/api/room-types/:id/images` (RF016, doc 22): mesmo contrato da galeria da unidade (`/api/units/:id/images`), com a foto devolvendo `roomTypeId` no lugar de `unitId`, sem capa (nenhum `isCover` na resposta; `POST` recebe só `assetId` e `PATCH` só `position`, obrigatório) e sem limite de quantidade. Escrita só com o hotel em `DRAFT` e o tipo ativo (`409 ROOM_TYPE_INACTIVE`); a leitura também mostra a galeria de um tipo desativado. Tipo inexistente ou de hotel alheio responde `404 ROOM_TYPE_NOT_FOUND`; foto fora do tipo, `404 ROOM_TYPE_IMAGE_NOT_FOUND`. Os quartos físicos exibem as fotos do tipo.
 - O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade. Número repetido na unidade responde `409 ROOM_NUMBER_ALREADY_EXISTS`.
 
 ### Search

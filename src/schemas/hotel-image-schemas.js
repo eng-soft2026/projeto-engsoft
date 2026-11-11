@@ -37,6 +37,13 @@ function buildUpdateImageSchema(maxImages) {
         });
 }
 
+function buildPositionOnlyUpdateSchema(maxImages) {
+    return z.object(
+        { position: buildPositionSchema(maxImages) },
+        { error: "Envie os dados da foto." },
+    );
+}
+
 function buildImageParamsSchema(ownerMessage) {
     return z.object(
         {
@@ -59,9 +66,16 @@ export const createHotelImageSchema = createImageSchema;
 
 export const createUnitImageSchema = createImageSchema;
 
+export const createRoomTypeImageSchema = z.object(
+    { assetId: z.uuid({ error: "Identificador de mídia inválido." }) },
+    { error: "Envie os dados da foto." },
+);
+
 export const updateHotelImageSchema = buildUpdateImageSchema(MAX_HOTEL_IMAGES);
 
 export const updateUnitImageSchema = buildUpdateImageSchema(null);
+
+export const updateRoomTypeImageSchema = buildPositionOnlyUpdateSchema(null);
 
 export const hotelImageParamsSchema = buildImageParamsSchema(
     "Identificador de hotel inválido.",
@@ -69,4 +83,8 @@ export const hotelImageParamsSchema = buildImageParamsSchema(
 
 export const unitImageParamsSchema = buildImageParamsSchema(
     "Identificador de unidade inválido.",
+);
+
+export const roomTypeImageParamsSchema = buildImageParamsSchema(
+    "Identificador de tipo de acomodação inválido.",
 );
