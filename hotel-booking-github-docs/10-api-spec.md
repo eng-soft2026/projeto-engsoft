@@ -95,6 +95,7 @@ UNIT_IMAGE_NOT_FOUND
 PRICE_PERIOD_NOT_FOUND
 PRICE_PERIOD_OVERLAP
 PRICE_PERIOD_PAST
+GEOCODING_NOT_FOUND
 ```
 
 - `VALIDATION_ERROR`: entrada inválida (Zod). A `message` é a do primeiro problema encontrado. CPF com formato ou dígitos verificadores inválidos usa `INVALID_CPF`, e CNPJ, `INVALID_CNPJ`.
@@ -102,12 +103,13 @@ PRICE_PERIOD_PAST
 - `INVALID_HOTEL_STATUS`: a ação não é permitida para o status atual do hotel (por exemplo, editar um hotel que não está em `DRAFT` ou aprovar um hotel que não está em `UNDER_REVIEW`). Também é devolvido quando outro usuário muda o status durante a requisição. Responde `409`.
 - `USER_ALREADY_EXISTS`: e-mail ou CPF já cadastrado. Um único código para os dois casos, para não revelar qual dado já existe.
 - `INTERNAL_ERROR`: erro inesperado. A `message` é genérica; detalhes ficam apenas no log do servidor (sem dados sensíveis).
-- `SERVICE_UNAVAILABLE`: uma dependência obrigatória (MySQL, Redis) não respondeu. Usado só por `GET /api/health/ready`, com status `503`.
+- `SERVICE_UNAVAILABLE`: uma dependência obrigatória (MySQL, Redis, Nominatim) não respondeu. Usado por `GET /api/health/ready` e pela geocodificação, com status `503`.
 - `RATE_LIMITED`: muitas tentativas seguidas. Usado por `POST /api/auth/login` depois de 5 falhas na mesma combinação de IP e e-mail em 15 min (doc 15). Responde `429` com o header `Retry-After` (segundos até a janela expirar) e a mensagem "Muitas tentativas de login. Tente novamente em alguns minutos.". Também usado por `POST /api/auth/forgot-password` (5 pedidos por IP e e-mail em 15 min, existindo a conta ou não) e por `POST /api/auth/reset-password` (10 tokens inválidos por IP em 15 min).
 - `INVALID_RESET_TOKEN`: token de recuperação de senha inexistente, expirado, já usado, substituído por um pedido mais novo ou de usuário inativo. Um único código e a mesma mensagem ("Link de recuperação inválido ou expirado. Solicite um novo.") para todos os casos. Responde `400`.
 - `INVALID_MEDIA_TYPE`, `MEDIA_TOO_LARGE` e `VIDEO_TOO_LONG`: arquivo com MIME, extensão, tamanho ou duração fora do doc 22. Respondem `400`.
 - `MEDIA_NOT_FOUND`: o Cloudinary não tem o asset pedido. Responde `404`.
 - `MEDIA_IN_USE`: o asset já está gravado numa tabela de imagem e só sai pela rota da galeria. Responde `409`.
+- `GEOCODING_NOT_FOUND`: o Nominatim não encontrou o endereço no Brasil. Responde `404`.
 - `HOTEL_IMAGE_NOT_FOUND`: a foto não existe na galeria do hotel. Responde `404`.
 - `HOTEL_IMAGE_LIMIT_REACHED`: o hotel já tem 10 fotos (RN085). Responde `409`.
 - `UNIT_IMAGE_NOT_FOUND`: a foto não existe na galeria da unidade. Responde `404`.
@@ -377,6 +379,10 @@ POST /api/geocoding/resolve-address
 ```
 
 Essa rota deverá ser autenticada quando usada no cadastro de unidades, aplicar cache e limitação de taxa. Não expor um proxy genérico para geocodificação pública.
+
+- Só `MANAGER`. O corpo tem só os campos do endereço da unidade (`zipCode`, `street`, `number`, `complement`, `neighborhood`, `city`, `state`, mesmas regras de `POST /api/hotels/:id/units`); campos extras são ignorados e não há busca em texto livre. O complemento não é enviado ao Nominatim (doc 15).
+- `200` com `data: { latitude, longitude }`, strings com 6 casas decimais. Endereço não encontrado: `404 GEOCODING_NOT_FOUND`. Nominatim indisponível, sem `NOMINATIM_USER_AGENT` ou fila de 1 req/s ocupada por mais de 2 s: `503 SERVICE_UNAVAILABLE`.
+- Limite: 10 chamadas por usuário em 10 min, contando toda chamada; `429 RATE_LIMITED` com `Retry-After`.
 
 ## Search metrics
 

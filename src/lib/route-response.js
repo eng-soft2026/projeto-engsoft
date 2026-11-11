@@ -6,6 +6,7 @@ import {
     ForbiddenError,
     NotFoundError,
     RateLimitError,
+    ServiceUnavailableError,
     UnauthorizedError,
     ValidationError,
 } from "./errors.js";
@@ -21,6 +22,7 @@ const HTTP_STATUS_BY_ERROR_CLASS = [
     [NotFoundError, 404],
     [ConflictError, 409],
     [RateLimitError, 429],
+    [ServiceUnavailableError, 503],
 ];
 const DEFAULT_DOMAIN_ERROR_STATUS = 400;
 const INTERNAL_ERROR_STATUS = 500;

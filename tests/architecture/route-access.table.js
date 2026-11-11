@@ -258,6 +258,14 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
             resourceAccess: "Only an authorized manager may create a unit.",
         },
         {
+            path: "/api/geocoding/resolve-address",
+            method: "POST",
+            access: "roles",
+            roles: ["MANAGER"],
+            resourceAccess:
+                "Any manager may resolve a Brazilian address, rate limited per user.",
+        },
+        {
             path: "/api/media/:id",
             method: "DELETE",
             access: "roles",
