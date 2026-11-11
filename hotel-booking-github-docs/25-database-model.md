@@ -556,6 +556,8 @@ ROOM_BLOCK
 - created_at
 ```
 
+`start_at` e `end_at` são `DATE` e o período é semiaberto: `start_at` é a primeira noite bloqueada e `end_at` é a primeira noite livre. A migration tem `CHECK (start_at < end_at)`, e assim a condição de conflito do §30 (`new_start < existing_end AND new_end > existing_start`) vale igual para bloqueio e para reserva, numa única query de disponibilidade. Um bloqueio de uma noite tem `end_at` igual ao dia seguinte ao de `start_at`. `reason` é obrigatório e `created_by_user_id` guarda quem bloqueou. A sobreposição de bloqueios do mesmo alvo não é constraint: o service a trata na transação. Índices em `(unit_id, start_at, end_at)` e `(room_id, start_at, end_at)` conforme o §27.
+
 ## 14. Reservas
 
 ### RESERVATION
