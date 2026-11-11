@@ -41,6 +41,7 @@ export const ERROR_CODES = Object.freeze({
     MEDIA_IN_USE: "MEDIA_IN_USE",
     HOTEL_IMAGE_NOT_FOUND: "HOTEL_IMAGE_NOT_FOUND",
     HOTEL_IMAGE_LIMIT_REACHED: "HOTEL_IMAGE_LIMIT_REACHED",
+    UNIT_IMAGE_NOT_FOUND: "UNIT_IMAGE_NOT_FOUND",
 });
 
 export class DomainError extends Error {

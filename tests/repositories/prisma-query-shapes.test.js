@@ -14,6 +14,7 @@ import { createPasswordResetTokenRepository } from "../../src/repositories/passw
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
 import { createRoomTypeRepository } from "../../src/repositories/room-type-repository.js";
 import { createSystemSettingRepository } from "../../src/repositories/system-setting-repository.js";
+import { createUnitImageRepository } from "../../src/repositories/unit-image-repository.js";
 import { createUnitRepository } from "../../src/repositories/unit-repository.js";
 import { createUserRepository } from "../../src/repositories/user-repository.js";
 
@@ -58,6 +59,7 @@ const passwordResetTokens = createPasswordResetTokenRepository(() => prisma);
 const users = createUserRepository(() => prisma);
 const mediaReferences = createMediaReferenceRepository(() => prisma);
 const hotelImages = createHotelImageRepository(() => prisma);
+const unitImages = createUnitImageRepository(() => prisma);
 
 const NEW_HOTEL_IMAGE = {
     hotelId: ID,
@@ -417,7 +419,7 @@ const QUERIES = [
             ),
     ],
     ["hotel.lockForUpdate", () => hotels.lockForUpdate(ID, prisma)],
-    ["hotelImage.listByHotel", () => hotelImages.listByHotel(ID)],
+    ["hotelImage.listByOwner", () => hotelImages.listByOwner(ID)],
     ["hotelImage.findById", () => hotelImages.findById(ID)],
     ["hotelImage.create", () => hotelImages.create(NEW_HOTEL_IMAGE)],
     [
@@ -426,6 +428,24 @@ const QUERIES = [
     ],
     ["hotelImage.clearCover", () => hotelImages.clearCover(ID)],
     ["hotelImage.delete", () => hotelImages.delete(ID)],
+    ["unitImage.listByOwner", () => unitImages.listByOwner(ID)],
+    ["unitImage.findById", () => unitImages.findById(ID)],
+    [
+        "unitImage.create",
+        () =>
+            unitImages.create({
+                ...NEW_HOTEL_IMAGE,
+                hotelId: undefined,
+                unitId: ID,
+                cloudinaryPublicId: `units/${ID}/${ID}`,
+            }),
+    ],
+    [
+        "unitImage.updateFields",
+        () => unitImages.updateFields(ID, { position: 2, isCover: true }),
+    ],
+    ["unitImage.clearCover", () => unitImages.clearCover(ID)],
+    ["unitImage.delete", () => unitImages.delete(ID)],
     [
         "$transaction with a callback",
         () =>

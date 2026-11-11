@@ -53,6 +53,7 @@ const SPEC_CODES = [
     "MEDIA_IN_USE",
     "HOTEL_IMAGE_NOT_FOUND",
     "HOTEL_IMAGE_LIMIT_REACHED",
+    "UNIT_IMAGE_NOT_FOUND",
 ];
 
 describe("ERROR_CODES", () => {

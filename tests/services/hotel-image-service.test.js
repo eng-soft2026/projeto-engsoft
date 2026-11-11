@@ -70,7 +70,7 @@ function createWorld({
         lockForUpdate: vi.fn(async () => calls.push("lock")),
     };
     const hotelImageRepository = {
-        listByHotel: vi.fn(async (hotelId, client) =>
+        listByOwner: vi.fn(async (hotelId, client) =>
             (client ? gallery : images).map((image) => ({ ...image })),
         ),
         findById: vi.fn(async (id) => {
