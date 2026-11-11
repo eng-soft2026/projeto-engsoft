@@ -437,6 +437,8 @@ ROOM_PRICE_PERIOD
 - updated_at
 ```
 
+`start_date` e `end_date` são `DATE` e o período é inclusivo nas duas pontas: a diária da noite `D` usa o período quando `start_date <= D <= end_date` (um período de uma noite tem as duas datas iguais). `price` é `DECIMAL(10,2)`. A migration tem `CHECK (price > 0)` e `CHECK (start_date <= end_date)`, e o índice é `(room_id, start_date, end_date)`. O alvo é sempre um quarto físico (`room_id`); não há período por tipo de quarto. A sobreposição de períodos do mesmo quarto não é constraint: o service a recusa na transação.
+
 Prioridade:
 
 ```text

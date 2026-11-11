@@ -176,4 +176,36 @@ describe("prisma migrations", () => {
             /ALTER TABLE `password_reset_token` ADD CONSTRAINT `\w+` FOREIGN KEY \(`user_id`\) REFERENCES `user`\(`id`\) ON DELETE RESTRICT/,
         );
     });
+
+    it("stores a room price period with DATE bounds and a DECIMAL(10, 2) price (doc 25 §10, DT020)", () => {
+        const [, body] = readAllMigrationsSql().match(
+            /CREATE TABLE `room_price_period` \(([\s\S]*?)\n\) /,
+        );
+
+        expect(body).toContain("`room_id` CHAR(36) NOT NULL");
+        expect(body).toContain("`start_date` DATE NOT NULL");
+        expect(body).toContain("`end_date` DATE NOT NULL");
+        expect(body).toContain("`price` DECIMAL(10, 2) NOT NULL");
+        expect(body).toContain("`updated_at` DATETIME(3) NOT NULL");
+        expect(body).toMatch(
+            /INDEX `\w+`\(`room_id`, `start_date`, `end_date`\)/,
+        );
+    });
+
+    it("keeps the room price period CHECKs for a positive price and ordered dates (RN025)", () => {
+        const sql = readAllMigrationsSql();
+
+        expect(sql).toMatch(
+            /ALTER TABLE `room_price_period` ADD CONSTRAINT `\w+` CHECK \(`price` > 0\)/,
+        );
+        expect(sql).toMatch(
+            /ALTER TABLE `room_price_period` ADD CONSTRAINT `\w+` CHECK \(`start_date` <= `end_date`\)/,
+        );
+    });
+
+    it("keeps the room price period room as a RESTRICT foreign key (RN011)", () => {
+        expect(readAllMigrationsSql()).toMatch(
+            /ALTER TABLE `room_price_period` ADD CONSTRAINT `\w+` FOREIGN KEY \(`room_id`\) REFERENCES `room`\(`id`\) ON DELETE RESTRICT/,
+        );
+    });
 });
