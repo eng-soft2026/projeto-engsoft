@@ -208,4 +208,89 @@ describe("prisma migrations", () => {
             /ALTER TABLE `room_price_period` ADD CONSTRAINT `\w+` FOREIGN KEY \(`room_id`\) REFERENCES `room`\(`id`\) ON DELETE RESTRICT/,
         );
     });
+
+    describe.each([
+        {
+            table: "hotel_image",
+            owner: "hotel_id",
+            parent: "hotel",
+            hasCover: true,
+        },
+        {
+            table: "unit_image",
+            owner: "unit_id",
+            parent: "hotel_unit",
+            hasCover: true,
+        },
+        {
+            table: "room_type_image",
+            owner: "room_type_id",
+            parent: "room_type",
+            hasCover: false,
+        },
+    ])("$table (doc 25 §12)", ({ table, owner, parent, hasCover }) => {
+        function readImageTableBody() {
+            const sql = readAllMigrationsSql();
+            const start = sql.indexOf(`CREATE TABLE \`${table}\` (`);
+            expect(start).toBeGreaterThan(-1);
+            return sql.slice(start, sql.indexOf("\n) ", start));
+        }
+
+        it("stores only the Cloudinary metadata, never the file (RNF029)", () => {
+            const body = readImageTableBody();
+
+            expect(body).toContain(`\`${owner}\` CHAR(36) NOT NULL`);
+            expect(body).toContain(
+                "`cloudinary_public_id` VARCHAR(255) NOT NULL",
+            );
+            expect(body).toContain("`url` VARCHAR(500) NOT NULL");
+            expect(body).toContain("`position` SMALLINT UNSIGNED NOT NULL");
+            expect(body).toContain("`format` VARCHAR(20) NOT NULL");
+            expect(body).toContain("`bytes` INTEGER UNSIGNED NOT NULL");
+            expect(body).toContain("`width` INTEGER UNSIGNED NOT NULL");
+            expect(body).toContain("`height` INTEGER UNSIGNED NOT NULL");
+            expect(body).toContain("`updated_at` DATETIME(3) NOT NULL");
+            expect(body).not.toMatch(/BLOB|BINARY/);
+        });
+
+        it(hasCover ? "has the cover flag" : "has no cover flag", () => {
+            const body = readImageTableBody();
+
+            if (hasCover) {
+                expect(body).toContain(
+                    "`is_cover` BOOLEAN NOT NULL DEFAULT false",
+                );
+                return;
+            }
+            expect(body).not.toContain("`is_cover`");
+        });
+
+        it("keeps the Cloudinary public id unique and indexes the gallery order", () => {
+            const body = readImageTableBody();
+
+            expect(body).toMatch(
+                /UNIQUE INDEX `\w+`\(`cloudinary_public_id`\)/,
+            );
+            expect(body).toContain(
+                `INDEX \`${table}_${owner}_position_idx\`(\`${owner}\`, \`position\`)`,
+            );
+        });
+
+        it("keeps the CHECKs for positive bytes and dimensions", () => {
+            const sql = readAllMigrationsSql();
+
+            expect(sql).toContain(
+                `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_bytes_check\` CHECK (\`bytes\` > 0);`,
+            );
+            expect(sql).toContain(
+                `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_dimensions_check\` CHECK (\`width\` > 0 AND \`height\` > 0);`,
+            );
+        });
+
+        it("keeps the owner as a RESTRICT foreign key (RN011)", () => {
+            expect(readAllMigrationsSql()).toContain(
+                `FOREIGN KEY (\`${owner}\`) REFERENCES \`${parent}\`(\`id\`) ON DELETE RESTRICT`,
+            );
+        });
+    });
 });

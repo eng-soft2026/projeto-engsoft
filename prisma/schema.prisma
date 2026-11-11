@@ -112,6 +112,7 @@ model Hotel {
     amenities   HotelAmenity[]
     units       HotelUnit[]
     roomTypes   RoomType[]
+    images      HotelImage[]
 
     @@index([status])
     @@index([cnpj])
@@ -210,6 +211,7 @@ model HotelUnit {
     phones  UnitPhone[]
     rooms   Room[]
     amenities UnitAmenity[]
+    images  UnitImage[]
 
     @@map("hotel_unit")
 }
@@ -298,6 +300,7 @@ model RoomType {
     rooms   Room[]
     amenities RoomTypeAmenity[]
     history RoomTypeHistory[]
+    images  RoomTypeImage[]
 
     @@index([hotelId])
     @@map("room_type")
@@ -382,6 +385,65 @@ model RoomPricePeriod {
 
     @@index([roomId, startDate, endDate])
     @@map("room_price_period")
+}
+
+model HotelImage {
+    id                 String   @id @default(uuid()) @db.Char(36)
+    hotelId            String   @map("hotel_id") @db.Char(36)
+    cloudinaryPublicId String   @unique @map("cloudinary_public_id") @db.VarChar(255)
+    url                String   @db.VarChar(500)
+    isCover            Boolean  @default(false) @map("is_cover")
+    position           Int      @db.UnsignedSmallInt
+    format             String   @db.VarChar(20)
+    bytes              Int      @db.UnsignedInt
+    width              Int      @db.UnsignedInt
+    height             Int      @db.UnsignedInt
+    createdAt          DateTime @default(now()) @map("created_at")
+    updatedAt          DateTime @updatedAt @map("updated_at")
+
+    hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+
+    @@index([hotelId, position])
+    @@map("hotel_image")
+}
+
+model UnitImage {
+    id                 String   @id @default(uuid()) @db.Char(36)
+    unitId             String   @map("unit_id") @db.Char(36)
+    cloudinaryPublicId String   @unique @map("cloudinary_public_id") @db.VarChar(255)
+    url                String   @db.VarChar(500)
+    isCover            Boolean  @default(false) @map("is_cover")
+    position           Int      @db.UnsignedSmallInt
+    format             String   @db.VarChar(20)
+    bytes              Int      @db.UnsignedInt
+    width              Int      @db.UnsignedInt
+    height             Int      @db.UnsignedInt
+    createdAt          DateTime @default(now()) @map("created_at")
+    updatedAt          DateTime @updatedAt @map("updated_at")
+
+    unit HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+    @@index([unitId, position])
+    @@map("unit_image")
+}
+
+model RoomTypeImage {
+    id                 String   @id @default(uuid()) @db.Char(36)
+    roomTypeId         String   @map("room_type_id") @db.Char(36)
+    cloudinaryPublicId String   @unique @map("cloudinary_public_id") @db.VarChar(255)
+    url                String   @db.VarChar(500)
+    position           Int      @db.UnsignedSmallInt
+    format             String   @db.VarChar(20)
+    bytes              Int      @db.UnsignedInt
+    width              Int      @db.UnsignedInt
+    height             Int      @db.UnsignedInt
+    createdAt          DateTime @default(now()) @map("created_at")
+    updatedAt          DateTime @updatedAt @map("updated_at")
+
+    roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+    @@index([roomTypeId, position])
+    @@map("room_type_image")
 }
 
 model Amenity {
