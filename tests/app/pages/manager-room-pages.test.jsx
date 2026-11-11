@@ -8,10 +8,12 @@ import CreateRoomPage, {
 import EditRoomPage, {
     metadata as editRoomMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/rooms/[roomId]/page.jsx";
+import { AMENITY_TARGETS } from "../../../src/constants/amenity.js";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import { ROOM_STATUSES } from "../../../src/constants/room-statuses.js";
 import { USER_ROLES } from "../../../src/constants/user-roles.js";
 import { ERROR_CODES, NotFoundError } from "../../../src/lib/errors.js";
+import { AmenityPicker } from "../../../src/modules/amenities/components/amenity-picker.jsx";
 import { DeactivateRoomButton } from "../../../src/modules/rooms/components/deactivate-room-button.jsx";
 import {
     ManagedRoomList,
@@ -29,6 +31,7 @@ const {
     listRooms,
     getRoom,
     listRoomTypes,
+    loadAmenityPickerData,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -39,6 +42,7 @@ const {
     listRooms: vi.fn(),
     getRoom: vi.fn(),
     listRoomTypes: vi.fn(),
+    loadAmenityPickerData: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -60,11 +64,21 @@ vi.mock("../../../src/services/room-service.js", () => ({
 vi.mock("../../../src/services/room-type-service.js", () => ({
     roomTypeService: { listRoomTypes },
 }));
+vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
+    loadAmenityPickerData,
+}));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: USER_ROLES.MANAGER });
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const AMENITY_PICKER_DATA = Object.freeze({
+    amenities: [
+        { id: "amenity-1", name: "Wi-Fi", isGlobal: true, isActive: true },
+    ],
+    selectedIds: ["amenity-1"],
+});
+
 const HOTEL_ID = "6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 const UNIT_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const OTHER_UNIT_ID = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
@@ -136,6 +150,7 @@ beforeEach(() => {
     requirePageRole.mockResolvedValue(MANAGER);
     listUnits.mockResolvedValue({ items: [UNIT, OTHER_UNIT], total: 2 });
     listRoomTypes.mockResolvedValue({ items: ROOM_TYPES, total: 2 });
+    loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
 });
 
 describe("HotelRoomsPage", () => {
@@ -313,6 +328,17 @@ describe("EditRoomPage", () => {
         });
         expect(findElementByType(element, RemoveRoomButton)).not.toBeNull();
         expect(findElementByType(element, DeactivateRoomButton)).toBeNull();
+        expect(loadAmenityPickerData).toHaveBeenCalledWith(
+            MANAGER,
+            AMENITY_TARGETS.ROOM,
+            ROOM_ID,
+        );
+        expect(findElementByType(element, AmenityPicker).props).toEqual({
+            target: AMENITY_TARGETS.ROOM,
+            targetId: ROOM_ID,
+            isEditable: true,
+            ...AMENITY_PICKER_DATA,
+        });
     });
 
     it("allows only the daily operation in a published hotel", async () => {
@@ -330,6 +356,9 @@ describe("EditRoomPage", () => {
         ]);
         expect(findElementByType(element, DeactivateRoomButton)).not.toBeNull();
         expect(findElementByType(element, RemoveRoomButton)).not.toBeNull();
+        expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
     });
 
     it("is read only for an inactive room or a hotel under review", async () => {

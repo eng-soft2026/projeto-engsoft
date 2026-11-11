@@ -8,6 +8,7 @@ import CreateRoomTypePage, {
 import EditRoomTypePage, {
     metadata as editRoomTypeMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/room-types/[roomTypeId]/page.jsx";
+import { AMENITY_TARGETS } from "../../../src/constants/amenity.js";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import { USER_ROLES } from "../../../src/constants/user-roles.js";
 import { ERROR_CODES, NotFoundError } from "../../../src/lib/errors.js";
@@ -15,6 +16,7 @@ import {
     ManagedRoomTypeList,
     NewRoomTypeLink,
 } from "../../../src/modules/room-types/components/managed-room-type-list.jsx";
+import { AmenityPicker } from "../../../src/modules/amenities/components/amenity-picker.jsx";
 import { RemoveRoomTypeButton } from "../../../src/modules/room-types/components/remove-room-type-button.jsx";
 import { RoomTypeForm } from "../../../src/modules/room-types/components/room-type-form.jsx";
 
@@ -23,6 +25,7 @@ const {
     getHotel,
     listRoomTypes,
     getRoomType,
+    loadAmenityPickerData,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -30,6 +33,7 @@ const {
     getHotel: vi.fn(),
     listRoomTypes: vi.fn(),
     getRoomType: vi.fn(),
+    loadAmenityPickerData: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -45,10 +49,20 @@ vi.mock("../../../src/services/hotel-service.js", () => ({
 vi.mock("../../../src/services/room-type-service.js", () => ({
     roomTypeService: { listRoomTypes, getRoomType },
 }));
+vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
+    loadAmenityPickerData,
+}));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: USER_ROLES.MANAGER });
 const DEFAULT_PAGE_SIZE = 20;
+const AMENITY_PICKER_DATA = Object.freeze({
+    amenities: [
+        { id: "amenity-1", name: "Wi-Fi", isGlobal: true, isActive: true },
+    ],
+    selectedIds: ["amenity-1"],
+});
+
 const HOTEL_ID = "6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 const ROOM_TYPE_ID = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
 
@@ -95,6 +109,7 @@ function mockHotelStatus(status) {
 beforeEach(() => {
     vi.clearAllMocks();
     requirePageRole.mockResolvedValue(MANAGER);
+    loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
 });
 
 describe("HotelRoomTypesPage", () => {
@@ -202,6 +217,17 @@ describe("EditRoomTypePage", () => {
             hotelId: HOTEL_ID,
             roomType: ROOM_TYPE,
         });
+        expect(loadAmenityPickerData).toHaveBeenCalledWith(
+            MANAGER,
+            AMENITY_TARGETS.ROOM_TYPE,
+            ROOM_TYPE_ID,
+        );
+        expect(findElementByType(element, AmenityPicker).props).toEqual({
+            target: AMENITY_TARGETS.ROOM_TYPE,
+            targetId: ROOM_TYPE_ID,
+            isEditable: true,
+            ...AMENITY_PICKER_DATA,
+        });
     });
 
     it("allows only the default price in a published hotel", async () => {
@@ -215,6 +241,9 @@ describe("EditRoomTypePage", () => {
             isPriceEditable: true,
         });
         expect(findElementByType(element, RemoveRoomTypeButton)).toBeNull();
+        expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
     });
 
     it.each([HOTEL_STATUSES.UNDER_REVIEW, HOTEL_STATUSES.BLOCKED])(
@@ -245,6 +274,9 @@ describe("EditRoomTypePage", () => {
             isPriceEditable: false,
         });
         expect(findElementByType(element, RemoveRoomTypeButton)).toBeNull();
+        expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
     });
 
     it("answers not found for an invalid identifier", async () => {

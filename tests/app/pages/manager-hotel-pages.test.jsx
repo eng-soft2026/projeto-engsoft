@@ -25,12 +25,14 @@ import CreateUnitPage, {
 import EditUnitPage, {
     metadata as editUnitMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/units/[unitId]/page.jsx";
+import { AMENITY_TARGETS } from "../../../src/constants/amenity.js";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import {
     ERROR_CODES,
     ForbiddenError,
     NotFoundError,
 } from "../../../src/lib/errors.js";
+import { AmenityPicker } from "../../../src/modules/amenities/components/amenity-picker.jsx";
 import { CreateHotelForm } from "../../../src/modules/hotels/components/create-hotel-form.jsx";
 import { EditHotelForm } from "../../../src/modules/hotels/components/edit-hotel-form.jsx";
 import { HotelAcceptancesForm } from "../../../src/modules/hotels/components/hotel-acceptances-form.jsx";
@@ -59,6 +61,7 @@ const {
     listPolicies,
     listUnits,
     getUnit,
+    loadAmenityPickerData,
     notFound,
     redirect,
 } = vi.hoisted(() => ({
@@ -69,6 +72,7 @@ const {
     listPolicies: vi.fn(),
     listUnits: vi.fn(),
     getUnit: vi.fn(),
+    loadAmenityPickerData: vi.fn(),
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
@@ -90,10 +94,19 @@ vi.mock("../../../src/services/policy-service.js", () => ({
 vi.mock("../../../src/services/unit-service.js", () => ({
     unitService: { listUnits, getUnit },
 }));
+vi.mock("../../../src/modules/amenities/amenity-picker-data.js", () => ({
+    loadAmenityPickerData,
+}));
 vi.mock("next/navigation", () => ({ notFound, redirect }));
 
 const MANAGER = Object.freeze({ id: "manager-1", role: USER_ROLES.MANAGER });
 const DEFAULT_PAGE_SIZE = 20;
+const AMENITY_PICKER_DATA = Object.freeze({
+    amenities: [
+        { id: "amenity-1", name: "Wi-Fi", isGlobal: true, isActive: true },
+    ],
+    selectedIds: ["amenity-1"],
+});
 
 function findElementByType(element, type) {
     if (!element || typeof element !== "object") {
@@ -262,6 +275,7 @@ describe("ManagedHotelPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         requirePageRole.mockResolvedValue(MANAGER);
+        loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
     });
 
     it("renders the edit form with the hotel data only", async () => {
@@ -281,6 +295,30 @@ describe("ManagedHotelPage", () => {
             cnpj: "11222333000181",
             email: "contato@pousada.com",
         });
+        expect(loadAmenityPickerData).toHaveBeenCalledWith(
+            MANAGER,
+            AMENITY_TARGETS.HOTEL,
+            HOTEL_ID,
+        );
+        expect(findElementByType(element, AmenityPicker).props).toEqual({
+            target: AMENITY_TARGETS.HOTEL,
+            targetId: HOTEL_ID,
+            isEditable: true,
+            ...AMENITY_PICKER_DATA,
+        });
+    });
+
+    it("renders the amenity picker read-only outside draft", async () => {
+        getHotel.mockResolvedValue({
+            ...HOTEL,
+            status: HOTEL_STATUSES.PUBLISHED,
+        });
+
+        const element = await ManagedHotelPage({ params: buildParams() });
+
+        expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
     });
 });
 
@@ -525,6 +563,7 @@ describe("EditUnitPage", () => {
         vi.clearAllMocks();
         requirePageRole.mockResolvedValue(MANAGER);
         getHotel.mockResolvedValue(HOTEL);
+        loadAmenityPickerData.mockResolvedValue(AMENITY_PICKER_DATA);
     });
 
     it("renders the edit form and the deactivate action", async () => {
@@ -548,6 +587,17 @@ describe("EditUnitPage", () => {
         expect(findElementByType(element, DeactivateUnitButton).props).toEqual({
             unit: CLIENT_UNIT,
         });
+        expect(loadAmenityPickerData).toHaveBeenCalledWith(
+            MANAGER,
+            AMENITY_TARGETS.UNIT,
+            UNIT_ID,
+        );
+        expect(findElementByType(element, AmenityPicker).props).toEqual({
+            target: AMENITY_TARGETS.UNIT,
+            targetId: UNIT_ID,
+            isEditable: true,
+            ...AMENITY_PICKER_DATA,
+        });
     });
 
     it.each([
@@ -566,6 +616,9 @@ describe("EditUnitPage", () => {
             findElementByType(element, UnitLocationPanel).props.isEditable,
         ).toBe(false);
         expect(findElementByType(element, DeactivateUnitButton)).toBeNull();
+        expect(findElementByType(element, AmenityPicker).props.isEditable).toBe(
+            false,
+        );
     });
 
     it("answers not found for an invalid unit identifier", async () => {
