@@ -51,6 +51,8 @@ const SPEC_CODES = [
     "VIDEO_TOO_LONG",
     "MEDIA_NOT_FOUND",
     "MEDIA_IN_USE",
+    "HOTEL_IMAGE_NOT_FOUND",
+    "HOTEL_IMAGE_LIMIT_REACHED",
 ];
 
 describe("ERROR_CODES", () => {

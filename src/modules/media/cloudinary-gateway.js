@@ -54,7 +54,42 @@ export function createCloudinaryGateway({
         return response?.result;
     }
 
-    return Object.freeze({ signUpload, destroy });
+    async function getResource({ publicId, resourceType }) {
+        const config = requireConfig();
+        try {
+            const resource = await sdk.api.resource(publicId, {
+                resource_type: resourceType,
+                cloud_name: config.cloudName,
+                api_key: config.apiKey,
+                api_secret: config.apiSecret,
+            });
+            return Object.freeze({
+                publicId: resource.public_id,
+                format: resource.format,
+                bytes: resource.bytes,
+                width: resource.width,
+                height: resource.height,
+                secureUrl: resource.secure_url,
+            });
+        } catch (reason) {
+            const httpCode = readHttpCode(reason);
+            if (httpCode === HTTP_NOT_FOUND) {
+                return null;
+            }
+            // eslint-disable-next-line preserve-caught-error -- the SDK rejection may carry the API credentials in its request options
+            throw new Error(
+                `Cloudinary resource lookup failed with status ${httpCode ?? "unknown"}`,
+            );
+        }
+    }
+
+    return Object.freeze({ signUpload, destroy, getResource });
+}
+
+const HTTP_NOT_FOUND = 404;
+
+function readHttpCode(reason) {
+    return reason?.error?.http_code ?? reason?.http_code ?? null;
 }
 
 export const cloudinaryGateway = createCloudinaryGateway();

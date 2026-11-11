@@ -46,3 +46,5 @@ export const MEDIA_SCOPE_KINDS = Object.freeze({
 });
 
 export const SIGNED_UPLOAD_TTL_SECONDS = 60 * 60;
+
+export const MAX_HOTEL_IMAGES = 10;

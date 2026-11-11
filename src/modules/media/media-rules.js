@@ -85,3 +85,12 @@ export function buildMediaFolder(scope, targetId) {
 export function buildMediaPublicId(scope, targetId, assetId) {
     return `${buildMediaFolder(scope, targetId)}/${assetId}`;
 }
+
+export function validateStoredImage(resource, limits) {
+    const format = resource.format?.toLowerCase();
+    if (!listAllowedFormats(MEDIA_KINDS.IMAGE).includes(format)) {
+        throw createInvalidMediaTypeError([MEDIA_KINDS.IMAGE]);
+    }
+    assertSize(MEDIA_KINDS.IMAGE, resource.bytes, limits);
+    return format;
+}

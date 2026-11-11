@@ -72,6 +72,10 @@ export function createHotelRepository(getClient = getPrisma) {
             });
         },
 
+        async lockForUpdate(id, client) {
+            await client.$queryRaw`SELECT id FROM hotel WHERE id = ${id} FOR UPDATE`;
+        },
+
         findByIdWithReviewNotes(id, client = getClient()) {
             return client.hotel.findUnique({
                 where: { id },

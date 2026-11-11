@@ -59,6 +59,9 @@ export const ERROR_MESSAGES = Object.freeze({
     [ERROR_CODES.MEDIA_NOT_FOUND]: "Mídia não encontrada.",
     [ERROR_CODES.MEDIA_IN_USE]:
         "A mídia está em uso e não pode ser removida por aqui.",
+    [ERROR_CODES.HOTEL_IMAGE_NOT_FOUND]: "Foto não encontrada.",
+    [ERROR_CODES.HOTEL_IMAGE_LIMIT_REACHED]:
+        "O hotel já tem o número máximo de fotos.",
     [CLIENT_ERROR_CODES.NETWORK_ERROR]:
         "Não foi possível conectar ao servidor. Verifique sua conexão.",
 });

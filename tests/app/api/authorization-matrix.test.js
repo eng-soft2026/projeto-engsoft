@@ -9,6 +9,8 @@ import * as hotels from "../../../src/app/api/hotels/route.js";
 import * as hotel from "../../../src/app/api/hotels/[id]/route.js";
 import * as hotelAcceptances from "../../../src/app/api/hotels/[id]/acceptances/route.js";
 import * as hotelAmenities from "../../../src/app/api/hotels/[id]/amenities/route.js";
+import * as hotelImages from "../../../src/app/api/hotels/[id]/images/route.js";
+import * as hotelImage from "../../../src/app/api/hotels/[id]/images/[imageId]/route.js";
 import * as hotelManagers from "../../../src/app/api/hotels/[id]/managers/route.js";
 import * as hotelManager from "../../../src/app/api/hotels/[id]/managers/[userId]/route.js";
 import * as hotelPolicies from "../../../src/app/api/hotels/[id]/policies/route.js";
@@ -52,6 +54,9 @@ vi.mock("../../../src/services/amenity-association-service.js", () => ({
 vi.mock("../../../src/services/amenity-service.js", () => ({
     amenityService: service,
 }));
+vi.mock("../../../src/services/hotel-image-service.js", () => ({
+    hotelImageService: service,
+}));
 vi.mock("../../../src/services/hotel-manager-service.js", () => ({
     hotelManagerService: service,
 }));
@@ -88,6 +93,8 @@ const ROUTE_HANDLERS = new Map([
     ["/api/hotels/:id", hotel],
     ["/api/hotels/:id/acceptances", hotelAcceptances],
     ["/api/hotels/:id/amenities", hotelAmenities],
+    ["/api/hotels/:id/images", hotelImages],
+    ["/api/hotels/:id/images/:imageId", hotelImage],
     ["/api/hotels/:id/managers", hotelManagers],
     ["/api/hotels/:id/managers/:userId", hotelManager],
     ["/api/hotels/:id/policies", hotelPolicies],
@@ -178,7 +185,7 @@ describe("HTTP authorization matrix", () => {
     });
 
     it("maps every protected matrix entry to an HTTP handler", () => {
-        expect(PROTECTED_ROUTES).toHaveLength(46);
+        expect(PROTECTED_ROUTES).toHaveLength(50);
         for (const entry of PROTECTED_ROUTES) {
             expect(getHandler(entry), routeKey(entry)).toEqual(
                 expect.any(Function),
