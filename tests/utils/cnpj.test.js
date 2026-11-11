@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isValidCnpj, normalizeCnpj } from "../../src/utils/cnpj.js";
+import {
+    formatCnpj,
+    isValidCnpj,
+    normalizeCnpj,
+} from "../../src/utils/cnpj.js";
 
 describe("normalizeCnpj", () => {
     it("keeps only the digits of a numeric CNPJ", () => {
@@ -69,5 +73,22 @@ describe("isValidCnpj", () => {
         expect(isValidCnpj(11222333000181)).toBe(false);
         expect(isValidCnpj(undefined)).toBe(false);
         expect(isValidCnpj(null)).toBe(false);
+    });
+});
+
+describe("formatCnpj", () => {
+    it.each([
+        ["", ""],
+        ["11", "11"],
+        ["112", "11.2"],
+        ["112223", "11.222.3"],
+        ["112223330", "11.222.333/0"],
+        ["1122233300018", "11.222.333/0001-8"],
+        ["11222333000181", "11.222.333/0001-81"],
+        ["11.222.333/0001-81", "11.222.333/0001-81"],
+        ["12abc34501de35", "12.ABC.345/01DE-35"],
+        ["112223330001819", "11.222.333/0001-81"],
+    ])("formats %j as %j", (value, formatted) => {
+        expect(formatCnpj(value)).toBe(formatted);
     });
 });

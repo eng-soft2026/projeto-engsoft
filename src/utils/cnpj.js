@@ -8,9 +8,19 @@ const MODULUS = 11;
 const MIN_WEIGHT = 2;
 const MAX_WEIGHT = 9;
 const WEIGHT_COUNT = MAX_WEIGHT - MIN_WEIGHT + 1;
+const CNPJ_LENGTH = 14;
+const CNPJ_SEPARATORS = Object.freeze({ 2: ".", 5: ".", 8: "/", 12: "-" });
 
 export function normalizeCnpj(value) {
     return String(value).replace(NON_ALPHANUMERIC_PATTERN, "").toUpperCase();
+}
+
+export function formatCnpj(value) {
+    return [...normalizeCnpj(value).slice(0, CNPJ_LENGTH)]
+        .map(
+            (character, index) => `${CNPJ_SEPARATORS[index] ?? ""}${character}`,
+        )
+        .join("");
 }
 
 function toCheckValue(character) {
