@@ -458,6 +458,7 @@ describe("unitService.updateUnit", () => {
             "updateFields",
             "replaceAddress",
             "replacePhones",
+            "geocodeAddress",
         ]);
     });
 
