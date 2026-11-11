@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { ACCEPTANCE_TYPE_CODES } from "../constants/acceptance-types.js";
 
-const MAX_ACCEPTANCES = 30;
+export const MAX_ACCEPTANCES = 30;
 const CUSTOM_LABEL_MAX_LENGTH = 150;
 const DETAILS_MAX_LENGTH = 2000;
 
-const customLabelSchema = z
+export const customLabelSchema = z
     .string({ error: "O rótulo da regra deve ser um texto." })
     .trim()
     .min(1, { error: "Informe o rótulo da regra." })
@@ -13,7 +13,7 @@ const customLabelSchema = z
         error: `O rótulo deve ter no máximo ${CUSTOM_LABEL_MAX_LENGTH} caracteres.`,
     });
 
-const detailsSchema = z
+export const detailsSchema = z
     .string({ error: "Os detalhes devem ser um texto." })
     .trim()
     .max(DETAILS_MAX_LENGTH, {

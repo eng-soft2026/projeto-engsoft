@@ -23,7 +23,7 @@ describe("managed hotel routes", () => {
             "Tipos de acomodação",
             "Quartos",
             "Gestores",
-            "Políticas",
+            "Regras e políticas",
         ]);
     });
 

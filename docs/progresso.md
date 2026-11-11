@@ -55,3 +55,4 @@ One line per decision not recorded in the spec or `CLAUDE.md`: date, decision, w
 - 2026-11-11: Gallery core shared by hotel, unit and room type. Unit and room type have no photo cap; room type gallery has no cover and refuses writes on an inactive type (`ROOM_TYPE_INACTIVE`), unlike the unit (team decision, BE-13).
 - 2026-11-11: Agent docs (`CLAUDE.md`, this file, the issue-cycle skill) are written only for the agent: terse, essentials only. Tests run only in CI on the PR.
 - 2026-11-11: BE-14 has no `/api/room-types/:id/price-periods` despite the issue: doc 25 says a period always targets a room.
+- 2026-11-11: Acceptances/policies screen (FE-13): UI only toggles `is_system` policies (no text edit), though `PATCH /api/policies/:id` still allows it; server `VALIDATION_ERROR` has no field path, so the screens show it as a form error.

@@ -10,7 +10,7 @@ export const MANAGED_HOTEL_SECTIONS = Object.freeze([
         segment: "managers",
         isOwnerOnly: true,
     }),
-    Object.freeze({ label: "Políticas", segment: "policies" }),
+    Object.freeze({ label: "Regras e políticas", segment: "policies" }),
 ]);
 
 export function listManagedHotelSections(isOwner) {

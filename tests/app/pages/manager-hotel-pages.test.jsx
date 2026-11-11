@@ -13,6 +13,9 @@ import ManagedHotelPage, {
 import HotelManagersPage, {
     metadata as hotelManagersMetadata,
 } from "../../../src/app/(manager)/manager/hotels/[id]/managers/page.jsx";
+import HotelPoliciesPage, {
+    metadata as hotelPoliciesMetadata,
+} from "../../../src/app/(manager)/manager/hotels/[id]/policies/page.jsx";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import {
     ERROR_CODES,
@@ -21,7 +24,9 @@ import {
 } from "../../../src/lib/errors.js";
 import { CreateHotelForm } from "../../../src/modules/hotels/components/create-hotel-form.jsx";
 import { EditHotelForm } from "../../../src/modules/hotels/components/edit-hotel-form.jsx";
+import { HotelAcceptancesForm } from "../../../src/modules/hotels/components/hotel-acceptances-form.jsx";
 import { HotelManagersPanel } from "../../../src/modules/hotels/components/hotel-managers-panel.jsx";
+import { HotelPoliciesPanel } from "../../../src/modules/hotels/components/hotel-policies-panel.jsx";
 import { HotelTabs } from "../../../src/modules/hotels/components/hotel-tabs.jsx";
 import { ManagedHotelHeader } from "../../../src/modules/hotels/components/managed-hotel-header.jsx";
 import {
@@ -29,20 +34,33 @@ import {
     NewHotelLink,
 } from "../../../src/modules/hotels/components/managed-hotel-list.jsx";
 
-const { requirePageRole, listManagedHotels, getHotel, notFound } = vi.hoisted(
-    () => ({
-        requirePageRole: vi.fn(),
-        listManagedHotels: vi.fn(),
-        getHotel: vi.fn(),
-        notFound: vi.fn(() => {
-            throw new Error("NEXT_NOT_FOUND");
-        }),
+const {
+    requirePageRole,
+    listManagedHotels,
+    getHotel,
+    listAcceptances,
+    listPolicies,
+    notFound,
+} = vi.hoisted(() => ({
+    requirePageRole: vi.fn(),
+    listManagedHotels: vi.fn(),
+    getHotel: vi.fn(),
+    listAcceptances: vi.fn(),
+    listPolicies: vi.fn(),
+    notFound: vi.fn(() => {
+        throw new Error("NEXT_NOT_FOUND");
     }),
-);
+}));
 
 vi.mock("../../../src/modules/auth/guards.js", () => ({ requirePageRole }));
 vi.mock("../../../src/services/hotel-service.js", () => ({
     hotelService: { listManagedHotels, getHotel },
+}));
+vi.mock("../../../src/services/acceptance-service.js", () => ({
+    acceptanceService: { listAcceptances },
+}));
+vi.mock("../../../src/services/policy-service.js", () => ({
+    policyService: { listPolicies },
 }));
 vi.mock("next/navigation", () => ({ notFound }));
 
@@ -283,5 +301,73 @@ describe("HotelManagersPage", () => {
             HotelManagersPage({ params: buildParams() }),
         ).rejects.toThrow("NEXT_NOT_FOUND");
         expect(notFound).toHaveBeenCalled();
+    });
+});
+
+describe("HotelPoliciesPage", () => {
+    const ACCEPTANCES = Object.freeze([
+        {
+            id: "acceptance-1",
+            type: "PETS",
+            typeName: "Animais de estimação",
+            customLabel: null,
+            isAllowed: true,
+            details: null,
+        },
+    ]);
+    const POLICIES = Object.freeze([
+        {
+            id: "policy-1",
+            type: "PARKING",
+            title: "Estacionamento",
+            description: "Vagas cobertas.",
+            isSystem: false,
+            isActive: true,
+        },
+    ]);
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        requirePageRole.mockResolvedValue(MANAGER);
+        listAcceptances.mockResolvedValue(ACCEPTANCES);
+        listPolicies.mockResolvedValue(POLICIES);
+    });
+
+    it("renders the acceptances form and the policies panel", async () => {
+        getHotel.mockResolvedValue(HOTEL);
+
+        const element = await HotelPoliciesPage({ params: buildParams() });
+
+        expect(hotelPoliciesMetadata.title).toBe(
+            "Regras e políticas do hotel | Reserva de Hotéis",
+        );
+        expect(listAcceptances).toHaveBeenCalledWith(MANAGER, HOTEL_ID);
+        expect(listPolicies).toHaveBeenCalledWith(MANAGER, HOTEL_ID);
+        expect(findElementByType(element, HotelAcceptancesForm).props).toEqual({
+            hotelId: HOTEL_ID,
+            isEditable: true,
+            acceptances: ACCEPTANCES,
+        });
+        expect(findElementByType(element, HotelPoliciesPanel).props).toEqual({
+            hotelId: HOTEL_ID,
+            isEditable: true,
+            policies: POLICIES,
+        });
+    });
+
+    it("renders read-only sections outside draft", async () => {
+        getHotel.mockResolvedValue({
+            ...HOTEL,
+            status: HOTEL_STATUSES.PUBLISHED,
+        });
+
+        const element = await HotelPoliciesPage({ params: buildParams() });
+
+        expect(
+            findElementByType(element, HotelAcceptancesForm).props.isEditable,
+        ).toBe(false);
+        expect(
+            findElementByType(element, HotelPoliciesPanel).props.isEditable,
+        ).toBe(false);
     });
 });
