@@ -210,7 +210,9 @@ describe("RoomPricePeriodsPanel", () => {
                 name: "Editar período 20/12/2026 a 31/12/2026",
             }),
         );
-        const priceInput = screen.getByLabelText(/^Preço por noite/);
+        const priceInput = within(screen.getByRole("list")).getByLabelText(
+            /^Preço por noite/,
+        );
         expect(priceInput).toHaveValue("480,50");
         await user.clear(priceInput);
         await user.type(priceInput, "500");
