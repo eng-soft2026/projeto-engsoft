@@ -93,7 +93,7 @@ const addressSchema = z.object(
     { error: "Envie o endereço da unidade." },
 );
 
-const phoneSchema = z
+export const phoneSchema = z
     .string({ error: "Informe o telefone." })
     .trim()
     .refine(isValidBrazilianPhone, { error: "Telefone inválido." })
