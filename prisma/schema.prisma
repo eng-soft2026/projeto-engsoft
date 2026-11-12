@@ -73,6 +73,9 @@ model User {
     updatedSettings     SystemSetting[]
     amenities           Amenity[]
     passwordResetTokens PasswordResetToken[]
+    searchHistory       SearchHistory[]
+    searchImpressions   SearchImpression[]
+    searchClicks        SearchClick[]
 
     @@map("user")
 }
@@ -212,6 +215,8 @@ model HotelUnit {
     rooms   Room[]
     amenities UnitAmenity[]
     images  UnitImage[]
+    searchImpressions SearchImpression[]
+    searchClicks      SearchClick[]
 
     @@map("hotel_unit")
 }
@@ -510,4 +515,52 @@ model RoomAmenity {
 
     @@id([roomId, amenityId])
     @@map("room_amenity")
+}
+
+model SearchHistory {
+    id          String   @id @default(uuid()) @db.Char(36)
+    userId      String   @map("user_id") @db.Char(36)
+    destination String   @db.VarChar(200)
+    checkIn     DateTime @map("check_in") @db.Date
+    checkOut    DateTime @map("check_out") @db.Date
+    guests      Int      @db.UnsignedSmallInt
+    filters     Json
+    createdAt   DateTime @default(now()) @map("created_at")
+
+    user        User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+    impressions SearchImpression[]
+    clicks      SearchClick[]
+
+    @@index([userId, createdAt])
+    @@map("search_history")
+}
+
+model SearchImpression {
+    id        String   @id @default(uuid()) @db.Char(36)
+    userId    String?  @map("user_id") @db.Char(36)
+    unitId    String   @map("unit_id") @db.Char(36)
+    searchId  String?  @map("search_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user   User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
+    unit   HotelUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+    search SearchHistory? @relation(fields: [searchId], references: [id], onDelete: Restrict)
+
+    @@index([unitId, createdAt])
+    @@map("search_impression")
+}
+
+model SearchClick {
+    id        String   @id @default(uuid()) @db.Char(36)
+    userId    String?  @map("user_id") @db.Char(36)
+    unitId    String   @map("unit_id") @db.Char(36)
+    searchId  String?  @map("search_id") @db.Char(36)
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user   User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
+    unit   HotelUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+    search SearchHistory? @relation(fields: [searchId], references: [id], onDelete: Restrict)
+
+    @@index([unitId, createdAt])
+    @@map("search_click")
 }
