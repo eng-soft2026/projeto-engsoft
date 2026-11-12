@@ -10,7 +10,7 @@ Agent notes, terse. History of what was done lives in git, issues and PRs; rules
 ## Open items
 
 - Media: BE-61 rechecks real `bytes`/`duration` of review media (as `validateStoredImage` does) and adds the `REVIEW` scope and videos. Orphans (signed never registered, failed destroy) → BE-88. No photo cap on unit/room type galleries; add abuse cap if Cloudinary quota suffers. Public room page shows room type photos via BE-15 (#76).
-- Schema part 3: doc 25 §13 onwards.
+- Schema part 3: doc 25 §13 onwards (§23 search tables done in DB-16).
 - Rooms: extend `roomRepository.hasHistory` and `roomTypeRepository.hasRoomReferences` with blocks and reservations (price periods already count in `hasHistory`); warn on future reservations when blocking/deactivating (RN012, RN134); block type change with future reservations; deactivating a unit or type does not touch its rooms.
 - Public reads (hotel, unit, room, amenities, acceptances) need their own `select`: no `administrativeNotes`, no CNPJ (`PUBLIC_HOTEL_FIELDS` has it).
 - `hotelEvents.publish` and `passwordResetService` publisher are no-ops until RabbitMQ/e-mail (BE-80, BE-83).
@@ -61,3 +61,4 @@ One line per decision not recorded in the spec or `CLAUDE.md`: date, decision, w
 - 2026-11-11: FE-18: one `AmenityPicker` for the 4 targets, data loaded on the server (`loadAmenityPickerData`: every page of `GET /api/amenities` plus the current associations, so an amenity of another manager of the hotel shows only when already associated, since `listAvailableTo` lists global + own). Editable under the same rule as the page structure (DRAFT, active unit/type/room); creating an amenity selects it but saving the set stays explicit.
 - 2026-11-11: FE-19: one `MediaGallery` for hotel, unit and room type (`GALLERY_TARGETS`); upload by `XMLHttpRequest` (fetch has no upload progress), files one at a time, reorder by up/down buttons (no drag-and-drop dependency), `alt` generic ("Foto N do hotel", no column). A failed registration calls `DELETE /api/media/:id` best effort; the list reloads from `GET .../images` after each write. Images via `next/image` `unoptimized` (no `next.config`).
 - 2026-11-11: FE-20: "Preços" screen is a card on the room edit page (periods belong to a room, no type-level periods); editable under `canOperateHotel` + active room; "today" for the read-only check comes from the server in `America/Sao_Paulo`; overlap shown on the start date field; form schema client-side (`price-period-form.js`, server schemas import Prisma `Decimal`).
+- 2026-11-11: DB-16: search tables keyed by `unit_id` as doc 25 §23/§27 (the issue said hotel); `search_id` FKs stay `RESTRICT`, so BE-33 nulls `search_id` in impressions/clicks before pruning history past 10 per user.
