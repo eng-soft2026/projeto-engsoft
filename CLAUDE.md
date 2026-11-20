@@ -9,7 +9,7 @@ UNIFESP Software Engineering: hotel booking platform for Brazil, fictional hotel
 - Spec (Portuguese, source of truth; docs win over code): `hotel-booking-github-docs/`. Root `README.md` is obsolete.
 - Backlog: 166 GitHub issues from `docs/plans/` (`01-database` DB-xx, `02-backend` BE-xx, `03-frontend` FE-xx, `04-testing-observability` QA-xx; order in `docs/plans/README.md`).
 - Open items and decisions: `docs/progresso.md`. Read it at session start.
-- Built so far: auth, hotels (status machine, managers, admin review, audit), units, room types and rooms, amenities/acceptances/policies, media signed upload and galleries (hotel, unit, room type), logging, request id, health, rate limit, password reset, UI base components, auth/profile screens, role layouts, test infra (unit, dom, integration, e2e). Check `src/` before assuming something is missing.
+- Built so far: auth, hotels (status machine, managers, admin review, audit), units, room types and rooms, amenities/acceptances/policies, media signed upload and galleries (hotel, unit, room type), public catalog reads (`/api/public/...`), logging, request id, health, rate limit, password reset, UI base components, auth/profile screens, role layouts, test infra (unit, dom, integration, e2e). Check `src/` before assuming something is missing.
 
 ## Language
 
