@@ -293,4 +293,53 @@ describe("prisma migrations", () => {
             );
         });
     });
+
+    describe.each([
+        { table: "unit_block", owner: "unit_id", parent: "hotel_unit" },
+        { table: "room_block", owner: "room_id", parent: "room" },
+    ])("$table (doc 25 §13)", ({ table, owner, parent }) => {
+        function readBlockTableBody() {
+            const sql = readAllMigrationsSql();
+            const start = sql.indexOf(`CREATE TABLE \`${table}\` (`);
+            expect(start).toBeGreaterThan(-1);
+            return sql.slice(start, sql.indexOf("\n) ", start));
+        }
+
+        it("stores the blocked period, the reason and the author (RF014, RF020)", () => {
+            const body = readBlockTableBody();
+
+            expect(body).toContain(`\`${owner}\` CHAR(36) NOT NULL`);
+            expect(body).toContain("`start_at` DATE NOT NULL");
+            expect(body).toContain("`end_at` DATE NOT NULL");
+            expect(body).toContain("`reason` VARCHAR(500) NOT NULL");
+            expect(body).toContain("`created_by_user_id` CHAR(36) NOT NULL");
+            expect(body).toContain(
+                "`created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)",
+            );
+            expect(body).not.toContain("`updated_at`");
+        });
+
+        it("indexes the conflict query of the availability (doc 25 §27)", () => {
+            expect(readBlockTableBody()).toContain(
+                `INDEX \`${table}_${owner}_start_at_end_at_idx\`(\`${owner}\`, \`start_at\`, \`end_at\`)`,
+            );
+        });
+
+        it("keeps the CHECK of the half-open period (doc 25 §13, §30)", () => {
+            expect(readAllMigrationsSql()).toContain(
+                `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_dates_check\` CHECK (\`start_at\` < \`end_at\`);`,
+            );
+        });
+
+        it("keeps the target and the author as RESTRICT foreign keys (RN011)", () => {
+            const sql = readAllMigrationsSql();
+
+            expect(sql).toContain(
+                `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_${owner}_fkey\` FOREIGN KEY (\`${owner}\`) REFERENCES \`${parent}\`(\`id\`) ON DELETE RESTRICT`,
+            );
+            expect(sql).toContain(
+                `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_created_by_user_id_fkey\` FOREIGN KEY (\`created_by_user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE RESTRICT`,
+            );
+        });
+    });
 });

@@ -73,6 +73,8 @@ model User {
     updatedSettings     SystemSetting[]
     amenities           Amenity[]
     passwordResetTokens PasswordResetToken[]
+    createdUnitBlocks   UnitBlock[]
+    createdRoomBlocks   RoomBlock[]
 
     @@map("user")
 }
@@ -212,6 +214,7 @@ model HotelUnit {
     rooms   Room[]
     amenities UnitAmenity[]
     images  UnitImage[]
+    blocks  UnitBlock[]
 
     @@map("hotel_unit")
 }
@@ -337,6 +340,7 @@ model Room {
     amenities    RoomAmenity[]
     priceHistory RoomPriceHistory[]
     pricePeriods RoomPricePeriod[]
+    blocks       RoomBlock[]
 
     @@unique([unitId, number])
     @@index([roomTypeId])
@@ -444,6 +448,38 @@ model RoomTypeImage {
 
     @@index([roomTypeId, position])
     @@map("room_type_image")
+}
+
+model UnitBlock {
+    id              String   @id @default(uuid()) @db.Char(36)
+    unitId          String   @map("unit_id") @db.Char(36)
+    startAt         DateTime @map("start_at") @db.Date
+    endAt           DateTime @map("end_at") @db.Date
+    reason          String   @db.VarChar(500)
+    createdByUserId String   @map("created_by_user_id") @db.Char(36)
+    createdAt       DateTime @default(now()) @map("created_at")
+
+    unit          HotelUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+    createdByUser User      @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+    @@index([unitId, startAt, endAt])
+    @@map("unit_block")
+}
+
+model RoomBlock {
+    id              String   @id @default(uuid()) @db.Char(36)
+    roomId          String   @map("room_id") @db.Char(36)
+    startAt         DateTime @map("start_at") @db.Date
+    endAt           DateTime @map("end_at") @db.Date
+    reason          String   @db.VarChar(500)
+    createdByUserId String   @map("created_by_user_id") @db.Char(36)
+    createdAt       DateTime @default(now()) @map("created_at")
+
+    room          Room @relation(fields: [roomId], references: [id], onDelete: Restrict)
+    createdByUser User @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+    @@index([roomId, startAt, endAt])
+    @@map("room_block")
 }
 
 model Amenity {
