@@ -62,6 +62,10 @@ export function readAdminHotelsQuery(searchParams = {}) {
     };
 }
 
+export function buildAdminHotelHref(hotelId) {
+    return `${ADMIN_HOTELS_PATH}/${hotelId}`;
+}
+
 export function buildAdminHotelsHref({ filter, page = 1 }) {
     const params = new URLSearchParams({ status: filter });
     if (page > 1) {

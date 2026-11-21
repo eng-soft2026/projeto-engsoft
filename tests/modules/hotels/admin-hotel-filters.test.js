@@ -3,6 +3,7 @@ import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import {
     ADMIN_HOTEL_STATUS_FILTERS,
     ALL_STATUSES_FILTER,
+    buildAdminHotelHref,
     buildAdminHotelsHref,
     readAdminHotelsQuery,
 } from "../../../src/modules/hotels/admin-hotel-filters.js";
@@ -77,5 +78,9 @@ describe("admin hotel filters", () => {
                 page: 2,
             }),
         ).toBe("/admin/hotels?status=UNDER_REVIEW&page=2");
+    });
+
+    it("builds the hotel detail link", () => {
+        expect(buildAdminHotelHref("hotel-1")).toBe("/admin/hotels/hotel-1");
     });
 });
