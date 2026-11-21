@@ -82,6 +82,9 @@
   "overrides": {
     "@prisma/adapter-mariadb": {
       "mariadb": "3.5.4"
+    },
+    "@prisma/config": {
+      "effect": "3.22.5"
     }
   }
 }

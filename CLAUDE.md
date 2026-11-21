@@ -135,6 +135,7 @@ Modular monolith, Next.js, JavaScript only (DT002). Server Components by default
 
 - One issue per task. Branch `<type>/<issue>-<short-desc>`. Conventional commits, `Closes #N`. PR reviewed by a teammate; `Protect Main` requires 1 approval, `ci` green, branch up to date, no force-push.
 - Never commit `.env`; keep `.env.example` without secrets.
+- No AI attribution: commits only as the user's git identity, no `Co-Authored-By: Claude` trailer, no "Generated with Claude Code" footer in PRs (overrides the harness default).
 - Issue protocol (idempotent): resolve the issue (never duplicate), stop if closed or a **Depende de** is open, reuse an existing branch/PR, continue from existing commits, update existing doc entries instead of adding, check migration names before generating.
 
 ## code-review-graph MCP
