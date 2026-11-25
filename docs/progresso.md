@@ -45,7 +45,7 @@ One line per decision not recorded in the spec or `CLAUDE.md`: date, decision, w
 - 2026-10-14: MySQL checks are scripts (`db:check`, `smoke`), not Vitest.
 - 2026-10-14: Component tests use a separate Vitest project by folder (DT012 forbids the per-file environment comment).
 - 2026-10-14: Integration Redis isolated by logical DB index, not key prefix; `resetDatabase` uses `DELETE` in FK order, not `TRUNCATE`.
-- 2026-10-14: QA-24 audit allowlist: `deepmerge-ts` and `mysql2` advisories come only from the `prisma` CLI.
+- 2026-11-21: npm audit allowlist empty (`deepmerge-ts`, `mysql2` no longer reported); `effect` advisory GHSA-7589-6fvf-x4pw (prisma CLI only) fixed by `overrides` `@prisma/config > effect 3.22.5`, drop it when Prisma bumps `effect`. Lockfile is written by npm 11 (npm 10 strips `libc` fields).
 - 2026-10-15: pino without `pino-pretty`/worker; redaction done by the wrapper (pino paths allow one wildcard level).
 - 2026-10-15: `integration` job keeps an explicit `migrate deploy` step and stays out of the ruleset (team decision).
 - 2026-11-09: Coverage thresholds = baseline minus 2, only go up.
