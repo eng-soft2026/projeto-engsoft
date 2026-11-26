@@ -268,6 +268,20 @@ POST /api/rooms/:id/blocks
 - Preço por período (RF057, RN025, doc 25 §10): `POST /api/rooms/:id/price-periods` recebe `startDate` e `endDate` (`AAAA-MM-DD`, inclusivas, `startDate <= endDate`) e `price` (positivo, até 2 casas). O `GET` devolve os períodos do quarto por `startDate` crescente, sem paginação, cada um com `{ id, roomId, startDate, endDate, price, createdAt, updatedAt }`. O `PATCH` aceita qualquer subconjunto desses campos (ao menos um). O `DELETE` remove o período e responde `{ id }`. Escrita com o hotel em `DRAFT` ou `PUBLISHED` (RN129) e o quarto ativo (`409 ROOM_INACTIVE`). `startDate` anterior a hoje responde `400`. Período já iniciado (`startDate` anterior a hoje) não é alterado nem excluído: `409 PRICE_PERIOD_PAST`. Datas sobrepostas a outro período do quarto respondem `409 PRICE_PERIOD_OVERLAP`; períodos encostados (um termina no dia 10, o outro começa no 11) são aceitos. Período inexistente ou de hotel alheio responde `404 PRICE_PERIOD_NOT_FOUND`. Não há período por tipo de quarto.
 - O corpo de `POST /api/units/:unitId/rooms` informa `roomTypeId`, que deve pertencer ao mesmo hotel da unidade. Número repetido na unidade responde `409 ROOM_NUMBER_ALREADY_EXISTS`.
 
+### Catálogo público
+
+```text
+GET /api/public/hotels/:id
+GET /api/public/units/:id
+GET /api/public/rooms/:id
+```
+
+- Leituras sem login para as páginas de hotel, unidade e quarto (doc 18). Só aparece hotel `PUBLISHED` e ativo (RN003); unidade, tipo e quarto também precisam estar ativos, e o quarto em `AVAILABLE` (`MAINTENANCE` e `UNAVAILABLE` ficam de fora). Qualquer outro caso responde `404` (`HOTEL_NOT_FOUND`, `UNIT_NOT_FOUND` ou `ROOM_NOT_FOUND`), sem revelar que o item existe.
+- Nunca devolvem CNPJ, e-mail do hotel, proprietário, gestores, `reviewNotes`, `status`, `administrativeNotes`, `overbookingPercentage` nem `cloudinaryPublicId`. As fotos trazem `id`, `url`, `position`, `width`, `height` e, em hotel e unidade, `isCover`. Comodidades: só as ativas, `{ id, name }` em ordem alfabética.
+- Hotel: `id`, `name`, `description`, `category`, `rating` (`{ average, count }`; `{ null, 0 }` até existirem avaliações, BE-60), `images`, `amenities`, `acceptances` (mesmo formato de `GET /api/hotels/:id/acceptances`), `policies` ativas (`id`, `type`, `title`, `description`) e `units` ativas (`id`, `name`, `address` com bairro, cidade, UF, `latitude` e `longitude`, e `coverImage` ou `null`).
+- Unidade: `id`, `name`, `email`, `checkInTime` e `checkOutTime` (`HH:mm`), `address` completo com `latitude`/`longitude` (texto, `null` enquanto não geocodificada), `phones`, `images`, `amenities`, `hotel` (`id`, `name`, `category`) e `rooms` (por número: `id`, `number`, `floor`, `isAccessible`, `effectivePrice` e o tipo com `id`, `name`, `maxGuests`, `areaM2`).
+- Quarto: `id`, `number`, `floor`, `isAccessible`, `effectivePrice` (preço do quarto ou, sem ele, o preço padrão do tipo; sem período nem promoção), `amenities`, `roomType` (`id`, `name`, `description`, `maxGuests`, `areaM2`, `beds`, `amenities` e as fotos do tipo), `unit` (`id`, `name`, horários e `address` resumido) e `hotel` (`id`, `name`, `category`).
+
 ### Search
 
 ```text
