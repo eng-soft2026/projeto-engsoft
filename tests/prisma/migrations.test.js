@@ -293,4 +293,72 @@ describe("prisma migrations", () => {
             );
         });
     });
+
+    function readTableBody(table) {
+        const sql = readAllMigrationsSql();
+        const start = sql.indexOf(`CREATE TABLE \`${table}\` (`);
+        expect(start).toBeGreaterThan(-1);
+        return sql.slice(start, sql.indexOf("\n) ", start));
+    }
+
+    it("stores a search of a signed-in user with dates, guests and JSON filters (doc 25 §23, RF086)", () => {
+        const body = readTableBody("search_history");
+
+        expect(body).toContain("`user_id` CHAR(36) NOT NULL");
+        expect(body).toContain("`destination` VARCHAR(200) NOT NULL");
+        expect(body).toContain("`check_in` DATE NOT NULL");
+        expect(body).toContain("`check_out` DATE NOT NULL");
+        expect(body).toContain("`guests` SMALLINT UNSIGNED NOT NULL");
+        expect(body).toContain("`filters` JSON NOT NULL");
+        expect(body).toContain(
+            "INDEX `search_history_user_id_created_at_idx`(`user_id`, `created_at`)",
+        );
+    });
+
+    it("keeps the search history CHECKs for ordered dates and at least one guest", () => {
+        const sql = readAllMigrationsSql();
+
+        expect(sql).toContain(
+            "ALTER TABLE `search_history` ADD CONSTRAINT `search_history_dates_check` CHECK (`check_in` < `check_out`);",
+        );
+        expect(sql).toContain(
+            "ALTER TABLE `search_history` ADD CONSTRAINT `search_history_guests_check` CHECK (`guests` >= 1);",
+        );
+    });
+
+    it("keeps the search history owner as a RESTRICT foreign key to user", () => {
+        expect(readAllMigrationsSql()).toMatch(
+            /ALTER TABLE `search_history` ADD CONSTRAINT `\w+` FOREIGN KEY \(`user_id`\) REFERENCES `user`\(`id`\) ON DELETE RESTRICT/,
+        );
+    });
+
+    describe.each(["search_impression", "search_click"])(
+        "%s (doc 25 §23, RF132-133)",
+        (table) => {
+            it("records the unit with an optional user and search, without updated_at", () => {
+                const body = readTableBody(table);
+
+                expect(body).toContain("`unit_id` CHAR(36) NOT NULL");
+                expect(body).toContain("`user_id` CHAR(36) NULL");
+                expect(body).toContain("`search_id` CHAR(36) NULL");
+                expect(body).not.toContain("`updated_at`");
+            });
+
+            it("indexes the unit by date for CTR and relevance (doc 25 §27)", () => {
+                expect(readTableBody(table)).toContain(
+                    `INDEX \`${table}_unit_id_created_at_idx\`(\`unit_id\`, \`created_at\`)`,
+                );
+            });
+
+            it.each([
+                ["user_id", "user"],
+                ["unit_id", "hotel_unit"],
+                ["search_id", "search_history"],
+            ])("keeps %s as a RESTRICT foreign key to %s", (column, parent) => {
+                expect(readAllMigrationsSql()).toContain(
+                    `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_${column}_fkey\` FOREIGN KEY (\`${column}\`) REFERENCES \`${parent}\`(\`id\`) ON DELETE RESTRICT`,
+                );
+            });
+        },
+    );
 });

@@ -1096,7 +1096,7 @@ SEARCH_HISTORY
 - created_at
 ```
 
-Manter apenas as últimas 10 pesquisas por usuário.
+Manter apenas as últimas 10 pesquisas por usuário. `filters` é obrigatório (`{}` sem filtros); CHECKs `check_in < check_out` e `guests >= 1`. Ao descartar pesquisas antigas, a mesma transação primeiro grava `search_id = NULL` nas impressões e cliques que apontam para elas (as FKs são `RESTRICT`; as métricas contam por `unit_id`).
 
 ### SEARCH_IMPRESSION
 
