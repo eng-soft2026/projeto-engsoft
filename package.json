@@ -61,7 +61,7 @@
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.3",
+    "@hookform/resolvers": "^7.0.8",
     "@prisma/adapter-mariadb": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
