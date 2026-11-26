@@ -1062,6 +1062,7 @@ JOB_EXECUTION
 - attempts
 - payload JSON
 - last_error nullable
+- correlation_id
 - scheduled_at
 - executed_at nullable
 - created_at
@@ -1081,6 +1082,8 @@ RabbitMQ:
 - máximo 3 tentativas;
 - retry após 30 minutos;
 - falha final vai para DLQ.
+
+O `id` é o `jobId` levado na mensagem (idempotência). `correlation_id` é o `requestId` de quem publicou o job (doc 24). `reference_type`/`reference_id` são opcionais e vêm juntos (`analytics.aggregate` não tem referência; `reference_id` aceita `public_id` do Cloudinary). `CHECK`: `attempts` entre 0 e 3; `COMPLETED` exige `executed_at`.
 
 ## 23. Pesquisa
 

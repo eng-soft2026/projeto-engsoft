@@ -76,7 +76,6 @@ const PENDING_TABLES = [
     "PROMOTION",
     "NOTIFICATION",
     "EMAIL_DELIVERY",
-    "JOB_EXECUTION",
     "DAILY_METRIC",
 ];
 
