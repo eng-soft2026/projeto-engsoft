@@ -335,7 +335,7 @@ POST /api/admin/hotels/:id/unblock
 GET /api/admin/review-reports
 ```
 
-- `GET /api/admin/hotels?status=&page=&pageSize=`: apenas `ADMIN`. Lista hotéis (`updatedAt` decrescente) com o resumo do proprietário (sem CPF), usando a paginação do contrato de listas paginadas. O filtro `status` (`DRAFT`, `UNDER_REVIEW`, `PUBLISHED` ou `BLOCKED`) é opcional e combina-se com a paginação; `total` considera somente os hotéis que correspondem ao status informado. Sem `status`, lista todos os status.
+- `GET /api/admin/hotels?status=&page=&pageSize=`: apenas `ADMIN`. Lista hotéis (`updatedAt` decrescente) com o resumo do proprietário (sem CPF), usando a paginação do contrato de listas paginadas. O filtro `status` (`DRAFT`, `UNDER_REVIEW`, `PUBLISHED` ou `BLOCKED`) é opcional e combina-se com a paginação; `total` considera somente os hotéis que correspondem ao status informado. Sem `status`, lista todos os status. Com `status=BLOCKED`, cada item traz `lastBlockNote` (`notes` e `createdAt` da última observação de bloqueio, ou `null`).
 - As quatro ações de hotel são exclusivas do `ADMIN`, exigem corpo JSON com `reason` (1 a 1000 caracteres, RN108), gravam o `AUDIT_LOG` na mesma transação da mudança de status (RN070, RN122) e respondem `200` com o hotel atualizado. Um status de origem incompatível responde `409 INVALID_HOTEL_STATUS`.
     - `approve`: `UNDER_REVIEW` → `PUBLISHED`.
     - `request-changes`: `UNDER_REVIEW` → `DRAFT`, com `HOTEL_REVIEW_NOTE` (RN105).

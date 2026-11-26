@@ -36,6 +36,10 @@ function createHotelNotFoundError() {
     );
 }
 
+function presentBlockedHotel({ reviewNotes = [], ...hotel }) {
+    return { ...hotel, lastBlockNote: reviewNotes[0] ?? null };
+}
+
 function presentHotel(hotel) {
     const presented = { ...hotel };
     delete presented.managers;
@@ -130,12 +134,17 @@ export function createHotelService({
     ) {
         assertAdmin(admin);
         const skipTake = getSkipTake({ page, pageSize });
+        const isBlockedFilter = status === HOTEL_STATUSES.BLOCKED;
         const [items, total] = await Promise.all([
-            hotelRepository.listForReview({ status, ...skipTake }),
+            hotelRepository.listForReview({
+                status,
+                ...skipTake,
+                ...(isBlockedFilter && { includeLastBlockNote: true }),
+            }),
             hotelRepository.countForReview({ status }),
         ]);
         return {
-            items,
+            items: isBlockedFilter ? items.map(presentBlockedHotel) : items,
             ...buildPageMeta({ page, pageSize, total }),
         };
     }

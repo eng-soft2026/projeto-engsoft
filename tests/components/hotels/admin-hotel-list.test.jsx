@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { HOTEL_STATUSES } from "../../../src/constants/hotel-statuses.js";
 import { ALL_STATUSES_FILTER } from "../../../src/modules/hotels/admin-hotel-filters.js";
 import {
@@ -7,6 +7,11 @@ import {
     AdminHotelStatusFilter,
     formatHotelUpdatedAt,
 } from "../../../src/modules/hotels/components/admin-hotel-list.jsx";
+import { renderWithUser } from "../../helpers/render.jsx";
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+}));
 
 const HOTELS = Object.freeze([
     {
@@ -23,6 +28,32 @@ const HOTELS = Object.freeze([
         },
     },
 ]);
+
+const BLOCK_NOTE = Object.freeze({
+    notes: "Fotos com marca d'água de outro hotel.",
+    createdAt: "2026-11-20T12:00:00.000Z",
+});
+
+function buildBlockedHotel(overrides = {}) {
+    return {
+        ...HOTELS[0],
+        status: HOTEL_STATUSES.BLOCKED,
+        lastBlockNote: BLOCK_NOTE,
+        ...overrides,
+    };
+}
+
+function renderBlockedList(items) {
+    return renderWithUser(
+        <AdminHotelList
+            items={items}
+            filter={HOTEL_STATUSES.BLOCKED}
+            page={1}
+            pageSize={20}
+            total={items.length}
+        />,
+    );
+}
 
 describe("AdminHotelStatusFilter", () => {
     it("links every status filter and marks the current one", () => {
@@ -125,6 +156,59 @@ describe("AdminHotelList", () => {
 
         expect(hrefs).toContain("/admin/hotels?status=PUBLISHED");
         expect(hrefs).toContain("/admin/hotels?status=PUBLISHED&page=3");
+    });
+
+    it("shows the last block reason and only the unblock action in the blocked filter", () => {
+        renderBlockedList([buildBlockedHotel()]);
+
+        const item = screen.getByRole("listitem");
+
+        expect(within(item).getByText(BLOCK_NOTE.notes)).toBeInTheDocument();
+        expect(
+            within(item).getByText(formatHotelUpdatedAt(BLOCK_NOTE.createdAt)),
+        ).toHaveAttribute("datetime", BLOCK_NOTE.createdAt);
+        expect(
+            within(item)
+                .getAllByRole("button")
+                .map((button) => button.textContent),
+        ).toEqual(["Desbloquear"]);
+    });
+
+    it("says when a blocked hotel has no recorded reason", () => {
+        renderBlockedList([buildBlockedHotel({ lastBlockNote: null })]);
+
+        expect(
+            screen.getByText("Motivo do bloqueio não registrado."),
+        ).toBeInTheDocument();
+    });
+
+    it("opens the unblock dialog from the blocked list", async () => {
+        const { user } = renderBlockedList([buildBlockedHotel()]);
+
+        await user.click(screen.getByRole("button", { name: "Desbloquear" }));
+
+        const dialog = screen.getByRole("dialog", {
+            name: "Desbloquear o hotel?",
+        });
+        expect(within(dialog).getByLabelText(/Motivo/)).toBeInTheDocument();
+        expect(
+            within(dialog).getByLabelText(/Status de destino/),
+        ).toBeInTheDocument();
+    });
+
+    it("keeps blocked hotels without reason or actions in the other filters", () => {
+        render(
+            <AdminHotelList
+                items={[buildBlockedHotel()]}
+                filter={ALL_STATUSES_FILTER}
+                page={1}
+                pageSize={20}
+                total={1}
+            />,
+        );
+
+        expect(screen.queryByText(BLOCK_NOTE.notes)).not.toBeInTheDocument();
+        expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
     it("formats the update date in Brazilian time", () => {

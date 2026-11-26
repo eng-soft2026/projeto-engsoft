@@ -1,3 +1,4 @@
+import { HOTEL_STATUSES } from "../constants/hotel-statuses.js";
 import { getPrisma } from "../lib/prisma.js";
 import { PUBLIC_REVIEW_NOTE_FIELDS } from "./hotel-review-note-repository.js";
 
@@ -49,6 +50,16 @@ const HOTEL_WITH_REVIEW_NOTES_FIELDS = Object.freeze({
 const HOTEL_WITH_OWNER_FIELDS = Object.freeze({
     ...PUBLIC_HOTEL_FIELDS,
     owner: { select: OWNER_SUMMARY_FIELDS },
+});
+
+const HOTEL_WITH_LAST_BLOCK_NOTE_FIELDS = Object.freeze({
+    ...HOTEL_WITH_OWNER_FIELDS,
+    reviewNotes: {
+        where: { toStatus: HOTEL_STATUSES.BLOCKED },
+        select: { notes: true, createdAt: true },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: 1,
+    },
 });
 
 async function updateIfStatus(client, id, expectedStatus, data) {
@@ -109,10 +120,15 @@ export function createHotelRepository(getClient = getPrisma) {
             });
         },
 
-        listForReview({ status, skip, take } = {}, client = getClient()) {
+        listForReview(
+            { status, skip, take, includeLastBlockNote = false } = {},
+            client = getClient(),
+        ) {
             return client.hotel.findMany({
                 where: status ? { status } : {},
-                select: HOTEL_WITH_OWNER_FIELDS,
+                select: includeLastBlockNote
+                    ? HOTEL_WITH_LAST_BLOCK_NOTE_FIELDS
+                    : HOTEL_WITH_OWNER_FIELDS,
                 orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
                 ...(skip !== undefined && { skip }),
                 ...(take !== undefined && { take }),

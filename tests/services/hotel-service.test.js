@@ -282,6 +282,35 @@ describe("hotelService", () => {
             });
         });
 
+        it("adds the last block note to each hotel of the blocked filter", async () => {
+            const blockNote = {
+                notes: "Fotos com marca d'água de outro hotel.",
+                createdAt: new Date("2026-11-20T12:00:00.000Z"),
+            };
+            const { service, hotelRepository } = createWorld(
+                buildHotel(BLOCKED),
+            );
+            hotelRepository.listForReview.mockResolvedValueOnce([
+                { ...buildHotel(BLOCKED), reviewNotes: [blockNote] },
+                { ...buildHotel(BLOCKED), id: "hotel-2", reviewNotes: [] },
+            ]);
+
+            const hotels = await service.listHotelsForReview(ADMIN, {
+                status: "BLOCKED",
+            });
+
+            expect(hotelRepository.listForReview).toHaveBeenCalledWith({
+                status: "BLOCKED",
+                skip: 0,
+                take: 20,
+                includeLastBlockNote: true,
+            });
+            expect(hotels.items).toEqual([
+                { ...buildHotel(BLOCKED), lastBlockNote: blockNote },
+                { ...buildHotel(BLOCKED), id: "hotel-2", lastBlockNote: null },
+            ]);
+        });
+
         it("lists every status without a filter", async () => {
             const { service, hotelRepository } = createWorld(buildHotel(DRAFT));
 
