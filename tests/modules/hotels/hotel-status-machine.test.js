@@ -6,6 +6,7 @@ import {
     UNBLOCK_TARGET_STATUSES,
     canEditHotel,
     canOperateHotel,
+    listAvailableActions,
     resolveNextStatus,
     shouldRecordReviewNote,
 } from "../../../src/modules/hotels/hotel-status-machine.js";
@@ -142,4 +143,26 @@ describe("shouldRecordReviewNote", () => {
             expect(shouldRecordReviewNote(action)).toBe(false);
         },
     );
+});
+
+describe("listAvailableActions", () => {
+    it.each([
+        [DRAFT, [HOTEL_ACTIONS.SUBMIT_REVIEW]],
+        [
+            UNDER_REVIEW,
+            [
+                HOTEL_ACTIONS.APPROVE,
+                HOTEL_ACTIONS.REQUEST_CHANGES,
+                HOTEL_ACTIONS.BLOCK,
+            ],
+        ],
+        [PUBLISHED, [HOTEL_ACTIONS.BLOCK]],
+        [BLOCKED, [HOTEL_ACTIONS.UNBLOCK]],
+    ])("lists the actions allowed from %s", (status, actions) => {
+        expect(listAvailableActions(status)).toEqual(actions);
+    });
+
+    it("lists no action for an unknown status", () => {
+        expect(listAvailableActions("ARCHIVED")).toEqual([]);
+    });
 });

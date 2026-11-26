@@ -7,6 +7,7 @@ import { joinClassNames } from "../../../utils/class-names.js";
 import { formatCnpj } from "../../../utils/cnpj.js";
 import {
     ADMIN_HOTEL_STATUS_FILTERS,
+    buildAdminHotelHref,
     buildAdminHotelsHref,
 } from "../admin-hotel-filters.js";
 import {
@@ -64,7 +65,12 @@ function AdminHotelItem({ hotel }) {
     return (
         <li className="rounded-card border-border bg-surface flex flex-col gap-2 border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
-                <p className="text-foreground font-medium">{hotel.name}</p>
+                <Link
+                    href={buildAdminHotelHref(hotel.id)}
+                    className="text-foreground hover:text-primary focus-visible:ring-ring rounded-control self-start font-medium focus-visible:ring-2 focus-visible:outline-none"
+                >
+                    {hotel.name}
+                </Link>
                 <p className="text-muted-foreground text-sm">
                     {hotel.category} · CNPJ {formatCnpj(hotel.cnpj)}
                 </p>

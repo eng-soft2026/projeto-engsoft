@@ -89,8 +89,8 @@ describe("AdminHotelList", () => {
         const item = screen.getByRole("listitem");
 
         expect(
-            within(item).getByText("Pousada Serra Azul"),
-        ).toBeInTheDocument();
+            within(item).getByRole("link", { name: "Pousada Serra Azul" }),
+        ).toHaveAttribute("href", "/admin/hotels/hotel-1");
         expect(
             within(item).getByText("Pousada · CNPJ 11.222.333/0001-81"),
         ).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("AdminHotelList", () => {
             ),
         ).toBeInTheDocument();
         expect(within(item).getByText("Em análise")).toBeInTheDocument();
-        expect(screen.queryByRole("link")).not.toBeInTheDocument();
+        expect(screen.getAllByRole("link")).toHaveLength(1);
     });
 
     it("keeps the status filter in the pagination links", () => {
