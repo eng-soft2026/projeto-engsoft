@@ -10,6 +10,7 @@ import { createHotelPolicyRepository } from "../../src/repositories/hotel-policy
 import { createHotelRepository } from "../../src/repositories/hotel-repository.js";
 import { createHotelReviewNoteRepository } from "../../src/repositories/hotel-review-note-repository.js";
 import { createMediaReferenceRepository } from "../../src/repositories/media-reference-repository.js";
+import { createPublicCatalogRepository } from "../../src/repositories/public-catalog-repository.js";
 import { createPasswordResetTokenRepository } from "../../src/repositories/password-reset-token-repository.js";
 import { createRoomPricePeriodRepository } from "../../src/repositories/room-price-period-repository.js";
 import { createRoomRepository } from "../../src/repositories/room-repository.js";
@@ -64,6 +65,7 @@ const mediaReferences = createMediaReferenceRepository(() => prisma);
 const hotelImages = createHotelImageRepository(() => prisma);
 const unitImages = createUnitImageRepository(() => prisma);
 const roomTypeImages = createRoomTypeImageRepository(() => prisma);
+const publicCatalog = createPublicCatalogRepository(() => prisma);
 
 const NEW_HOTEL_IMAGE = {
     hotelId: ID,
@@ -519,6 +521,18 @@ const QUERIES = [
         () => roomTypeImages.updateFields(ID, { position: 2 }),
     ],
     ["roomTypeImage.delete", () => roomTypeImages.delete(ID)],
+    [
+        "publicCatalog.findPublishedHotel",
+        () => publicCatalog.findPublishedHotel(ID),
+    ],
+    [
+        "publicCatalog.findPublishedUnit",
+        () => publicCatalog.findPublishedUnit(ID),
+    ],
+    [
+        "publicCatalog.findPublishedRoom",
+        () => publicCatalog.findPublishedRoom(ID),
+    ],
     [
         "$transaction with a callback",
         () =>
