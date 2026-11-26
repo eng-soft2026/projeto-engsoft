@@ -409,4 +409,169 @@ describe("prisma migrations", () => {
             });
         },
     );
+
+    describe("reservations (doc 25 §14)", () => {
+        const MONEY_COLUMNS = Object.freeze({
+            reservation: [
+                "subtotal_amount",
+                "discount_amount",
+                "gross_amount",
+                "service_fee",
+                "platform_commission",
+                "total_amount",
+            ],
+            reservation_room: [
+                "base_price_snapshot",
+                "subtotal_amount",
+                "discount_amount",
+                "gross_amount",
+                "service_fee",
+                "platform_commission",
+                "total_price",
+            ],
+            reservation_room_night: ["applied_price"],
+        });
+
+        it.each(Object.entries(MONEY_COLUMNS))(
+            "keeps the money of %s as DECIMAL(12, 2) (doc 25 §2, DT020)",
+            (table, columns) => {
+                const body = readTableBody(table);
+
+                for (const column of columns) {
+                    expect(body).toContain(
+                        `\`${column}\` DECIMAL(12, 2) NOT NULL`,
+                    );
+                }
+            },
+        );
+
+        it("stores the stay dates, the unique code and the hold of the reservation", () => {
+            const body = readTableBody("reservation");
+
+            expect(body).toContain("`user_id` CHAR(36) NOT NULL");
+            expect(body).toContain("`check_in` DATE NOT NULL");
+            expect(body).toContain("`check_out` DATE NOT NULL");
+            expect(body).toContain("`hold_expires_at` DATETIME(3) NULL");
+            expect(body).toContain(
+                "`status` ENUM('PENDING_PAYMENT', 'CONFIRMED', 'PARTIALLY_CANCELLED', 'CANCELLED', 'COMPLETED', 'NO_SHOW') NOT NULL DEFAULT 'PENDING_PAYMENT'",
+            );
+            expect(body).toContain(
+                "UNIQUE INDEX `reservation_code_key`(`code`)",
+            );
+        });
+
+        it.each([
+            ["reservation_user_id_idx", "`user_id`"],
+            ["reservation_check_in_check_out_idx", "`check_in`, `check_out`"],
+            ["reservation_status_idx", "`status`"],
+            [
+                "reservation_status_hold_expires_at_idx",
+                "`status`, `hold_expires_at`",
+            ],
+        ])("indexes the reservation with %s (doc 25 §27)", (name, columns) => {
+            expect(readTableBody("reservation")).toContain(
+                `INDEX \`${name}\`(${columns})`,
+            );
+        });
+
+        it("stores the snapshots and the optional promotion of the reserved room", () => {
+            const body = readTableBody("reservation_room");
+
+            expect(body).toContain(
+                "`room_type_name_snapshot` VARCHAR(150) NOT NULL",
+            );
+            expect(body).toContain(
+                "`room_number_snapshot` VARCHAR(20) NOT NULL",
+            );
+            expect(body).toContain(
+                "`unit_name_snapshot` VARCHAR(150) NOT NULL",
+            );
+            expect(body).toContain("`promotion_id` CHAR(36) NULL");
+            expect(body).toContain(
+                "`promotion_name_snapshot` VARCHAR(150) NULL",
+            );
+            expect(body).toContain(
+                "`discount_type_snapshot` ENUM('PERCENTAGE', 'FIXED_AMOUNT') NULL",
+            );
+            expect(body).toContain(
+                "`discount_value_snapshot` DECIMAL(12, 2) NULL",
+            );
+            expect(body).toContain(
+                "`status` ENUM('PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW') NOT NULL DEFAULT 'PENDING_PAYMENT'",
+            );
+            expect(body).toContain(
+                "INDEX `reservation_room_room_id_idx`(`room_id`)",
+            );
+            expect(body).toContain(
+                "INDEX `reservation_room_promotion_id_idx`(`promotion_id`)",
+            );
+        });
+
+        it("keeps one price per night of a reserved room (doc 25 §14, §27)", () => {
+            const body = readTableBody("reservation_room_night");
+
+            expect(body).toContain("`stay_date` DATE NOT NULL");
+            expect(body).toContain(
+                "`price_source` ENUM('PERIOD', 'ROOM', 'ROOM_TYPE') NOT NULL",
+            );
+            expect(body).toContain(
+                "UNIQUE INDEX `reservation_room_night_reservation_room_id_stay_date_key`(`reservation_room_id`, `stay_date`)",
+            );
+        });
+
+        it("does not lock a room night across reservations, since cancelled rows stay as history", () => {
+            expect(readAllMigrationsSql()).not.toMatch(
+                /UNIQUE INDEX `\w+`\(`room_id`, `stay_date`\)/,
+            );
+        });
+
+        it.each([
+            ["reservation", "user_id", "user"],
+            ["reservation_room", "reservation_id", "reservation"],
+            ["reservation_room", "room_id", "room"],
+            [
+                "reservation_room_night",
+                "reservation_room_id",
+                "reservation_room",
+            ],
+        ])(
+            "keeps %s.%s as a RESTRICT foreign key to %s",
+            (table, column, parent) => {
+                expect(readAllMigrationsSql()).toContain(
+                    `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_${column}_fkey\` FOREIGN KEY (\`${column}\`) REFERENCES \`${parent}\`(\`id\`) ON DELETE RESTRICT`,
+                );
+            },
+        );
+
+        it("keeps the reservation CHECKs for dates, non-negative money and RN111 totals", () => {
+            const sql = readAllMigrationsSql();
+
+            expect(sql).toContain(
+                "ALTER TABLE `reservation` ADD CONSTRAINT `reservation_dates_check` CHECK (`check_in` < `check_out`);",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `reservation` ADD CONSTRAINT `reservation_amounts_check` CHECK (`subtotal_amount` >= 0 AND `discount_amount` >= 0 AND `gross_amount` >= 0 AND `service_fee` >= 0 AND `platform_commission` >= 0 AND `total_amount` >= 0);",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `reservation` ADD CONSTRAINT `reservation_totals_check` CHECK (`gross_amount` = `subtotal_amount` - `discount_amount` AND `total_amount` = `gross_amount` + `service_fee`);",
+            );
+        });
+
+        it("keeps the reserved room CHECKs for money, RN111 totals and the discount snapshot", () => {
+            const sql = readAllMigrationsSql();
+
+            expect(sql).toContain(
+                "ALTER TABLE `reservation_room` ADD CONSTRAINT `reservation_room_amounts_check` CHECK (`base_price_snapshot` >= 0 AND `subtotal_amount` >= 0 AND `discount_amount` >= 0 AND `gross_amount` >= 0 AND `service_fee` >= 0 AND `platform_commission` >= 0 AND `total_price` >= 0);",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `reservation_room` ADD CONSTRAINT `reservation_room_totals_check` CHECK (`gross_amount` = `subtotal_amount` - `discount_amount` AND `total_price` = `gross_amount` + `service_fee`);",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `reservation_room` ADD CONSTRAINT `reservation_room_discount_snapshot_check` CHECK ((`discount_type_snapshot` IS NULL AND `discount_value_snapshot` IS NULL) OR (`discount_type_snapshot` IS NOT NULL AND `discount_value_snapshot` > 0));",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `reservation_room_night` ADD CONSTRAINT `reservation_room_night_price_check` CHECK (`applied_price` >= 0);",
+            );
+        });
+    });
 });
