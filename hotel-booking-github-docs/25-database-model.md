@@ -669,6 +669,8 @@ UNIQUE(reservation_room_id, stay_date)
 
 `applied_price` é o preço da diária antes de promoção, conforme a prioridade de preço (RN026 e RN028).
 
+Não há `UNIQUE(room_id, stay_date)` entre reservas: noites de reservas canceladas ou expiradas continuam como histórico. A ausência de conflito entre reservas confirmadas (§30) é garantida pelo backend, revalidando a disponibilidade na transação com lock. `RESERVATION` e `RESERVATION_ROOM` têm `CHECK` de valores não negativos e das somas `gross = subtotal - discount` e `total = gross + service_fee`.
+
 ## 15. Hóspedes
 
 ### GUEST

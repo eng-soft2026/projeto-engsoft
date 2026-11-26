@@ -55,6 +55,34 @@ enum RoomStatus {
     INACTIVE
 }
 
+enum ReservationStatus {
+    PENDING_PAYMENT
+    CONFIRMED
+    PARTIALLY_CANCELLED
+    CANCELLED
+    COMPLETED
+    NO_SHOW
+}
+
+enum ReservationRoomStatus {
+    PENDING_PAYMENT
+    CONFIRMED
+    CANCELLED
+    COMPLETED
+    NO_SHOW
+}
+
+enum PriceSource {
+    PERIOD
+    ROOM
+    ROOM_TYPE
+}
+
+enum DiscountType {
+    PERCENTAGE
+    FIXED_AMOUNT
+}
+
 model User {
     id           String   @id @default(uuid()) @db.Char(36)
     name         String   @db.VarChar(150)
@@ -78,6 +106,7 @@ model User {
     searchHistory       SearchHistory[]
     searchImpressions   SearchImpression[]
     searchClicks        SearchClick[]
+    reservations        Reservation[]
 
     @@map("user")
 }
@@ -346,6 +375,7 @@ model Room {
     priceHistory RoomPriceHistory[]
     pricePeriods RoomPricePeriod[]
     blocks       RoomBlock[]
+    reservations ReservationRoom[]
 
     @@unique([unitId, number])
     @@index([roomTypeId])
@@ -485,6 +515,78 @@ model RoomBlock {
 
     @@index([roomId, startAt, endAt])
     @@map("room_block")
+}
+
+model Reservation {
+    id                 String            @id @default(uuid()) @db.Char(36)
+    userId             String            @map("user_id") @db.Char(36)
+    code               String            @unique @db.VarChar(20)
+    checkIn            DateTime          @map("check_in") @db.Date
+    checkOut           DateTime          @map("check_out") @db.Date
+    status             ReservationStatus @default(PENDING_PAYMENT)
+    subtotalAmount     Decimal           @map("subtotal_amount") @db.Decimal(12, 2)
+    discountAmount     Decimal           @map("discount_amount") @db.Decimal(12, 2)
+    grossAmount        Decimal           @map("gross_amount") @db.Decimal(12, 2)
+    serviceFee         Decimal           @map("service_fee") @db.Decimal(12, 2)
+    platformCommission Decimal           @map("platform_commission") @db.Decimal(12, 2)
+    totalAmount        Decimal           @map("total_amount") @db.Decimal(12, 2)
+    holdExpiresAt      DateTime?         @map("hold_expires_at")
+    createdAt          DateTime          @default(now()) @map("created_at")
+    updatedAt          DateTime          @updatedAt @map("updated_at")
+
+    user  User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+    rooms ReservationRoom[]
+
+    @@index([userId])
+    @@index([checkIn, checkOut])
+    @@index([status])
+    @@index([status, holdExpiresAt])
+    @@map("reservation")
+}
+
+model ReservationRoom {
+    id                    String                @id @default(uuid()) @db.Char(36)
+    reservationId         String                @map("reservation_id") @db.Char(36)
+    roomId                String                @map("room_id") @db.Char(36)
+    roomTypeNameSnapshot  String                @map("room_type_name_snapshot") @db.VarChar(150)
+    roomNumberSnapshot    String                @map("room_number_snapshot") @db.VarChar(20)
+    unitNameSnapshot      String                @map("unit_name_snapshot") @db.VarChar(150)
+    basePriceSnapshot     Decimal               @map("base_price_snapshot") @db.Decimal(12, 2)
+    subtotalAmount        Decimal               @map("subtotal_amount") @db.Decimal(12, 2)
+    promotionId           String?               @map("promotion_id") @db.Char(36)
+    promotionNameSnapshot String?               @map("promotion_name_snapshot") @db.VarChar(150)
+    discountTypeSnapshot  DiscountType?         @map("discount_type_snapshot")
+    discountValueSnapshot Decimal?              @map("discount_value_snapshot") @db.Decimal(12, 2)
+    discountAmount        Decimal               @map("discount_amount") @db.Decimal(12, 2)
+    grossAmount           Decimal               @map("gross_amount") @db.Decimal(12, 2)
+    serviceFee            Decimal               @map("service_fee") @db.Decimal(12, 2)
+    platformCommission    Decimal               @map("platform_commission") @db.Decimal(12, 2)
+    totalPrice            Decimal               @map("total_price") @db.Decimal(12, 2)
+    status                ReservationRoomStatus @default(PENDING_PAYMENT)
+    createdAt             DateTime              @default(now()) @map("created_at")
+    updatedAt             DateTime              @updatedAt @map("updated_at")
+
+    reservation Reservation            @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+    room        Room                   @relation(fields: [roomId], references: [id], onDelete: Restrict)
+    nights      ReservationRoomNight[]
+
+    @@index([reservationId])
+    @@index([roomId])
+    @@index([promotionId])
+    @@map("reservation_room")
+}
+
+model ReservationRoomNight {
+    id                String      @id @default(uuid()) @db.Char(36)
+    reservationRoomId String      @map("reservation_room_id") @db.Char(36)
+    stayDate          DateTime    @map("stay_date") @db.Date
+    appliedPrice      Decimal     @map("applied_price") @db.Decimal(12, 2)
+    priceSource       PriceSource @map("price_source")
+
+    reservationRoom ReservationRoom @relation(fields: [reservationRoomId], references: [id], onDelete: Restrict)
+
+    @@unique([reservationRoomId, stayDate])
+    @@map("reservation_room_night")
 }
 
 model Amenity {
