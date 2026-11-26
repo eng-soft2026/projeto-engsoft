@@ -70,6 +70,12 @@ export function resolveNextStatus(action, currentStatus, requestedStatus) {
     return nextStatus;
 }
 
+export function listAvailableActions(status) {
+    return Object.keys(ALLOWED_TARGETS).filter(
+        (action) => ALLOWED_TARGETS[action][status] !== undefined,
+    );
+}
+
 export function canEditHotel(status) {
     return EDITABLE_STATUSES.includes(status);
 }

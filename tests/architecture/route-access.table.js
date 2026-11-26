@@ -312,6 +312,27 @@ export const ROUTE_ACCESS_TABLE = Object.freeze(
                 "Only an authorized manager may delete a price period that has not started.",
         },
         {
+            path: "/api/public/hotels/:id",
+            method: "GET",
+            access: "public",
+            resourceAccess:
+                "Only a published, active hotel; anything else answers 404.",
+        },
+        {
+            path: "/api/public/rooms/:id",
+            method: "GET",
+            access: "public",
+            resourceAccess:
+                "Only an active, available room of an active type and unit of a published hotel; anything else answers 404.",
+        },
+        {
+            path: "/api/public/units/:id",
+            method: "GET",
+            access: "public",
+            resourceAccess:
+                "Only an active unit of a published hotel; anything else answers 404.",
+        },
+        {
             path: "/api/room-types/:id",
             method: "GET",
             access: "roles",
