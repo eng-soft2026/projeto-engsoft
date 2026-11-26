@@ -409,4 +409,65 @@ describe("prisma migrations", () => {
             });
         },
     );
+
+    describe("notifications (doc 25 §21)", () => {
+        it("stores an in-app notification with JSON metadata and a read flag", () => {
+            const body = readTableBody("notification");
+
+            expect(body).toContain("`user_id` CHAR(36) NOT NULL");
+            expect(body).toContain("`type` VARCHAR(50) NOT NULL");
+            expect(body).toContain("`title` VARCHAR(150) NOT NULL");
+            expect(body).toContain("`message` VARCHAR(1000) NOT NULL");
+            expect(body).toContain("`metadata` JSON NOT NULL");
+            expect(body).toContain("`is_read` BOOLEAN NOT NULL DEFAULT false");
+            expect(body).not.toContain("`updated_at`");
+            expect(body).toContain(
+                "INDEX `notification_user_id_is_read_created_at_idx`(`user_id`, `is_read`, `created_at`)",
+            );
+        });
+
+        it("stores an e-mail delivery with status, attempts and the last error", () => {
+            const body = readTableBody("email_delivery");
+
+            expect(body).toContain("`user_id` CHAR(36) NOT NULL");
+            expect(body).toContain("`notification_id` CHAR(36) NULL");
+            expect(body).toContain("`recipient` VARCHAR(254) NOT NULL");
+            expect(body).toContain("`subject` VARCHAR(200) NOT NULL");
+            expect(body).toContain(
+                "`status` ENUM('PENDING', 'SENT', 'FAILED') NOT NULL DEFAULT 'PENDING'",
+            );
+            expect(body).toContain(
+                "`attempt_count` SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+            );
+            expect(body).toContain("`last_error` VARCHAR(1000) NULL");
+            expect(body).toContain("`sent_at` DATETIME(3) NULL");
+            expect(body).toContain(
+                "INDEX `email_delivery_status_created_at_idx`(`status`, `created_at`)",
+            );
+        });
+
+        it.each([
+            ["notification", "user_id", "user"],
+            ["email_delivery", "user_id", "user"],
+            ["email_delivery", "notification_id", "notification"],
+        ])(
+            "keeps %s.%s as a RESTRICT foreign key to %s",
+            (table, column, parent) => {
+                expect(readAllMigrationsSql()).toContain(
+                    `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${table}_${column}_fkey\` FOREIGN KEY (\`${column}\`) REFERENCES \`${parent}\`(\`id\`) ON DELETE RESTRICT`,
+                );
+            },
+        );
+
+        it("keeps sent_at and the attempts consistent with a sent e-mail", () => {
+            const sql = readAllMigrationsSql();
+
+            expect(sql).toContain(
+                "ALTER TABLE `email_delivery` ADD CONSTRAINT `email_delivery_sent_at_check` CHECK ((`status` = 'SENT') = (`sent_at` IS NOT NULL));",
+            );
+            expect(sql).toContain(
+                "ALTER TABLE `email_delivery` ADD CONSTRAINT `email_delivery_attempt_count_check` CHECK (`status` <> 'SENT' OR `attempt_count` >= 1);",
+            );
+        });
+    });
 });
