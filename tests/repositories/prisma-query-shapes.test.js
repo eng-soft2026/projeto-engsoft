@@ -170,6 +170,16 @@ const QUERIES = [
     ],
     ["hotel.listForReview without a status", () => hotels.listForReview({})],
     [
+        "hotel.listForReview with the last block note",
+        () =>
+            hotels.listForReview({
+                status: "BLOCKED",
+                skip: 0,
+                take: 20,
+                includeLastBlockNote: true,
+            }),
+    ],
+    [
         "hotel.countForReview with a status",
         () => hotels.countForReview({ status: "UNDER_REVIEW" }),
     ],

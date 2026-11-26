@@ -97,9 +97,11 @@ function AdminActionDialog({ hotelId, adminAction, onClose }) {
     );
 }
 
-export function AdminHotelActions({ hotelId, status }) {
+export function AdminHotelActions({ hotelId, status, allowedActions }) {
     const [openAction, setOpenAction] = useState(null);
-    const adminActions = getAvailableAdminActions(status);
+    const adminActions = getAvailableAdminActions(status).filter(
+        ({ action }) => !allowedActions || allowedActions.includes(action),
+    );
 
     if (adminActions.length === 0) {
         return null;

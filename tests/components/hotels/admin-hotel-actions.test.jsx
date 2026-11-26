@@ -52,6 +52,32 @@ describe("AdminHotelActions", () => {
         ).toEqual(["Bloquear"]);
     });
 
+    it("shows only the allowed actions", () => {
+        renderWithUser(
+            <AdminHotelActions
+                hotelId={HOTEL_ID}
+                status={HOTEL_STATUSES.UNDER_REVIEW}
+                allowedActions={["APPROVE", "BLOCK"]}
+            />,
+        );
+
+        expect(
+            screen.getAllByRole("button").map((button) => button.textContent),
+        ).toEqual(["Aprovar", "Bloquear"]);
+    });
+
+    it("renders nothing when no available action is allowed", () => {
+        const { container } = renderWithUser(
+            <AdminHotelActions
+                hotelId={HOTEL_ID}
+                status={HOTEL_STATUSES.PUBLISHED}
+                allowedActions={["UNBLOCK"]}
+            />,
+        );
+
+        expect(container).toBeEmptyDOMElement();
+    });
+
     it("renders nothing for a draft hotel", () => {
         const { container } = renderActions(HOTEL_STATUSES.DRAFT);
 
