@@ -1048,6 +1048,8 @@ SENT
 FAILED
 ```
 
+`NOTIFICATION` é a notificação in-app; o canal e-mail é a `EMAIL_DELIVERY` (com `notification_id` quando nasce de uma notificação). `type` é `VARCHAR(50)` com os valores definidos no código (eventos do doc 13), não enum. `sent_at` é preenchido se e somente se `status = SENT`, que exige `attempt_count >= 1`.
+
 ## 22. Jobs
 
 ### JOB_EXECUTION

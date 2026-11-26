@@ -39,6 +39,12 @@ enum AuditResult {
     FAILURE
 }
 
+enum EmailDeliveryStatus {
+    PENDING
+    SENT
+    FAILED
+}
+
 enum BedType {
     SINGLE
     DOUBLE
@@ -78,6 +84,8 @@ model User {
     searchHistory       SearchHistory[]
     searchImpressions   SearchImpression[]
     searchClicks        SearchClick[]
+    notifications       Notification[]
+    emailDeliveries     EmailDelivery[]
 
     @@map("user")
 }
@@ -599,4 +607,43 @@ model SearchClick {
 
     @@index([unitId, createdAt])
     @@map("search_click")
+}
+
+model Notification {
+    id        String   @id @default(uuid()) @db.Char(36)
+    userId    String   @map("user_id") @db.Char(36)
+    type      String   @db.VarChar(50)
+    title     String   @db.VarChar(150)
+    message   String   @db.VarChar(1000)
+    metadata  Json
+    isRead    Boolean  @default(false) @map("is_read")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+    emailDeliveries EmailDelivery[]
+
+    @@index([userId, isRead, createdAt])
+    @@map("notification")
+}
+
+model EmailDelivery {
+    id             String              @id @default(uuid()) @db.Char(36)
+    userId         String              @map("user_id") @db.Char(36)
+    notificationId String?             @map("notification_id") @db.Char(36)
+    recipient      String              @db.VarChar(254)
+    subject        String              @db.VarChar(200)
+    status         EmailDeliveryStatus @default(PENDING)
+    attemptCount   Int                 @default(0) @map("attempt_count") @db.UnsignedSmallInt
+    lastError      String?             @map("last_error") @db.VarChar(1000)
+    sentAt         DateTime?           @map("sent_at")
+    createdAt      DateTime            @default(now()) @map("created_at")
+    updatedAt      DateTime            @updatedAt @map("updated_at")
+
+    user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+    notification Notification? @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+
+    @@index([userId])
+    @@index([notificationId])
+    @@index([status, createdAt])
+    @@map("email_delivery")
 }
